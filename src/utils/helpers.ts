@@ -1,0 +1,80 @@
+import { League, Round, Submission } from '../types';
+
+export function generateId(): string {
+  return Date.now().toString(36) + Math.random().toString(36).substring(2);
+}
+
+export function getCurrentRound(league: League): Round | null {
+  if (league.rounds.length === 0) return null;
+  return league.rounds[league.currentRound - 1] || null;
+}
+
+export function formatLeagueStatus(league: League): string {
+  const round = getCurrentRound(league);
+  if (!round) {
+    return `**${league.name}**\nNo active rounds. Use \`/start-round\` to begin!`;
+  }
+
+  const status = round.status === 'submission' ? 'Submission Phase' :
+                 round.status === 'voting' ? 'Voting Phase' : 'Completed';
+
+  const deadline = round.status === 'submission' ? round.submissionDeadline : round.votingDeadline;
+  const timeLeft = deadline - Date.now();
+  const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
+  const daysLeft = Math.floor(hoursLeft / 24);
+
+  return `**${league.name}** - Round ${round.roundNumber}
+**Prompt:** ${round.prompt}
+**Status:** ${status}
+**Time Remaining:** ${daysLeft}d ${hoursLeft % 24}h
+**Submissions:** ${round.submissions.length}/${league.participants.length}`;
+}
+
+export function extractSongInfo(url: string): { songTitle: string; artist: string } {
+  // Basic parsing - can be enhanced with actual API integration
+  return {
+    songTitle: 'Song Title',
+    artist: 'Artist Name'
+  };
+}
+
+export function calculateScores(round: Round): Map<string, number> {
+  const scores = new Map<string, number>();
+
+  for (const vote of round.votes) {
+    for (const v of vote.votes) {
+      const submission = round.submissions[v.submissionIndex];
+      if (submission) {
+        const currentScore = scores.get(submission.userId) || 0;
+        scores.set(submission.userId, currentScore + v.points);
+      }
+    }
+  }
+
+  return scores;
+}
+
+export function formatLeaderboard(league: League): string {
+  const allScores = new Map<string, number>();
+
+  for (const round of league.rounds) {
+    if (round.status === 'completed') {
+      const roundScores = calculateScores(round);
+      for (const [userId, score] of roundScores) {
+        const current = allScores.get(userId) || 0;
+        allScores.set(userId, current + score);
+      }
+    }
+  }
+
+  const sorted = Array.from(allScores.entries())
+    .sort((a, b) => b[1] - a[1]);
+
+  let leaderboard = `**${league.name} - Leaderboard**\n\n`;
+  sorted.forEach(([userId, score], index) => {
+    const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
+    leaderboard += `${medal} <@${userId}>: ${score} points\n`;
+  });
+
+  return leaderboard || 'No scores yet!';
+}
