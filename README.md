@@ -4,10 +4,8 @@ A Discord bot for music sharing and voting - a game where participants submit so
 
 ## 📚 Documentation
 
-- **[QUICK_START.md](QUICK_START.md)** - Get running in 5 minutes
-- **[USER_GUIDE.md](USER_GUIDE.md)** - Complete user documentation
-- **[TESTING_GUIDE.md](TESTING_GUIDE.md)** - Comprehensive testing guide
-- **[MODAL_UX_IMPROVEMENTS.md](MODAL_UX_IMPROVEMENTS.md)** - Technical implementation details
+- **[docs/USER_GUIDE.md](docs/USER_GUIDE.md)** - Complete user documentation
+- **[docs/TESTING_GUIDE.md](docs/TESTING_GUIDE.md)** - Comprehensive testing guide
 
 ## Features
 
@@ -27,27 +25,54 @@ A Discord bot for music sharing and voting - a game where participants submit so
 - Node.js (v16 or higher)
 - A Discord bot token
 
-### Quick Setup
+### Getting Started
 
-**5-minute setup:** See [QUICK_START.md](QUICK_START.md)
+#### 1. Create Discord Bot
 
-**Detailed setup:** See [TESTING_GUIDE.md](TESTING_GUIDE.md)
+1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
+2. Create a new application
+3. Go to **Bot** tab → Add Bot → Copy the bot token
+4. Go to **OAuth2** tab → Copy the Application ID
+5. In **OAuth2 → URL Generator**:
+   - Scopes: `bot` + `applications.commands`
+   - Bot Permissions: Send Messages, Embed Links, Read Message History, Use Slash Commands
+   - Copy and open the generated URL to invite the bot to your server
 
-**TL;DR:**
+#### 2. Configure Environment
+
+Create a `.env` file in the project root:
+
+```env
+DISCORD_TOKEN=your_bot_token_here
+DISCORD_CLIENT_ID=your_application_id_here
+```
+
+#### 3. Install and Run
 
 ```bash
-# 1. Create bot at discord.com/developers
-# 2. Get bot token and application ID
-# 3. Create .env file:
-DISCORD_TOKEN=your_token
-DISCORD_CLIENT_ID=your_id
-
-# 4. Run:
-npm install
-npm run build
-npm run deploy
-npm start
+npm install          # Install dependencies
+npm run build        # Compile TypeScript
+npm run deploy       # Register slash commands
+npm start            # Start the bot
 ```
+
+You should see "Ready! Logged in as..." - the bot is now online in your Discord server.
+
+#### 4. Verify It Works
+
+In your Discord server, try:
+
+```
+/create-league name:Test League
+```
+
+Then test the modal UI:
+
+```
+/submit-song
+```
+
+A modal form should appear. If it does, everything is working correctly!
 
 ## Commands
 
@@ -59,31 +84,31 @@ npm start
 - `/my-leagues` - See your leagues (works in DMs!)
 - `/start-round` - Start a new round (opens modal, works in DMs!)
 
-**Complete command list:** See [USER_GUIDE.md](USER_GUIDE.md#command-reference)
+**Complete command list:** See [docs/USER_GUIDE.md](docs/USER_GUIDE.md#command-reference)
 
 ## How to Play
 
 1. Create a league → 2. Join league → 3. Start round → 4. Submit songs → 5. Vote → 6. See results!
 
-**Detailed walkthrough:** See [USER_GUIDE.md](USER_GUIDE.md)
+**Detailed walkthrough:** See [docs/USER_GUIDE.md](docs/USER_GUIDE.md)
 
 ## Project Structure
 
 ```
-music-leek-claude/
+music-leek/
 ├── src/
 │   ├── commands/          # Slash command handlers
-│   ├── modals/            # Modal form handlers (NEW!)
+│   ├── modals/            # Modal form handlers
 │   ├── types/             # TypeScript type definitions
 │   ├── utils/             # Helper functions and storage
 │   ├── index.ts           # Main bot entry point
 │   └── deploy-commands.ts # Command registration script
+├── docs/                  # Documentation
+│   ├── USER_GUIDE.md      # Complete user documentation
+│   └── TESTING_GUIDE.md   # Comprehensive testing guide
 ├── data/                  # League data storage (JSON)
 ├── dist/                  # Compiled JavaScript (generated)
 ├── .env                   # Environment variables (not in git)
-├── TESTING_GUIDE.md       # How to test the bot locally
-├── USER_GUIDE.md          # Complete user documentation
-├── MODAL_UX_IMPROVEMENTS.md # Technical implementation details
 ├── package.json
 └── tsconfig.json
 ```
@@ -91,17 +116,6 @@ music-leek-claude/
 ## Data Storage
 
 League data is stored in `data/leagues.json`. This is a simple JSON file storage system. For production use, consider migrating to a proper database.
-
-## What's New: Modal Components & DM Support
-
-The bot now uses Discord's modern modal components for a better user experience:
-
-- **Interactive Forms**: Instead of command parameters, users fill out modal forms
-- **Better UX**: Labeled fields, placeholders, and visual submission lists
-- **DM Support**: Submit and vote privately through Direct Messages
-- **Pre-filled Fields**: League IDs can be pre-filled or entered manually
-
-See [MODAL_UX_IMPROVEMENTS.md](MODAL_UX_IMPROVEMENTS.md) for technical details.
 
 ## Development
 
@@ -123,7 +137,7 @@ See [MODAL_UX_IMPROVEMENTS.md](MODAL_UX_IMPROVEMENTS.md) for technical details.
 
 ## Testing
 
-See [TESTING_GUIDE.md](TESTING_GUIDE.md) for comprehensive local testing instructions.
+See [docs/TESTING_GUIDE.md](docs/TESTING_GUIDE.md) for comprehensive testing scenarios and instructions.
 
 Quick test checklist:
 

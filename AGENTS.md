@@ -1,4 +1,6 @@
-# Claude Development Guidelines
+# AI Agent Development Guidelines
+
+> **For human contributors:** Learn more about the AGENTS.md convention at https://agents.md/
 
 ## Core Principle
 **When in doubt, ask.** Don't make assumptions about architecture, tooling, or implementation details.
@@ -25,6 +27,7 @@
 - Prefer minimal over comprehensive
 - Prefer asking over assuming
 - Only add what's explicitly requested
+- Don't use emojis
 
 ## This Project
 - Discord bot for music sharing/voting leagues

@@ -1,125 +1,24 @@
 # Testing Guide - Music Leek Bot
 
-Complete guide for testing the Music Leek bot locally with Discord.
+Comprehensive testing scenarios for the Music Leek Discord bot.
 
-> **⚡ Want to start quickly?** See [QUICK_START.md](QUICK_START.md) for a 5-minute setup.
+> **📖 Setup first?** See [../README.md](../README.md#getting-started) for setup instructions.
 
-This guide is the **single source of truth** for:
+This guide covers:
 
-- Complete Discord bot setup instructions
 - All testing scenarios and test cases
 - Troubleshooting common issues
 - Advanced testing techniques
+- Performance and edge case testing
 
 ## Prerequisites
 
-- Node.js 16+ installed
-- Discord account
-- Discord Developer Portal access
-- A test Discord server (where you're admin)
+Before testing, ensure you have:
 
-## Setup Instructions
-
-### 1. Create a Discord Bot Application
-
-1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
-2. Click "New Application"
-3. Name it "Music Leek Test" (or any name you prefer)
-4. Click "Create"
-
-### 2. Configure Bot Settings
-
-1. Go to the "Bot" tab in the left sidebar
-2. Click "Add Bot" and confirm
-3. Under "Privileged Gateway Intents", enable:
-   - ✅ **Message Content Intent** (if you need it for future features)
-   - Note: The bot currently uses `Guilds`, `GuildMessages`, and `DirectMessages` intents
-4. Click "Reset Token" and copy your bot token (you'll need this for `.env`)
-5. **Important**: Keep this token secret!
-
-### 3. Set Up OAuth2 & Permissions
-
-1. Go to the "OAuth2" tab → "URL Generator"
-2. Under "Scopes", select:
-   - ✅ `bot`
-   - ✅ `applications.commands`
-3. Under "Bot Permissions", select:
-   - ✅ Send Messages
-   - ✅ Send Messages in Threads
-   - ✅ Embed Links
-   - ✅ Read Message History
-   - ✅ Use Slash Commands
-4. Copy the generated URL at the bottom
-5. Open the URL in your browser to invite the bot to your test server
-
-### 4. Set Up Your Local Environment
-
-1. Clone/navigate to the repository:
-
-```bash
-cd "c:\Users\Owner\Git Repos\music-leek-claude"
-```
-
-2. Install dependencies:
-
-```bash
-npm install
-```
-
-3. Create a `.env` file in the root directory:
-
-```bash
-# Create .env file
-type nul > .env
-```
-
-4. Edit `.env` and add your credentials:
-
-```env
-DISCORD_TOKEN=your_bot_token_here
-DISCORD_CLIENT_ID=your_application_id_here
-```
-
-**To get your Client ID:**
-
-- Go to Discord Developer Portal → Your Application → "General Information"
-- Copy the "Application ID"
-
-### 5. Build and Deploy Commands
-
-```bash
-# Build TypeScript to JavaScript
-npm run build
-
-# Deploy slash commands to Discord
-npm run deploy
-```
-
-You should see output like:
-
-```
-Loaded command: create-league
-Loaded command: join-league
-Loaded command: submit-song
-...
-Successfully reloaded 10 application (/) commands.
-```
-
-### 6. Start the Bot
-
-```bash
-npm start
-```
-
-You should see:
-
-```
-Loaded command: create-league
-Loaded modal handler: submit-song-modal
-Loaded modal handler: vote-modal
-Loaded modal handler: start-round-modal
-Ready! Logged in as Music Leek Test#1234
-```
+- ✅ Completed setup instructions (see [README.md](../README.md#getting-started))
+- ✅ Bot is running (`npm start` shows "Ready! Logged in as...")
+- ✅ Commands are deployed (`npm run deploy` completed successfully)
+- ✅ Bot is invited to your test Discord server and shows as online
 
 ## Testing Scenarios
 
