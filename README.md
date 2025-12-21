@@ -5,6 +5,7 @@ A Discord bot for music sharing and voting - a game where participants submit so
 ## 📚 Documentation
 
 - **[docs/USER_GUIDE.md](docs/USER_GUIDE.md)** - Complete user documentation
+- **[docs/DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md)** - Deploy to Railway.app for 24/7 hosting
 - **[docs/TESTING_GUIDE.md](docs/TESTING_GUIDE.md)** - Comprehensive testing guide
 
 ## Features
