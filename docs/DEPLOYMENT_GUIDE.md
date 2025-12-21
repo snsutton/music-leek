@@ -341,14 +341,6 @@ npm audit fix
 cp data/leagues.json backups/leagues-$(date +%Y%m%d).json
 ```
 
-**Security Checklist:**
-
-- [ ] `.env` file in `.gitignore`
-- [ ] Environment variables set in platform (not hardcoded)
-- [ ] `npm audit` shows no critical vulnerabilities
-- [ ] Bot token regenerated if ever exposed
-- [ ] Regular backups of `data/leagues.json`
-
 ---
 
 ## Updating Your Bot
@@ -408,66 +400,7 @@ If an update breaks your bot:
 
 This instantly reverts to the previous version.
 
-### Common Issues
-
-#### "Invalid Token" Error
-
-**Log Message:** `Error: An invalid token was provided`
-
-**Solution:**
-1. Go to Railway Dashboard → Variables
-2. Verify `DISCORD_TOKEN` is set correctly
-3. Check for extra spaces or missing characters
-4. If needed, regenerate token:
-   - Discord Developer Portal → Your App → Bot → Reset Token
-   - Update Railway variable
-
-#### "Cannot find module" Error
-
-**Log Message:** `Error: Cannot find module 'discord.js'`
-
-**Solution:**
-1. Check [package.json](../package.json) includes all dependencies
-2. Ensure `package-lock.json` is committed to git
-3. Redeploy: Railway Dashboard → Deploy → Redeploy
-
-#### Build Failed
-
-**Log Message:** `Build failed` or `npm run build exited with code 1`
-
-**Solution:**
-1. Run `npm run build` locally to identify errors
-2. Fix TypeScript errors
-3. Commit and push
-
-#### Commands Not Registered
-
-**Symptoms:** Commands don't appear in Discord's slash command menu.
-
-**Solution:**
-- Run `npm run deploy` locally, or
-- Add to start script (see [Railway Step 4](#step-4-deploy-commands-to-discord))
-
-#### Data Not Persisting
-
-**Symptoms:** League data resets after deployments.
-
-**Solution:**
-1. Add Volume (see [Configuration → Persistent Data Storage](#persistent-data-storage))
-2. Verify `data/` folder exists in your repo
-3. Test persistence by creating a league, redeploying, and checking if it exists
-
 ---
-
-## Summary
-
-### What You've Deployed
-
-- **24/7 Discord bot** on Railway.app
-- **Automatic deployments** via GitHub push
-- **Built-in monitoring** and logs
-- **Free tier** ($1/month in credits)
-- **Zero maintenance** - no server management needed
 
 ### Quick Reference Commands
 
@@ -486,36 +419,6 @@ npm run dev
 # Build locally
 npm run build
 ```
-
-### Railway Dashboard Quick Links
-
-When logged into [railway.app](https://railway.app):
-
-- **View Logs:** Project → Service → "View Logs"
-- **Check Metrics:** Project → Service → "Metrics"
-- **Environment Variables:** Project → Service → "Variables"
-- **Deployments:** Project → Service → "Deployments"
-- **Settings:** Project → Service → "Settings"
-- **Usage/Billing:** Account Settings → "Usage"
-
-### Monthly Maintenance Checklist
-
-**Every month (5 minutes):**
-
-- [ ] Check Railway usage: Account → Usage (should be < $1)
-- [ ] Review logs for errors: Project → View Logs
-- [ ] Check Discord bot is responding: Test a command
-- [ ] Run `npm audit` locally and update dependencies if needed
-- [ ] Backup `data/leagues.json`
-
-### Support Resources
-
-- **Railway Documentation:** [docs.railway.app](https://docs.railway.app)
-- **Railway Community:** [Discord](https://discord.gg/railway) | [Help Station](https://help.railway.app/)
-- **Discord.js Guide:** [discordjs.guide](https://discordjs.guide/)
-- **This Project's Docs:**
-  - [User Guide](USER_GUIDE.md)
-  - [Testing Guide](TESTING_GUIDE.md)
 
 ---
 

@@ -153,4 +153,4 @@ Feel free to open issues or submit pull requests!
 
 ## License
 
-ISC
+MIT - see [LICENSE](LICENSE) file for details
