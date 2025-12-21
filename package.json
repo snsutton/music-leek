@@ -5,7 +5,8 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js",
+    "start": "npm run deploy-commands && node dist/index.js",
+    "deploy-commands": "node dist/deploy-commands.js",
     "dev": "ts-node src/index.ts",
     "deploy": "ts-node src/deploy-commands.ts",
     "test": "jest",
