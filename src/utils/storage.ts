@@ -2,7 +2,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { LeagueData, League } from '../types';
 
-const DATA_FILE = path.join(__dirname, '../../data/leagues.json');
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '../../data');
+const DATA_FILE = path.join(DATA_DIR, 'leagues.json');
 
 export class Storage {
   private static ensureDataFile(): void {
