@@ -275,21 +275,17 @@ Railway provides persistent storage, but you need to configure it:
    - **Mount Path:** `/app/data`
    - Click **"Add"**
 
-2. **Update Your Code (Optional):**
+2. **Configure Data Directory:**
 
-Your current setup uses `./data/leagues.json`. This will work on Railway as-is, but for better reliability, you can use the volume:
+The bot is already configured to use the `DATA_DIR` environment variable for flexible storage locations.
 
-Edit [src/utils/storage.ts](../src/utils/storage.ts) to use absolute path:
-
-```typescript
-const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '../../data');
-```
-
-Then add environment variable in Railway:
+Add environment variable in Railway:
+- Click **"New Variable"**
 - **Name:** `DATA_DIR`
 - **Value:** `/app/data`
+- Click **"Add"**
 
-This ensures data persists across deployments.
+This ensures league data persists across deployments by storing it in the mounted volume instead of the ephemeral filesystem.
 
 ### Environment Variables Reference
 
