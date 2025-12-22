@@ -102,7 +102,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
   // Handle modal submissions
   if (interaction.isModalSubmit()) {
-    const handler = modalHandlers.get(interaction.customId);
+    // Extract base customId (before any colon separator used for passing data)
+    const baseCustomId = interaction.customId.split(':')[0];
+    const handler = modalHandlers.get(baseCustomId);
 
     if (!handler) {
       console.error(`No modal handler matching ${interaction.customId} was found.`);
