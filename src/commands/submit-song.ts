@@ -43,30 +43,14 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
   const songUrlInput = new TextInputBuilder()
     .setCustomId('song-url')
-    .setLabel('Song URL (Spotify/YouTube)')
+    .setLabel('Song URL (Spotify/Apple Music)')
     .setStyle(TextInputStyle.Short)
-    .setPlaceholder('https://open.spotify.com/track/...')
-    .setRequired(true);
-
-  const songTitleInput = new TextInputBuilder()
-    .setCustomId('song-title')
-    .setLabel('Song Title')
-    .setStyle(TextInputStyle.Short)
-    .setPlaceholder('Enter the song title')
-    .setRequired(true);
-
-  const artistInput = new TextInputBuilder()
-    .setCustomId('artist')
-    .setLabel('Artist Name')
-    .setStyle(TextInputStyle.Short)
-    .setPlaceholder('Enter the artist name')
+    .setPlaceholder('https://open.spotify.com/track/... or https://music.apple.com/...')
     .setRequired(true);
 
   const firstActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(songUrlInput);
-  const secondActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(songTitleInput);
-  const thirdActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(artistInput);
 
-  modal.addComponents(firstActionRow, secondActionRow, thirdActionRow);
+  modal.addComponents(firstActionRow);
 
   await interaction.showModal(modal);
 }

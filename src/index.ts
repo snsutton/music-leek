@@ -2,6 +2,7 @@ import { Client, Collection, GatewayIntentBits, Events, Partials } from 'discord
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
+import { MusicServiceFactory } from './services/music-service-factory';
 
 // Load .env.local if it exists, otherwise fall back to .env
 dotenv.config({ path: '.env.local' });
@@ -136,4 +137,20 @@ if (!token) {
   process.exit(1);
 }
 
-client.login(token);
+// Initialize music services and then login
+async function startBot() {
+  try {
+    // Initialize music services
+    await MusicServiceFactory.initialize();
+    const platforms = MusicServiceFactory.getSupportedPlatforms();
+    console.log(`Music services initialized: ${platforms.join(', ') || 'none'}`);
+
+    // Login to Discord
+    await client.login(token);
+  } catch (error) {
+    console.error('Failed to start bot:', error);
+    process.exit(1);
+  }
+}
+
+startBot();

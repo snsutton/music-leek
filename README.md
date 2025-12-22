@@ -13,6 +13,7 @@ A Discord bot for music sharing and voting - a game where participants submit so
 - 🎵 Create and manage music leagues
 - 🎯 Start themed rounds with custom prompts
 - 📝 Submit songs using interactive modal forms
+- 🎼 Automatic song metadata from Spotify/Apple Music URLs
 - 🗳️ Vote on submissions with visual submission lists
 - 📊 Automatic scoring and leaderboards
 - 💬 Full DM support - submit and vote privately!
@@ -39,16 +40,34 @@ A Discord bot for music sharing and voting - a game where participants submit so
    - Bot Permissions: Send Messages, Embed Links, Read Message History, Use Slash Commands
    - Copy and open the generated URL to invite the bot to your server
 
-#### 2. Configure Environment
+#### 2. Set Up Spotify API (Required)
+
+The bot automatically fetches song metadata from Spotify URLs. You'll need a free Spotify API account:
+
+1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
+2. Log in with your Spotify account (or create one)
+3. Click **Create App**
+4. Fill in:
+   - **App name**: Music Leek Bot (or any name)
+   - **App description**: Discord bot for music sharing
+   - **Redirect URIs**: Leave blank or use `http://localhost` (not needed for this bot)
+   - **APIs to use**: Check only **Web API**
+5. Click **Settings** → Copy your **Client ID** and **Client Secret**
+
+#### 3. Configure Environment
 
 Create a `.env` file in the project root:
 
 ```env
 DISCORD_TOKEN=your_bot_token_here
 DISCORD_CLIENT_ID=your_application_id_here
+
+# Spotify API (required for automatic song metadata)
+SPOTIFY_CLIENT_ID=your_spotify_client_id
+SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
 ```
 
-#### 3. Install and Run
+#### 4. Install and Run
 
 ```bash
 npm install          # Install dependencies
@@ -57,9 +76,11 @@ npm run deploy       # Register slash commands
 npm start            # Start the bot
 ```
 
-You should see "Ready! Logged in as..." - the bot is now online in your Discord server.
+You should see:
+- "Music services initialized: spotify" (or "none" if credentials are missing)
+- "Ready! Logged in as..." - the bot is now online in your Discord server
 
-#### 4. Verify It Works
+#### 5. Verify It Works
 
 In your Discord server, try:
 
@@ -67,13 +88,18 @@ In your Discord server, try:
 /create-league name:Test League
 ```
 
-Then test the modal UI:
+Then test song submission with a Spotify link:
 
 ```
 /submit-song
 ```
 
-A modal form should appear. If it does, everything is working correctly!
+A modal should appear asking for a song URL. Paste a Spotify link like:
+```
+https://open.spotify.com/track/3n3Ppam7vgaVa1iaRUc9Lp
+```
+
+The bot should automatically fetch the song title and artist. If it does, everything is working correctly!
 
 ## Commands
 

@@ -40,3 +40,24 @@ export interface Vote {
 export interface LeagueData {
   leagues: { [leagueId: string]: League };
 }
+
+export interface SongMetadata {
+  title: string;
+  artist: string;
+  albumName?: string;
+  isExplicit?: boolean;
+}
+
+export interface MusicServiceError {
+  code: 'INVALID_URL' | 'NOT_FOUND' | 'API_ERROR' | 'RATE_LIMITED' | 'NETWORK_ERROR';
+  message: string;
+  retryable: boolean;
+}
+
+export type MusicPlatform = 'spotify' | 'apple-music' | 'unsupported';
+
+export interface ParsedMusicUrl {
+  platform: MusicPlatform;
+  trackId: string;
+  originalUrl: string;
+}
