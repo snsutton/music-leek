@@ -1,4 +1,4 @@
-import { ModalSubmitInteraction } from 'discord.js';
+import { ModalSubmitInteraction, MessageFlags } from 'discord.js';
 import { Storage } from '../utils/storage';
 import { Round } from '../types';
 import { getCurrentRound } from '../utils/helpers';
@@ -15,25 +15,25 @@ export async function execute(interaction: ModalSubmitInteraction) {
   const votingHours = parseInt(votingHoursStr) || 48;
 
   if (!interaction.guildId) {
-    await interaction.reply({ content: 'This command can only be used in a server!', ephemeral: true });
+    await interaction.reply({ content: 'This command can only be used in a server!', flags: MessageFlags.Ephemeral });
     return;
   }
 
   const league = Storage.getLeagueByGuild(interaction.guildId);
 
   if (!league) {
-    await interaction.reply({ content: 'No league found for this server! Use `/create-league` to create one.', ephemeral: true });
+    await interaction.reply({ content: 'No league found for this server! Use `/create-league` to create one.', flags: MessageFlags.Ephemeral });
     return;
   }
 
   if (!isAdmin(league, interaction.user.id)) {
-    await interaction.reply({ content: 'Only league admins can start rounds!', ephemeral: true });
+    await interaction.reply({ content: 'Only league admins can start rounds!', flags: MessageFlags.Ephemeral });
     return;
   }
 
   const currentRound = getCurrentRound(league);
   if (currentRound && currentRound.status !== 'completed') {
-    await interaction.reply({ content: 'The current round is not completed yet!', ephemeral: true });
+    await interaction.reply({ content: 'The current round is not completed yet!', flags: MessageFlags.Ephemeral });
     return;
   }
 
@@ -54,7 +54,6 @@ export async function execute(interaction: ModalSubmitInteraction) {
   Storage.saveLeague(league);
 
   await interaction.reply({
-    content: `🎵 **Round ${round.roundNumber}** has started in **${league.name}**!\n\n**Prompt:** ${prompt}\n**Submission Deadline:** <t:${Math.floor(round.submissionDeadline / 1000)}:F>\n\nUse \`/submit-song\` to submit your entry!`,
-    ephemeral: false
+    content: `🎵 **Round ${round.roundNumber}** has started in **${league.name}**!\n\n**Prompt:** ${prompt}\n**Submission Deadline:** <t:${Math.floor(round.submissionDeadline / 1000)}:F>\n\nUse \`/submit-song\` to submit your entry!`
   });
 }

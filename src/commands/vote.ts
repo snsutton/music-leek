@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } from 'discord.js';
+import { ChatInputCommandInteraction, SlashCommandBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, MessageFlags } from 'discord.js';
 import { Storage } from '../utils/storage';
 import { getCurrentRound } from '../utils/helpers';
 
@@ -11,7 +11,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   if (!interaction.guildId) {
     await interaction.reply({
       content: 'This command can only be used in a server!',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
     return;
   }
@@ -20,7 +20,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   if (!league) {
     await interaction.reply({
       content: 'No league found for this server!',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
     return;
   }
@@ -28,7 +28,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   if (!league.participants.includes(interaction.user.id)) {
     await interaction.reply({
       content: 'You are not in this league! Use `/join-league` first.',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
     return;
   }
@@ -37,7 +37,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   if (!round) {
     await interaction.reply({
       content: 'No active round!',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
     return;
   }
@@ -45,7 +45,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   if (round.status !== 'voting') {
     await interaction.reply({
       content: 'Voting is not open yet!',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
     return;
   }

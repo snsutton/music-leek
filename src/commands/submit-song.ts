@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } from 'discord.js';
+import { ChatInputCommandInteraction, SlashCommandBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, MessageFlags } from 'discord.js';
 import { Storage } from '../utils/storage';
 
 export const data = new SlashCommandBuilder()
@@ -13,7 +13,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   if (!guildId) {
     await interaction.reply({
       content: 'Please run this command from the server where the league is hosted!',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
     return;
   }
@@ -23,7 +23,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   if (!league) {
     await interaction.reply({
       content: 'No league found for this server!',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
     return;
   }
@@ -32,7 +32,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   if (!league.participants.includes(interaction.user.id)) {
     await interaction.reply({
       content: 'You are not in this league! Use `/join-league` first.',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
     return;
   }

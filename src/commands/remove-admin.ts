@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
+import { ChatInputCommandInteraction, SlashCommandBuilder, MessageFlags } from 'discord.js';
 import { Storage } from '../utils/storage';
 import { canManageAdmins, isAdmin, isCreator } from '../utils/permissions';
 
@@ -14,7 +14,7 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: ChatInputCommandInteraction) {
   if (!interaction.guildId) {
-    await interaction.reply({ content: 'This command can only be used in a server!', ephemeral: true });
+    await interaction.reply({ content: 'This command can only be used in a server!', flags: MessageFlags.Ephemeral });
     return;
   }
 
@@ -23,24 +23,24 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   const league = Storage.getLeagueByGuild(interaction.guildId);
 
   if (!league) {
-    await interaction.reply({ content: 'No league found for this server!', ephemeral: true });
+    await interaction.reply({ content: 'No league found for this server!', flags: MessageFlags.Ephemeral });
     return;
   }
 
   if (!canManageAdmins(league, interaction.user.id)) {
-    await interaction.reply({ content: 'Only the league creator can remove admins!', ephemeral: true });
+    await interaction.reply({ content: 'Only the league creator can remove admins!', flags: MessageFlags.Ephemeral });
     return;
   }
 
   if (!isAdmin(league, targetUser.id)) {
-    await interaction.reply({ content: `${targetUser.username} is not an admin!`, ephemeral: true });
+    await interaction.reply({ content: `${targetUser.username} is not an admin!`, flags: MessageFlags.Ephemeral });
     return;
   }
 
   if (isCreator(league, targetUser.id)) {
     await interaction.reply({
       content: 'Cannot remove the league creator! The creator will always be an admin.',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
     return;
   }
@@ -49,7 +49,6 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   Storage.saveLeague(league);
 
   await interaction.reply({
-    content: `✅ ${targetUser.username} has been removed as an admin of **${league.name}**.`,
-    ephemeral: false
+    content: `✅ ${targetUser.username} has been removed as an admin of **${league.name}**.`
   });
 }

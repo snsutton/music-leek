@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
+import { ChatInputCommandInteraction, SlashCommandBuilder, MessageFlags } from 'discord.js';
 import { Storage } from '../utils/storage';
 import { League } from '../types';
 
@@ -16,7 +16,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   const name = interaction.options.get('name')?.value as string;
 
   if (!interaction.guildId || !interaction.channelId) {
-    await interaction.reply({ content: 'This command can only be used in a server!', ephemeral: true });
+    await interaction.reply({ content: 'This command can only be used in a server!', flags: MessageFlags.Ephemeral });
     return;
   }
 
@@ -25,7 +25,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   if (existingLeague) {
     await interaction.reply({
       content: `This server already has a league called **${existingLeague.name}**!\n\nUse \`/delete-league\` first if you want to create a new one.`,
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
     return;
   }
@@ -45,7 +45,6 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   Storage.saveLeague(league);
 
   await interaction.reply({
-    content: `🎵 **${name}** has been created!\n\nYou've automatically joined as a participant and admin.\nUse \`/start-round\` to begin the first round!`,
-    ephemeral: false
+    content: `🎵 **${name}** has been created!\n\nYou've automatically joined as a participant and admin.\nUse \`/start-round\` to begin the first round!`
   });
 }

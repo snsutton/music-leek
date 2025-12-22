@@ -1,4 +1,4 @@
-import { ModalSubmitInteraction } from 'discord.js';
+import { ModalSubmitInteraction, MessageFlags } from 'discord.js';
 import { Storage } from '../utils/storage';
 import { Vote } from '../types';
 import { getCurrentRound } from '../utils/helpers';
@@ -12,36 +12,36 @@ export async function execute(interaction: ModalSubmitInteraction) {
   const guildId = interaction.customId.split(':')[1];
 
   if (!guildId) {
-    await interaction.reply({ content: 'Invalid vote! Please try again.', ephemeral: true });
+    await interaction.reply({ content: 'Invalid vote! Please try again.', flags: MessageFlags.Ephemeral });
     return;
   }
 
   const league = Storage.getLeagueByGuild(guildId);
 
   if (!league) {
-    await interaction.reply({ content: 'No league found for this server!', ephemeral: true });
+    await interaction.reply({ content: 'No league found for this server!', flags: MessageFlags.Ephemeral });
     return;
   }
 
   if (!league.participants.includes(interaction.user.id)) {
-    await interaction.reply({ content: 'You are not in this league! Use `/join-league` first.', ephemeral: true });
+    await interaction.reply({ content: 'You are not in this league! Use `/join-league` first.', flags: MessageFlags.Ephemeral });
     return;
   }
 
   const round = getCurrentRound(league);
 
   if (!round) {
-    await interaction.reply({ content: 'No active round!', ephemeral: true });
+    await interaction.reply({ content: 'No active round!', flags: MessageFlags.Ephemeral });
     return;
   }
 
   if (round.status !== 'voting') {
-    await interaction.reply({ content: 'Voting phase has not started or has ended!', ephemeral: true });
+    await interaction.reply({ content: 'Voting phase has not started or has ended!', flags: MessageFlags.Ephemeral });
     return;
   }
 
   if (Date.now() > round.votingDeadline) {
-    await interaction.reply({ content: 'Voting deadline has passed!', ephemeral: true });
+    await interaction.reply({ content: 'Voting deadline has passed!', flags: MessageFlags.Ephemeral });
     return;
   }
 
@@ -65,7 +65,7 @@ export async function execute(interaction: ModalSubmitInteraction) {
 
       // Check if voting for own song
       if (round.submissions[submissionIndex].userId === interaction.user.id) {
-        await interaction.reply({ content: 'You cannot vote for your own song!', ephemeral: true });
+        await interaction.reply({ content: 'You cannot vote for your own song!', flags: MessageFlags.Ephemeral });
         return;
       }
 
@@ -74,7 +74,7 @@ export async function execute(interaction: ModalSubmitInteraction) {
   } catch (error) {
     await interaction.reply({
       content: 'Invalid vote format! Use format like: "1:5,2:4,3:3" where numbers are submission#:points',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
     return;
   }
@@ -95,6 +95,6 @@ export async function execute(interaction: ModalSubmitInteraction) {
 
   await interaction.reply({
     content: `✅ Your votes have been recorded for **${league.name}**!\n\nVotes cast: ${round.votes.length}/${league.participants.length}`,
-    ephemeral: true
+    flags: MessageFlags.Ephemeral
   });
 }

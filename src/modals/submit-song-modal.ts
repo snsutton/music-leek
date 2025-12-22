@@ -1,4 +1,4 @@
-import { ModalSubmitInteraction } from 'discord.js';
+import { ModalSubmitInteraction, MessageFlags } from 'discord.js';
 import { Storage } from '../utils/storage';
 import { Submission } from '../types';
 import { getCurrentRound } from '../utils/helpers';
@@ -14,42 +14,42 @@ export async function execute(interaction: ModalSubmitInteraction) {
   const guildId = interaction.customId.split(':')[1];
 
   if (!guildId) {
-    await interaction.reply({ content: 'Invalid submission! Please try again.', ephemeral: true });
+    await interaction.reply({ content: 'Invalid submission! Please try again.', flags: MessageFlags.Ephemeral });
     return;
   }
 
   const league = Storage.getLeagueByGuild(guildId);
 
   if (!league) {
-    await interaction.reply({ content: 'League not found!', ephemeral: true });
+    await interaction.reply({ content: 'League not found!', flags: MessageFlags.Ephemeral });
     return;
   }
 
   if (!league.participants.includes(interaction.user.id)) {
-    await interaction.reply({ content: 'You are not in this league! Use `/join-league` first.', ephemeral: true });
+    await interaction.reply({ content: 'You are not in this league! Use `/join-league` first.', flags: MessageFlags.Ephemeral });
     return;
   }
 
   const round = getCurrentRound(league);
 
   if (!round) {
-    await interaction.reply({ content: 'No active round!', ephemeral: true });
+    await interaction.reply({ content: 'No active round!', flags: MessageFlags.Ephemeral });
     return;
   }
 
   if (round.status !== 'submission') {
-    await interaction.reply({ content: 'Submission phase has ended!', ephemeral: true });
+    await interaction.reply({ content: 'Submission phase has ended!', flags: MessageFlags.Ephemeral });
     return;
   }
 
   if (Date.now() > round.submissionDeadline) {
-    await interaction.reply({ content: 'Submission deadline has passed!', ephemeral: true });
+    await interaction.reply({ content: 'Submission deadline has passed!', flags: MessageFlags.Ephemeral });
     return;
   }
 
   const existingSubmission = round.submissions.find(s => s.userId === interaction.user.id);
   if (existingSubmission) {
-    await interaction.reply({ content: 'You have already submitted a song for this round!', ephemeral: true });
+    await interaction.reply({ content: 'You have already submitted a song for this round!', flags: MessageFlags.Ephemeral });
     return;
   }
 
@@ -66,6 +66,6 @@ export async function execute(interaction: ModalSubmitInteraction) {
 
   await interaction.reply({
     content: `✅ Your submission has been recorded for **${league.name}**!\n**${songTitle}** by **${artist}**\n\nSubmissions: ${round.submissions.length}/${league.participants.length}`,
-    ephemeral: true
+    flags: MessageFlags.Ephemeral
   });
 }
