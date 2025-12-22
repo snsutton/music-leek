@@ -1,9 +1,9 @@
 export interface League {
-  id: string;
   name: string;
   guildId: string;
   channelId: string;
   createdBy: string;
+  admins: string[]; // user IDs of league admins (includes createdBy)
   createdAt: number;
   currentRound: number;
   rounds: Round[];

@@ -5,19 +5,18 @@ import { formatLeaderboard } from '../utils/helpers';
 export const data = new SlashCommandBuilder()
   .setName('leaderboard')
   .setDescription('Display the overall league leaderboard')
-  .addStringOption(option =>
-    option.setName('league-id')
-      .setDescription('The league ID')
-      .setRequired(true)
-  );
+  .setDMPermission(false);
 
 export async function execute(interaction: ChatInputCommandInteraction) {
-  const leagueId = interaction.options.get('league-id')?.value as string;
+  if (!interaction.guildId) {
+    await interaction.reply({ content: 'This command can only be used in a server!', ephemeral: true });
+    return;
+  }
 
-  const league = Storage.getLeague(leagueId);
+  const league = Storage.getLeagueByGuild(interaction.guildId);
 
   if (!league) {
-    await interaction.reply({ content: 'League not found!', ephemeral: true });
+    await interaction.reply({ content: 'No league found for this server! Use `/create-league` to create one.', ephemeral: true });
     return;
   }
 

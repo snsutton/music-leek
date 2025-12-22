@@ -1,28 +1,28 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import { Storage } from '../utils/storage';
 import { getCurrentRound, calculateScores } from '../utils/helpers';
+import { isAdmin } from '../utils/permissions';
 
 export const data = new SlashCommandBuilder()
   .setName('end-round')
-  .setDescription('End the current round and display results')
-  .addStringOption(option =>
-    option.setName('league-id')
-      .setDescription('The league ID')
-      .setRequired(true)
-  );
+  .setDescription('End the current round and display results (admin only)')
+  .setDMPermission(false);
 
 export async function execute(interaction: ChatInputCommandInteraction) {
-  const leagueId = interaction.options.get('league-id')?.value as string;
-
-  const league = Storage.getLeague(leagueId);
-
-  if (!league) {
-    await interaction.reply({ content: 'League not found!', ephemeral: true });
+  if (!interaction.guildId) {
+    await interaction.reply({ content: 'This command can only be used in a server!', ephemeral: true });
     return;
   }
 
-  if (league.createdBy !== interaction.user.id) {
-    await interaction.reply({ content: 'Only the league creator can end rounds!', ephemeral: true });
+  const league = Storage.getLeagueByGuild(interaction.guildId);
+
+  if (!league) {
+    await interaction.reply({ content: 'No league found for this server!', ephemeral: true });
+    return;
+  }
+
+  if (!isAdmin(league, interaction.user.id)) {
+    await interaction.reply({ content: 'Only league admins can end rounds!', ephemeral: true });
     return;
   }
 
@@ -46,12 +46,10 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   round.status = 'completed';
   Storage.saveLeague(league);
 
-  // Calculate scores
   const scores = calculateScores(round);
   const sortedScores = Array.from(scores.entries())
     .sort((a, b) => b[1] - a[1]);
 
-  // Create results embed
   const embed = new EmbedBuilder()
     .setColor(0xFFD700)
     .setTitle(`🏆 Round ${round.roundNumber} Results`)

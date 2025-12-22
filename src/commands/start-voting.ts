@@ -1,28 +1,28 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import { Storage } from '../utils/storage';
 import { getCurrentRound } from '../utils/helpers';
+import { isAdmin } from '../utils/permissions';
 
 export const data = new SlashCommandBuilder()
   .setName('start-voting')
-  .setDescription('Start the voting phase (ends submission phase)')
-  .addStringOption(option =>
-    option.setName('league-id')
-      .setDescription('The league ID')
-      .setRequired(true)
-  );
+  .setDescription('Start the voting phase (admin only)')
+  .setDMPermission(false);
 
 export async function execute(interaction: ChatInputCommandInteraction) {
-  const leagueId = interaction.options.get('league-id')?.value as string;
-
-  const league = Storage.getLeague(leagueId);
-
-  if (!league) {
-    await interaction.reply({ content: 'League not found!', ephemeral: true });
+  if (!interaction.guildId) {
+    await interaction.reply({ content: 'This command can only be used in a server!', ephemeral: true });
     return;
   }
 
-  if (league.createdBy !== interaction.user.id) {
-    await interaction.reply({ content: 'Only the league creator can start voting!', ephemeral: true });
+  const league = Storage.getLeagueByGuild(interaction.guildId);
+
+  if (!league) {
+    await interaction.reply({ content: 'No league found for this server!', ephemeral: true });
+    return;
+  }
+
+  if (!isAdmin(league, interaction.user.id)) {
+    await interaction.reply({ content: 'Only league admins can start voting!', ephemeral: true });
     return;
   }
 
@@ -46,7 +46,6 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   round.status = 'voting';
   Storage.saveLeague(league);
 
-  // Create embed with all submissions
   const embed = new EmbedBuilder()
     .setColor(0x1DB954)
     .setTitle(`🎵 Round ${round.roundNumber} - Voting Phase`)

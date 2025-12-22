@@ -6,12 +6,19 @@ import { getCurrentRound } from '../utils/helpers';
 export const customId = 'submit-song-modal';
 
 export async function execute(interaction: ModalSubmitInteraction) {
-  const leagueId = interaction.fields.getTextInputValue('league-id');
   const songUrl = interaction.fields.getTextInputValue('song-url');
   const songTitle = interaction.fields.getTextInputValue('song-title');
   const artist = interaction.fields.getTextInputValue('artist');
 
-  const league = Storage.getLeague(leagueId);
+  // Extract guildId from customId (format: "submit-song-modal:guildId")
+  const guildId = interaction.customId.split(':')[1];
+
+  if (!guildId) {
+    await interaction.reply({ content: 'Invalid submission! Please try again.', ephemeral: true });
+    return;
+  }
+
+  const league = Storage.getLeagueByGuild(guildId);
 
   if (!league) {
     await interaction.reply({ content: 'League not found!', ephemeral: true });
@@ -19,7 +26,7 @@ export async function execute(interaction: ModalSubmitInteraction) {
   }
 
   if (!league.participants.includes(interaction.user.id)) {
-    await interaction.reply({ content: 'You are not in this league!', ephemeral: true });
+    await interaction.reply({ content: 'You are not in this league! Use `/join-league` first.', ephemeral: true });
     return;
   }
 
@@ -42,7 +49,7 @@ export async function execute(interaction: ModalSubmitInteraction) {
 
   const existingSubmission = round.submissions.find(s => s.userId === interaction.user.id);
   if (existingSubmission) {
-    await interaction.reply({ content: 'You have already submitted a song! Use the update submission modal to change it.', ephemeral: true });
+    await interaction.reply({ content: 'You have already submitted a song for this round!', ephemeral: true });
     return;
   }
 
@@ -58,7 +65,7 @@ export async function execute(interaction: ModalSubmitInteraction) {
   Storage.saveLeague(league);
 
   await interaction.reply({
-    content: `✅ Your submission has been recorded!\n**${songTitle}** by **${artist}**\n\nSubmissions: ${round.submissions.length}/${league.participants.length}`,
+    content: `✅ Your submission has been recorded for **${league.name}**!\n**${songTitle}** by **${artist}**\n\nSubmissions: ${round.submissions.length}/${league.participants.length}`,
     ephemeral: true
   });
 }

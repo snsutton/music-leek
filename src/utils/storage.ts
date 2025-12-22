@@ -27,14 +27,14 @@ export class Storage {
     fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
   }
 
-  static getLeague(leagueId: string): League | null {
+  static getLeagueByGuild(guildId: string): League | null {
     const data = this.load();
-    return data.leagues[leagueId] || null;
+    return data.leagues[guildId] || null;
   }
 
   static saveLeague(league: League): void {
     const data = this.load();
-    data.leagues[league.id] = league;
+    data.leagues[league.guildId] = league;
     this.save(data);
   }
 
@@ -43,14 +43,10 @@ export class Storage {
     return Object.values(data.leagues);
   }
 
-  static getLeaguesByGuild(guildId: string): League[] {
-    return this.getAllLeagues().filter(league => league.guildId === guildId);
-  }
-
-  static deleteLeague(leagueId: string): boolean {
+  static deleteLeague(guildId: string): boolean {
     const data = this.load();
-    if (data.leagues[leagueId]) {
-      delete data.leagues[leagueId];
+    if (data.leagues[guildId]) {
+      delete data.leagues[guildId];
       this.save(data);
       return true;
     }

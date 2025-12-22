@@ -1,11 +1,11 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder, ChannelType } from 'discord.js';
+import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import { Storage } from '../utils/storage';
 import { League } from '../types';
-import { generateId } from '../utils/helpers';
 
 export const data = new SlashCommandBuilder()
   .setName('create-league')
-  .setDescription('Create a new Music League')
+  .setDescription('Create a new music league for this server')
+  .setDMPermission(false)
   .addStringOption(option =>
     option.setName('name')
       .setDescription('Name of the league')
@@ -20,12 +20,22 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     return;
   }
 
+  // Check if league already exists for this server
+  const existingLeague = Storage.getLeagueByGuild(interaction.guildId);
+  if (existingLeague) {
+    await interaction.reply({
+      content: `This server already has a league called **${existingLeague.name}**!\n\nUse \`/delete-league\` first if you want to create a new one.`,
+      ephemeral: true
+    });
+    return;
+  }
+
   const league: League = {
-    id: generateId(),
     name,
     guildId: interaction.guildId,
     channelId: interaction.channelId,
     createdBy: interaction.user.id,
+    admins: [interaction.user.id],
     createdAt: Date.now(),
     currentRound: 0,
     rounds: [],
@@ -35,7 +45,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   Storage.saveLeague(league);
 
   await interaction.reply({
-    content: `🎵 **${name}** has been created!\n\nLeague ID: \`${league.id}\`\nUse \`/join-league\` to join and \`/start-round\` to begin the first round!`,
+    content: `🎵 **${name}** has been created!\n\nYou've automatically joined as a participant and admin.\nUse \`/start-round\` to begin the first round!`,
     ephemeral: false
   });
 }

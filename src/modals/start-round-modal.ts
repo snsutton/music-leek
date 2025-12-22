@@ -2,11 +2,11 @@ import { ModalSubmitInteraction } from 'discord.js';
 import { Storage } from '../utils/storage';
 import { Round } from '../types';
 import { getCurrentRound } from '../utils/helpers';
+import { isAdmin } from '../utils/permissions';
 
 export const customId = 'start-round-modal';
 
 export async function execute(interaction: ModalSubmitInteraction) {
-  const leagueId = interaction.fields.getTextInputValue('league-id');
   const prompt = interaction.fields.getTextInputValue('prompt');
   const submissionHoursStr = interaction.fields.getTextInputValue('submission-hours');
   const votingHoursStr = interaction.fields.getTextInputValue('voting-hours');
@@ -14,15 +14,20 @@ export async function execute(interaction: ModalSubmitInteraction) {
   const submissionHours = parseInt(submissionHoursStr) || 72;
   const votingHours = parseInt(votingHoursStr) || 48;
 
-  const league = Storage.getLeague(leagueId);
-
-  if (!league) {
-    await interaction.reply({ content: 'League not found!', ephemeral: true });
+  if (!interaction.guildId) {
+    await interaction.reply({ content: 'This command can only be used in a server!', ephemeral: true });
     return;
   }
 
-  if (league.createdBy !== interaction.user.id) {
-    await interaction.reply({ content: 'Only the league creator can start rounds!', ephemeral: true });
+  const league = Storage.getLeagueByGuild(interaction.guildId);
+
+  if (!league) {
+    await interaction.reply({ content: 'No league found for this server! Use `/create-league` to create one.', ephemeral: true });
+    return;
+  }
+
+  if (!isAdmin(league, interaction.user.id)) {
+    await interaction.reply({ content: 'Only league admins can start rounds!', ephemeral: true });
     return;
   }
 

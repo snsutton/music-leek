@@ -6,18 +6,25 @@ import { getCurrentRound } from '../utils/helpers';
 export const customId = 'vote-modal';
 
 export async function execute(interaction: ModalSubmitInteraction) {
-  const leagueId = interaction.fields.getTextInputValue('league-id');
   const votesString = interaction.fields.getTextInputValue('votes');
 
-  const league = Storage.getLeague(leagueId);
+  // Extract guildId from customId (format: "vote-modal:guildId")
+  const guildId = interaction.customId.split(':')[1];
+
+  if (!guildId) {
+    await interaction.reply({ content: 'Invalid vote! Please try again.', ephemeral: true });
+    return;
+  }
+
+  const league = Storage.getLeagueByGuild(guildId);
 
   if (!league) {
-    await interaction.reply({ content: 'League not found!', ephemeral: true });
+    await interaction.reply({ content: 'No league found for this server!', ephemeral: true });
     return;
   }
 
   if (!league.participants.includes(interaction.user.id)) {
-    await interaction.reply({ content: 'You are not in this league!', ephemeral: true });
+    await interaction.reply({ content: 'You are not in this league! Use `/join-league` first.', ephemeral: true });
     return;
   }
 
@@ -87,7 +94,7 @@ export async function execute(interaction: ModalSubmitInteraction) {
   Storage.saveLeague(league);
 
   await interaction.reply({
-    content: `✅ Your votes have been recorded!\n\nVotes cast: ${round.votes.length}/${league.participants.length}`,
+    content: `✅ Your votes have been recorded for **${league.name}**!\n\nVotes cast: ${round.votes.length}/${league.participants.length}`,
     ephemeral: true
   });
 }

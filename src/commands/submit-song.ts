@@ -1,31 +1,45 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } from 'discord.js';
+import { Storage } from '../utils/storage';
 
 export const data = new SlashCommandBuilder()
   .setName('submit-song')
-  .setDescription('Submit a song for the current round')
-  .addStringOption(option =>
-    option.setName('league-id')
-      .setDescription('The league ID')
-      .setRequired(false)
-  );
+  .setDescription('Submit a song for the current round (opens DM)')
+  .setDMPermission(false);
 
 export async function execute(interaction: ChatInputCommandInteraction) {
-  const leagueIdOption = interaction.options.get('league-id')?.value as string | undefined;
+  // This command can be used in server or DM, but we need a guildId
+  const guildId = interaction.guildId;
+
+  if (!guildId) {
+    await interaction.reply({
+      content: 'Please run this command from the server where the league is hosted!',
+      ephemeral: true
+    });
+    return;
+  }
+
+  // Check if league exists
+  const league = Storage.getLeagueByGuild(guildId);
+  if (!league) {
+    await interaction.reply({
+      content: 'No league found for this server!',
+      ephemeral: true
+    });
+    return;
+  }
+
+  // Check if user is a participant
+  if (!league.participants.includes(interaction.user.id)) {
+    await interaction.reply({
+      content: 'You are not in this league! Use `/join-league` first.',
+      ephemeral: true
+    });
+    return;
+  }
 
   const modal = new ModalBuilder()
-    .setCustomId('submit-song-modal')
-    .setTitle('Submit Your Song');
-
-  const leagueIdInput = new TextInputBuilder()
-    .setCustomId('league-id')
-    .setLabel('League ID')
-    .setStyle(TextInputStyle.Short)
-    .setPlaceholder('Enter the league ID')
-    .setRequired(true);
-
-  if (leagueIdOption) {
-    leagueIdInput.setValue(leagueIdOption);
-  }
+    .setCustomId(`submit-song-modal:${guildId}`)
+    .setTitle(`Submit to ${league.name}`);
 
   const songUrlInput = new TextInputBuilder()
     .setCustomId('song-url')
@@ -48,12 +62,11 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     .setPlaceholder('Enter the artist name')
     .setRequired(true);
 
-  const firstActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(leagueIdInput);
-  const secondActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(songUrlInput);
-  const thirdActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(songTitleInput);
-  const fourthActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(artistInput);
+  const firstActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(songUrlInput);
+  const secondActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(songTitleInput);
+  const thirdActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(artistInput);
 
-  modal.addComponents(firstActionRow, secondActionRow, thirdActionRow, fourthActionRow);
+  modal.addComponents(firstActionRow, secondActionRow, thirdActionRow);
 
   await interaction.showModal(modal);
 }
