@@ -29,16 +29,22 @@ A Discord bot for music sharing and voting - a game where participants submit so
 
 ### Getting Started
 
-#### 1. Create Discord Bot
+#### 1. Create Discord Bot & Invite to Server
 
 1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
 2. Create a new application
 3. Go to **Bot** tab → Add Bot → Copy the bot token
 4. Go to **OAuth2** tab → Copy the Application ID
-5. In **OAuth2 → URL Generator**:
-   - Scopes: `bot` + `applications.commands`
-   - Bot Permissions: Send Messages, Embed Links, Read Message History, Use Slash Commands
-   - Copy and open the generated URL to invite the bot to your server
+5. **Invite the bot to your server:**
+   - Go to **OAuth2 → URL Generator**
+   - Select scopes: `bot` + `applications.commands`
+   - Select bot permissions:
+     - Send Messages
+     - Embed Links
+     - Read Message History
+     - Use Slash Commands
+   - Copy the generated URL and open it in your browser
+   - Select your Discord server and click **Authorize**
 
 #### 2. Set Up Spotify API (Required)
 
@@ -118,27 +124,6 @@ The bot should automatically fetch the song title and artist. If it does, everyt
 1. Create a league → 2. Join league → 3. Start round → 4. Submit songs → 5. Vote → 6. See results!
 
 **Detailed walkthrough:** See [docs/USER_GUIDE.md](docs/USER_GUIDE.md)
-
-## Project Structure
-
-```
-music-leek/
-├── src/
-│   ├── commands/          # Slash command handlers
-│   ├── modals/            # Modal form handlers
-│   ├── types/             # TypeScript type definitions
-│   ├── utils/             # Helper functions and storage
-│   ├── index.ts           # Main bot entry point
-│   └── deploy-commands.ts # Command registration script
-├── docs/                  # Documentation
-│   ├── USER_GUIDE.md      # Complete user documentation
-│   └── TESTING_GUIDE.md   # Comprehensive testing guide
-├── data/                  # League data storage (JSON)
-├── dist/                  # Compiled JavaScript (generated)
-├── .env                   # Environment variables (not in git)
-├── package.json
-└── tsconfig.json
-```
 
 ## Data Storage
 
