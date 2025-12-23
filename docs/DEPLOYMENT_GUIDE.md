@@ -44,38 +44,6 @@ Your bot requires these secrets to be set:
 - Requires persistent storage (not ephemeral filesystem)
 - Recommend using volumes/mounted storage for production
 
-### Deployment Options
-
-**Platform-as-a-Service (PaaS)** - Recommended for beginners:
-- Railway.app ($1/month free tier)
-- Fly.io (256MB free tier)
-- Render.com (free tier with limitations)
-- Pros: Easy setup, auto-deployments, managed infrastructure
-- Cons: Less control, potential cost as bot scales
-
-**Virtual Private Server (VPS)** - For advanced users:
-- DigitalOcean, Linode, Vultr ($5+/month)
-- Oracle Cloud (free tier, poor availability)
-- Pros: Full control, predictable costs
-- Cons: Manual setup, require server management (SSH, PM2, security)
-
-**Serverless** - Not recommended for Discord bots:
-- AWS Lambda, Google Cloud Functions, etc.
-- Discord bots need persistent WebSocket connections
-- Serverless cold starts cause disconnections
-
-### Pre-Deployment Checklist
-
-Before deploying to any platform:
-
-- [ ] Bot code is in a Git repository (GitHub, GitLab, etc.)
-- [ ] `.gitignore` includes `.env`, `node_modules/`, `dist/`, `data/`
-- [ ] Discord bot token and client ID obtained from [Discord Developer Portal](https://discord.com/developers/applications)
-- [ ] Bot invited to your Discord server with proper permissions
-- [ ] Local testing completed (`npm run dev` works)
-- [ ] Build succeeds locally (`npm run build` runs without errors)
-- [ ] `package.json` has all required dependencies listed
-
 ---
 
 ## Prerequisites

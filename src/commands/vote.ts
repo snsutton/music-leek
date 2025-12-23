@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, MessageFlags } from 'discord.js';
+import { ChatInputCommandInteraction, SlashCommandBuilder, StringSelectMenuBuilder, ActionRowBuilder, MessageFlags } from 'discord.js';
 import { Storage } from '../utils/storage';
 import { getCurrentRound } from '../utils/helpers';
 
@@ -50,33 +50,52 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     return;
   }
 
-  // Build submission list
-  const submissionList = round.submissions
-    .map((s, idx) => `${idx + 1}. ${s.songTitle} - ${s.artist}`)
-    .join('\n');
+  // Check if >25 submissions (Discord select menu limit)
+  if (round.submissions.length > 25) {
+    await interaction.reply({
+      content: '⚠️ This round has more than 25 submissions.\n\n' +
+               'The interactive voting UI supports up to 25 songs. ' +
+               'Please contact an admin to split this into multiple rounds.',
+      flags: MessageFlags.Ephemeral
+    });
+    return;
+  }
 
-  const modal = new ModalBuilder()
-    .setCustomId(`vote-modal:${interaction.guildId}`)
-    .setTitle(`Vote - ${league.name}`);
+  // Filter out user's own submission
+  const votableSubmissions = round.submissions
+    .map((s, idx) => ({ submission: s, index: idx }))
+    .filter(item => item.submission.userId !== interaction.user.id);
 
-  const submissionsInfoInput = new TextInputBuilder()
-    .setCustomId('submissions-info')
-    .setLabel('Available Submissions')
-    .setStyle(TextInputStyle.Paragraph)
-    .setValue(submissionList)
-    .setRequired(false);
+  if (votableSubmissions.length === 0) {
+    await interaction.reply({
+      content: 'No other submissions to vote for!',
+      flags: MessageFlags.Ephemeral
+    });
+    return;
+  }
 
-  const votesInput = new TextInputBuilder()
-    .setCustomId('votes')
-    .setLabel('Your Votes (format: 1:5,2:4,3:3)')
-    .setStyle(TextInputStyle.Short)
-    .setPlaceholder('1:5,2:4,3:3 (submission#:points)')
-    .setRequired(true);
+  // Build select menu
+  const selectMenu = new StringSelectMenuBuilder()
+    .setCustomId(`vote-select:${interaction.guildId}`)
+    .setPlaceholder('Select songs to vote for...')
+    .setMinValues(1)
+    .setMaxValues(Math.min(votableSubmissions.length, 10))
+    .addOptions(
+      votableSubmissions.map(item => ({
+        label: `${item.index + 1}. ${item.submission.songTitle}`.substring(0, 100),
+        description: item.submission.artist.substring(0, 100),
+        value: item.index.toString()
+      }))
+    );
 
-  const firstActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(submissionsInfoInput);
-  const secondActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(votesInput);
+  const row = new ActionRowBuilder<StringSelectMenuBuilder>()
+    .addComponents(selectMenu);
 
-  modal.addComponents(firstActionRow, secondActionRow);
-
-  await interaction.showModal(modal);
+  await interaction.reply({
+    content: `**🗳️ Vote for Round ${round.roundNumber}**\n\n` +
+             `You have **10 points** to distribute across songs.\n` +
+             `Select up to ${Math.min(votableSubmissions.length, 10)} songs, then assign points.`,
+    components: [row],
+    flags: MessageFlags.Ephemeral
+  });
 }

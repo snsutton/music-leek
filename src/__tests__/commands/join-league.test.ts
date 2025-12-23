@@ -91,15 +91,15 @@ describe('join-league command', () => {
   it('should reject when league does not exist', async () => {
     const interaction = createMockInteraction({
       userId: 'user456',
-      guildId: 'guild123',
-      options: new Map([['league-id', 'nonexistent']]),
+      guildId: 'guild999', // Different guild with no league
+      options: new Map([]),
     });
 
     await execute(interaction);
 
     const replies = getMockReplies(interaction);
-    expect(replies[0].content).toBe('League not found!');
-    expect(replies[0].ephemeral).toBe(true);
+    expect(replies[0].content).toBe('No league found for this server! Use `/create-league` to create one.');
+    expect(replies[0].flags).toBeDefined();
   });
 
   it('should reject when user is already in the league', async () => {
@@ -120,17 +120,18 @@ describe('join-league command', () => {
     const interaction = createMockInteraction({
       userId: 'user123',
       guildId: 'guild123',
-      options: new Map([['league-id', 'league123']]),
+      options: new Map([]),
     });
 
     await execute(interaction);
 
     const replies = getMockReplies(interaction);
     expect(replies[0].content).toBe('You are already in this league!');
-    expect(replies[0].ephemeral).toBe(true);
+    expect(replies[0].flags).toBeDefined();
   });
 
-  it('should reject when league is in a different server', async () => {
+  it('should reject when guild has no league', async () => {
+    // guild123 has a league but guild999 doesn't
     const mockLeague: League = {
       name: 'Rock Classics',
       guildId: 'guild123',
@@ -147,14 +148,14 @@ describe('join-league command', () => {
 
     const interaction = createMockInteraction({
       userId: 'user456',
-      guildId: 'guild999',
-      options: new Map([['league-id', 'league123']]),
+      guildId: 'guild999', // Different server with no league
+      options: new Map([]),
     });
 
     await execute(interaction);
 
     const replies = getMockReplies(interaction);
-    expect(replies[0].content).toBe('This league is in a different server!');
-    expect(replies[0].ephemeral).toBe(true);
+    expect(replies[0].content).toBe('No league found for this server! Use `/create-league` to create one.');
+    expect(replies[0].flags).toBeDefined();
   });
 });

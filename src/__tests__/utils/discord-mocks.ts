@@ -49,19 +49,24 @@ export function getMockModals(interaction: any): any[] {
 
 export interface MockModalSubmitOptions {
   userId?: string;
+  guildId?: string;
   fields?: Map<string, string>;
 }
 
 export function createMockModalSubmit(opts: MockModalSubmitOptions = {}): any {
   const userId = opts.userId ?? 'user123';
+  const guildId = opts.guildId ?? 'guild123';
   const fields = opts.fields ?? new Map();
 
   const replies: any[] = [];
+  const followUps: any[] = [];
 
   return {
     user: {
       id: userId,
     },
+    guildId,
+    customId: 'mock-modal',
     fields: {
       getTextInputValue: (customId: string) => {
         return fields.get(customId) || '';
@@ -71,6 +76,55 @@ export function createMockModalSubmit(opts: MockModalSubmitOptions = {}): any {
       replies.push(replyOptions);
       return null as any;
     }),
+    deferReply: jest.fn(async (options: any) => {
+      return null as any;
+    }),
+    editReply: jest.fn(async (replyOptions: any) => {
+      replies.push(replyOptions);
+      return null as any;
+    }),
+    followUp: jest.fn(async (replyOptions: any) => {
+      followUps.push(replyOptions);
+      return null as any;
+    }),
     getReplies: () => replies,
+    getFollowUps: () => followUps,
+  };
+}
+
+export interface MockSelectMenuOptions {
+  userId?: string;
+  guildId?: string;
+  customId?: string;
+  values?: string[];
+}
+
+export function createMockSelectMenu(opts: MockSelectMenuOptions = {}): any {
+  const userId = opts.userId ?? 'user123';
+  const guildId = opts.guildId ?? 'guild123';
+  const customId = opts.customId ?? 'test-select';
+  const values = opts.values ?? [];
+
+  const replies: any[] = [];
+  const modals: any[] = [];
+
+  return {
+    user: {
+      id: userId,
+    },
+    guildId,
+    customId,
+    values,
+    isStringSelectMenu: () => true,
+    reply: jest.fn(async (replyOptions: any) => {
+      replies.push(replyOptions);
+      return null as any;
+    }),
+    showModal: jest.fn(async (modal: any) => {
+      modals.push(modal);
+      return null as any;
+    }),
+    getReplies: () => replies,
+    getModals: () => modals,
   };
 }

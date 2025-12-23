@@ -21,6 +21,11 @@ interface ModalHandler {
   execute: (interaction: any) => Promise<void>;
 }
 
+interface ComponentHandler {
+  customId: string;
+  execute: (interaction: any) => Promise<void>;
+}
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -35,6 +40,7 @@ const client = new Client({
 
 const commands = new Collection<string, Command>();
 const modalHandlers = new Collection<string, ModalHandler>();
+const componentHandlers = new Collection<string, ComponentHandler>();
 
 // Load commands
 const commandsPath = path.join(__dirname, 'commands');
@@ -66,6 +72,24 @@ if (fs.existsSync(modalsPath)) {
       console.log(`Loaded modal handler: ${modal.customId}`);
     } else {
       console.log(`Warning: The modal handler at ${filePath} is missing required "customId" or "execute" property.`);
+    }
+  }
+}
+
+// Load component handlers
+const componentsPath = path.join(__dirname, 'components');
+if (fs.existsSync(componentsPath)) {
+  const componentFiles = fs.readdirSync(componentsPath).filter(file => file.endsWith('.ts') || file.endsWith('.js'));
+
+  for (const file of componentFiles) {
+    const filePath = path.join(componentsPath, file);
+    const component = require(filePath);
+
+    if ('customId' in component && 'execute' in component) {
+      componentHandlers.set(component.customId, component);
+      console.log(`Loaded component handler: ${component.customId}`);
+    } else {
+      console.log(`Warning: The component handler at ${filePath} is missing required "customId" or "execute" property.`);
     }
   }
 }
@@ -118,6 +142,34 @@ client.on(Events.InteractionCreate, async (interaction) => {
       console.error(error);
       const replyOptions = {
         content: 'There was an error while processing your submission!',
+        ephemeral: true
+      };
+
+      if (interaction.replied || interaction.deferred) {
+        await interaction.followUp(replyOptions);
+      } else {
+        await interaction.reply(replyOptions);
+      }
+    }
+  }
+
+  // Handle message component interactions (buttons, select menus)
+  if (interaction.isMessageComponent()) {
+    // Extract base customId (before any colon separator used for passing data)
+    const baseCustomId = interaction.customId.split(':')[0];
+    const handler = componentHandlers.get(baseCustomId);
+
+    if (!handler) {
+      console.error(`No component handler matching ${interaction.customId} was found.`);
+      return;
+    }
+
+    try {
+      await handler.execute(interaction);
+    } catch (error) {
+      console.error(error);
+      const replyOptions = {
+        content: 'There was an error while processing your interaction!',
         ephemeral: true
       };
 

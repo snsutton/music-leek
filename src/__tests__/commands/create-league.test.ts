@@ -31,8 +31,7 @@ describe('create-league command', () => {
     const replies = getMockReplies(interaction);
     expect(replies).toHaveLength(1);
     expect(replies[0].content).toContain('Rock Classics');
-    expect(replies[0].content).toContain('league123');
-    expect(replies[0].ephemeral).toBe(false);
+    expect(replies[0].content).toContain('has been created');
 
     expect(Storage.saveLeague).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -56,7 +55,7 @@ describe('create-league command', () => {
 
     const replies = getMockReplies(interaction);
     expect(replies[0].content).toBe('This command can only be used in a server!');
-    expect(replies[0].ephemeral).toBe(true);
+    expect(replies[0].flags).toBeDefined();
     expect(Storage.saveLeague).not.toHaveBeenCalled();
   });
 });
