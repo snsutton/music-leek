@@ -5,42 +5,52 @@
 ### For Players
 
 1. **Join a League**
-   - In your server, use `/join-league <league-id>`
-   - Get the league ID from your server admin or `/my-leagues`
+   - In your server, use `/join-league` (the bot will use the server's league)
+   - Each Discord server has one league
 
-2. **Check Your Leagues**
-   - Use `/my-leagues` (works in DMs too!)
-   - This shows all leagues you're part of with their IDs and status
+2. **Check League Status**
+   - Use `/league-status` to see the current round, prompt, and deadlines
+   - Use `/leaderboard` to view overall standings across all rounds
 
 3. **Submit a Song**
-   - Use `/submit-song` or `/submit-song <league-id>`
-   - A form will pop up - fill it out and click Submit
-   - **Can be done in DMs for privacy!**
+   - Use `/submit-song` when a round is active
+   - A form will pop up - paste a Spotify or Apple Music URL
+   - **The bot automatically fills in the song title and artist!**
+   - Submissions are private until voting starts
 
 4. **Vote for Songs**
-   - Use `/vote` or `/vote <league-id>`
-   - You'll see all submissions in the form
-   - Enter your votes like: `1:5,2:4,3:3` (song#:points)
-   - **Can be done in DMs for privacy!**
+   - Use `/vote` when voting opens
+   - **Step 1:** Select up to 10 songs from the dropdown menu
+   - **Step 2:** A form appears - assign points to each selected song (you have 10 points total)
+   - You cannot vote for your own song
+   - **Vote sessions expire after 15 minutes** - complete both steps promptly!
 
 ### For League Admins
 
 1. **Create a League**
    - In your server: `/create-league <name>`
-   - Save the league ID that's displayed
+   - You're automatically added as the creator/admin
 
 2. **Start a Round**
-   - Use `/start-round` or `/start-round <league-id>`
-   - Fill out the form with your prompt and timing
-   - **Can be done in DMs!**
+   - Use `/start-round` to begin a new round
+   - Fill out the form with:
+     - **Round prompt** (the theme, e.g., "Songs that make you feel nostalgic")
+     - **Submission hours** (default: 72)
+     - **Voting hours** (default: 48)
 
 3. **Start Voting**
-   - When submissions are in: `/start-voting <league-id>`
+   - When submissions are in: `/start-voting`
    - This displays all songs and opens voting
 
 4. **End a Round**
-   - When voting ends: `/end-round <league-id>`
-   - Results will be posted with rankings
+   - When voting ends: `/end-round`
+   - Results will be posted with rankings and points
+
+5. **Manage Admins**
+   - Add helpers: `/add-admin <user>`
+   - Remove helpers: `/remove-admin <user>`
+   - View all admins: `/list-admins`
+   - Maximum 5 admins per league
 
 ## Command Reference
 
@@ -48,116 +58,251 @@
 
 | Command | Description | Works in DMs? |
 |---------|-------------|---------------|
-| `/my-leagues` | List your leagues | ✅ Yes |
-| `/submit-song [league-id]` | Submit a song (opens modal) | ✅ Yes |
-| `/vote [league-id]` | Vote for songs (opens modal) | ✅ Yes |
-| `/join-league <league-id>` | Join a league | ❌ Server only |
-| `/league-status <league-id>` | Check league status | ✅ Yes |
-| `/leaderboard <league-id>` | View leaderboard | ✅ Yes |
+| `/join-league` | Join your server's league | ❌ Server only |
+| `/league-status` | Check current round status and deadlines | ✅ Yes |
+| `/leaderboard` | View overall standings across all rounds | ✅ Yes |
+| `/submit-song` | Submit a song (opens modal with auto-fill) | ❌ Server only |
+| `/vote` | Vote for songs (interactive select menu) | ❌ Server only |
 
 ### Admin Commands
 
 | Command | Description | Works in DMs? |
 |---------|-------------|---------------|
 | `/create-league <name>` | Create a new league | ❌ Server only |
-| `/start-round [league-id]` | Start a round (opens modal) | ✅ Yes |
-| `/start-voting <league-id>` | Begin voting phase | ✅ Yes |
-| `/end-round <league-id>` | End round & show results | ✅ Yes |
+| `/start-round` | Start a round (opens modal) | ❌ Server only |
+| `/start-voting` | Begin voting phase | ❌ Server only |
+| `/end-round` | End round & show results | ❌ Server only |
+| `/add-admin <user>` | Add an admin (max 5) | ❌ Server only |
+| `/remove-admin <user>` | Remove an admin (creator only) | ❌ Server only |
+| `/list-admins` | View all league admins | ❌ Server only |
+| `/delete-league` | Delete the entire league (creator only) | ❌ Server only |
+
+## Feature Guide
+
+### Automatic Song Metadata
+
+When you submit a song, the bot automatically fetches the song information from Spotify or Apple Music:
+
+1. Use `/submit-song`
+2. Paste a Spotify or Apple Music URL in the form:
+   - **Spotify**: `https://open.spotify.com/track/3n3Ppam7vgaVa1iaRUc9Lp`
+   - **Apple Music**: `https://music.apple.com/us/song/song-name/1234567890`
+3. The bot automatically fills in:
+   - Song title
+   - Artist name
+   - Album name (if available)
+
+### Interactive Voting System
+
+The voting process has two steps:
+
+**Step 1: Select Songs**
+- After typing `/vote`, a dropdown menu appears
+- Select up to 10 songs you want to vote for
+- You can select as few as 1 song or as many as 10
+- Your own submission is automatically filtered out
+
+**Step 2: Assign Points**
+- After selecting, a form pops up with your chosen songs
+- You have a **budget of 10 points** to distribute
+- Assign 0-10 points to each song
+- You can give all 10 points to one song, or spread them across multiple songs
+- Examples:
+  - Give one song all 10 points: `10, 0, 0`
+  - Spread evenly: `5, 3, 2`
+  - Weighted voting: `7, 2, 1`
+
+**Important:**
+- You cannot exceed 10 total points
+- You must allocate at least 1 point total
+- You cannot vote for your own submission
+- Vote sessions expire after **15 minutes** - complete both steps before the timeout
+- You can change your vote by using `/vote` again (before voting ends)
+
+**Limitation:** If a round has more than 25 submissions, the interactive voting UI won't work due to Discord's select menu limit. Contact an admin to handle this situation.
+
+### Round Phases
+
+Each round has three phases:
+
+1. **Submission Phase**
+   - Players submit songs using `/submit-song`
+   - Default duration: 72 hours (configurable by admin)
+   - Submissions are private until voting starts
+   - One submission per player per round
+
+2. **Voting Phase**
+   - Started by admin using `/start-voting`
+   - All submissions are revealed
+   - Players vote using the interactive `/vote` system
+   - Default duration: 48 hours (configurable by admin)
+   - Votes are always private
+
+3. **Completed**
+   - Admin ends round with `/end-round`
+   - Results posted publicly with:
+     - Rankings (🥇🥈🥉 for top 3)
+     - Points for each submission
+     - Vote counts
+   - Points added to overall leaderboard
+
+### Admin Management
+
+League creators have full control and can:
+- Add up to 5 admins using `/add-admin <user>`
+- Remove non-creator admins using `/remove-admin <user>`
+- Delete the entire league using `/delete-league`
+- Start/manage rounds and voting
+
+Regular admins can:
+- Start new rounds with `/start-round`
+- Start voting with `/start-voting`
+- End rounds with `/end-round`
+
+The creator cannot be removed and always remains an admin.
+
+### Leaderboard & Scoring
+
+- Use `/leaderboard` to see cumulative scores across all completed rounds
+- Scores are calculated by totaling points each submission receives from voters
+- The leaderboard shows:
+  - Player rankings with medals (🥇🥈🥉)
+  - Total points accumulated
+  - Number of rounds participated in
+- Scores persist across multiple rounds
 
 ## Pro Tips
 
-### Using DMs
+### Viewing Round Information
 
-You can DM the bot to:
+Use `/league-status` to quickly see:
+- Current round number and status
+- Round prompt/theme
+- Submission deadline (with Discord timestamp)
+- Voting deadline (with Discord timestamp)
+- Number of submissions received
+- Current phase (submission/voting/completed)
 
-- Check your leagues with `/my-leagues`
-- Submit songs privately with `/submit-song`
-- Vote privately with `/vote`
-- Manage leagues as an admin with `/start-round`
+### Privacy Features
 
-**Workflow:**
+**Submissions:**
+- Private during submission phase
+- Revealed when voting starts
+- Bot responses are ephemeral (only you see them) when using commands in server channels
 
-1. DM the bot
-2. Use `/my-leagues` to see your league IDs
-3. Use any command with the league ID
-4. Fill out the modal form
+**Voting:**
+- All votes are completely private
+- Only final tallies are shown in results
+- No one can see who voted for what
 
-### Pre-filling League IDs
+**Commands:**
+- Most bot responses in servers are ephemeral (only visible to you)
+- Results and announcements are public
 
-Most commands accept an optional `league-id` parameter:
+### Time Management
 
-- `/submit-song league-id:abc123` - Modal opens with league ID already filled
-- `/vote league-id:abc123` - Modal shows submissions for that league
-- `/start-round league-id:abc123` - Admin form pre-filled
+- Deadlines are shown as Discord timestamps that auto-update in your timezone
+- When creating a round, consider:
+  - **72 hours for submissions** gives everyone time to participate
+  - **48 hours for voting** ensures people can review and vote thoughtfully
+  - Adjust based on your community's activity patterns
 
-If you don't provide it, you can type it in the modal!
+### Spotify/Apple Music Links
 
-### Voting Format
+Both platforms are supported:
 
-When voting, use this format: `submission#:points`
+**Spotify:**
+- Track URLs: `https://open.spotify.com/track/{id}`
+- Spotify URIs also work: `spotify:track:{id}`
 
-Examples:
+**Apple Music:**
+- Song URLs: `https://music.apple.com/{country}/song/{name}/{id}`
+- Album URLs with track: `https://music.apple.com/{country}/album/{name}/{id}?i={trackId}`
 
-- `1:5,2:4,3:3` - Give song #1 five points, song #2 four points, song #3 three points
-- `3:10,1:8,4:6` - Any order works!
-- You cannot vote for your own song
+**Note:** Apple Music support requires additional setup by the bot administrator.
 
 ## Modal Forms Guide
 
 ### Submit Song Modal
 
-- **League ID**: The league you're submitting to
-- **Song URL**: Spotify or YouTube link
-- **Song Title**: Name of the song
-- **Artist Name**: Who performs it
+- **Song URL**: Paste Spotify or Apple Music link
+- **Song Title**: Auto-filled from URL (or enter manually)
+- **Artist Name**: Auto-filled from URL (or enter manually)
+- **Album Name**: Auto-filled from URL (optional)
 
-### Vote Modal
+### Vote Select Menu + Points Modal
 
-- **League ID**: The league you're voting in
-- **Available Submissions**: Read-only list of songs (for reference)
-- **Your Votes**: Enter in format `1:5,2:4,3:3`
+**Select Menu:**
+- Shows all submissions except your own
+- Select 1-10 songs to vote for
+
+**Points Modal:**
+- Shows your selected songs
+- Enter points (0-10) for each
+- Total cannot exceed 10 points
 
 ### Start Round Modal (Admins)
 
-- **League ID**: The league to start a round in
 - **Round Prompt**: The theme (e.g., "Songs that make you feel nostalgic")
 - **Submission Hours**: How long players have to submit (default: 72)
 - **Voting Hours**: How long voting lasts (default: 48)
 
 ## Troubleshooting
 
-**"League not found!"**
-
-- Check the league ID is correct
-- Use `/my-leagues` to see your leagues
+**"No league found for this server!"**
+- The server doesn't have a league yet
+- Ask an admin to create one with `/create-league <name>`
 
 **"You are not in this league!"**
+- Use `/join-league` in the server first
 
-- Use `/join-league <league-id>` in the server first
+**"Voting is not open yet!"**
+- The round is still in submission phase
+- Wait for admin to start voting with `/start-voting`
 
-**"Submission phase has ended!"**
+**"Voting deadline has passed!"**
+- The voting period ended
+- Wait for admin to end the round and start a new one
 
-- The round moved to voting - you can only vote now
+**"Vote session expired! Please start over."**
+- You took longer than 15 minutes between selecting songs and assigning points
+- Start fresh with `/vote` and complete both steps quickly
 
-**"Voting phase has not started!"**
+**"You allocated X points, but only have 10 available!"**
+- Your total points exceed the budget
+- Reduce the points assigned to some songs
 
-- Wait for the admin to start voting with `/start-voting`
+**"This round has more than 25 submissions"**
+- Discord's select menu limit prevents interactive voting
+- Contact an admin to handle this (may need to split into multiple rounds)
 
-**"Invalid vote format!"**
+**"Could not fetch song metadata"**
+- The Spotify/Apple Music API couldn't retrieve the song info
+- Verify the URL is correct
+- Enter song details manually if needed
+- Contact bot admin if this persists (API credentials may be missing)
 
-- Make sure to use format: `1:5,2:4,3:3`
-- No spaces between numbers and colons
-- Separate votes with commas
+## Best Practices
 
-## Privacy
+### For Players
 
-When you use commands in DMs:
+- Submit songs early to avoid missing the deadline
+- Take time to listen to all submissions before voting
+- Use the full 10-point budget strategically
+- Complete vote selection and point allocation within 15 minutes
 
-- Song submissions are private until voting starts
-- Your votes are always private
-- Only results are public
+### For Admins
 
-When you use commands in a server:
+- Announce when you start a new round in your Discord channel
+- Give clear, creative prompts that inspire diverse submissions
+- Adjust deadline hours based on your community's timezone and activity
+- Remind participants when deadlines are approaching
+- End rounds promptly after voting closes to maintain momentum
 
-- The bot's responses are ephemeral (only you see them) for submission and voting
-- Results and announcements are public
+### For Communities
+
+- Establish consistent round schedules (e.g., weekly rounds)
+- Share playlists of submissions after voting
+- Discuss why people chose certain songs in your Discord channels
+- Celebrate winners and interesting submissions
+- Consider themed seasons or special event rounds

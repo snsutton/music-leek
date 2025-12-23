@@ -162,15 +162,31 @@ Your bot will fail initially because it's missing the Discord token. Let's add i
    - Click on the service (should be named `music-leek` or similar)
    - Go to **"Variables"** tab
 
-2. **Add Environment Variables:**
-   - Click **"New Variable"**
-   - Add the following:
-     - **Name:** `DISCORD_TOKEN`
+2. **Add Required Environment Variables:**
+
+   Click **"New Variable"** and add each of the following:
+
+   **Discord Credentials (Required):**
+   - **Name:** `DISCORD_TOKEN`
      - **Value:** `your_bot_token_here`
-   - Click **"Add"**
-   - Repeat for:
-     - **Name:** `DISCORD_CLIENT_ID`
+   - **Name:** `DISCORD_CLIENT_ID`
      - **Value:** `your_client_id_here`
+
+   **Spotify API (Required for Spotify URL support):**
+   - **Name:** `SPOTIFY_CLIENT_ID`
+     - **Value:** `your_spotify_client_id`
+   - **Name:** `SPOTIFY_CLIENT_SECRET`
+     - **Value:** `your_spotify_client_secret`
+
+   **Apple Music API (Optional - requires $99/year Apple Developer account):**
+   - **Name:** `APPLE_MUSIC_TEAM_ID`
+     - **Value:** `your_apple_team_id`
+   - **Name:** `APPLE_MUSIC_KEY_ID`
+     - **Value:** `your_musickit_key_id`
+   - **Name:** `APPLE_MUSIC_PRIVATE_KEY`
+     - **Value:** `your_private_key_content` (paste the full .p8 file content)
+
+   > **Note:** If you skip the Spotify credentials, users will see "Spotify support is not configured on this bot" when submitting Spotify URLs. Apple Music credentials are optional.
 
 3. **Redeploy:**
    - Railway automatically redeploys when you add variables
@@ -261,8 +277,15 @@ This ensures league data persists across deployments by storing it in the mounte
 | --- | --- | --- |
 | `DISCORD_TOKEN` | Yes | Your Discord bot token |
 | `DISCORD_CLIENT_ID` | Yes | Your Discord application ID |
+| `SPOTIFY_CLIENT_ID` | Yes* | Spotify API client ID (required for Spotify URL support) |
+| `SPOTIFY_CLIENT_SECRET` | Yes* | Spotify API client secret (required for Spotify URL support) |
+| `APPLE_MUSIC_TEAM_ID` | No | Apple Developer Team ID (optional, for Apple Music support) |
+| `APPLE_MUSIC_KEY_ID` | No | Apple MusicKit Key ID (optional, for Apple Music support) |
+| `APPLE_MUSIC_PRIVATE_KEY` | No | Apple MusicKit private key content from .p8 file (optional) |
 | `DATA_DIR` | No | Path to data directory (default: `./data`) |
 | `NODE_ENV` | No | Set to `production` for production mode |
+
+\* Required if you want users to be able to submit Spotify URLs. Without these, users will see "Spotify support is not configured on this bot" error.
 
 ### Security Best Practices
 
