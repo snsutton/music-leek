@@ -29,8 +29,39 @@
 - Only add what's explicitly requested
 - Don't use emojis
 
+## Testing Requirements
+
+### Before Writing Tests
+1. **Read the actual implementation first** - Never assume API signatures, method names, or interfaces
+2. **Check type definitions** - Read `src/types/index.ts` to ensure test objects include all required properties
+3. **Verify mocks match reality** - If creating mocks, they must exactly mirror the real implementation's API
+
+### After Writing Tests
+1. **Always run `npm run build`** - TypeScript compilation will catch:
+   - API mismatches between mocks and real code
+   - Missing required properties in test objects
+   - Non-existent methods being called
+2. **Fix ALL build errors before claiming completion** - Don't exclude test files from compilation to hide errors
+3. **Run `npm test`** - Ensure tests actually pass, not just compile
+
+### Common Test Mistakes to Avoid
+- Inventing API methods that don't exist (e.g., `Storage.getLeague()` when only `Storage.getLeagueByGuild()` exists)
+- Using non-existent properties (e.g., `league.id` when the interface uses `guildId` as the identifier)
+- Forgetting required fields in test data objects (check the TypeScript interface for all required fields)
+- Creating mocks that don't match the real implementation's method signatures
+
+### Test Writing Checklist
+- [ ] Read the source file being tested
+- [ ] Read relevant type definitions
+- [ ] Ensure mocks use correct method names and signatures
+- [ ] Include all required properties in test data
+- [ ] Run `npm run build` to verify TypeScript compilation
+- [ ] Run `npm test` to verify tests pass
+- [ ] Fix any build or test errors before submitting
+
 ## This Project
 - Discord bot for music sharing/voting leagues
 - TypeScript, discord.js
 - Testing: Jest
+- Storage: JSON file-based (leagues stored by guildId, not a separate id field)
 - Ask before adding more tooling or frameworks

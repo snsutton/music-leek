@@ -15,7 +15,7 @@ jest.mock('../../utils/helpers');
 describe('Full Flow Integration Test', () => {
   beforeEach(() => {
     MockStorage.reset();
-    (Storage.getLeague as jest.Mock) = jest.fn((leagueId: string) => MockStorage.getLeague(leagueId));
+    (Storage.getLeagueByGuild as jest.Mock) = jest.fn((guildId: string) => MockStorage.getLeagueByGuild(guildId));
     (Storage.saveLeague as jest.Mock) = jest.fn((league) => MockStorage.saveLeague(league));
     (Storage.load as jest.Mock) = jest.fn(() => MockStorage.load());
     (helpers.generateId as jest.Mock) = jest.fn(() => 'league123');
@@ -44,7 +44,7 @@ describe('Full Flow Integration Test', () => {
     expect(replies[0].content).toContain('Rock Legends');
     expect(replies[0].content).toContain('league123');
 
-    let league = MockStorage.getLeague('league123');
+    let league = MockStorage.getLeagueByGuild('guild123');
     expect(league?.participants).toEqual(['userA']);
 
     // Step 2: User B joins the league
@@ -60,7 +60,7 @@ describe('Full Flow Integration Test', () => {
     expect(replies[0].content).toContain('joined');
     expect(replies[0].content).toContain('Total participants: 2');
 
-    league = MockStorage.getLeague('league123');
+    league = MockStorage.getLeagueByGuild('guild123');
     expect(league?.participants).toEqual(['userA', 'userB']);
 
     // Step 3: User A starts a round
@@ -80,7 +80,7 @@ describe('Full Flow Integration Test', () => {
     expect(replies[0].content).toContain('Round 1');
     expect(replies[0].content).toContain('Best guitar solo');
 
-    league = MockStorage.getLeague('league123');
+    league = MockStorage.getLeagueByGuild('guild123');
     expect(league?.rounds).toHaveLength(1);
     expect(league?.rounds[0].status).toBe('submission');
 
@@ -118,7 +118,7 @@ describe('Full Flow Integration Test', () => {
     expect(replies[0].content).toContain('Comfortably Numb');
     expect(replies[0].content).toContain('Submissions: 2/2');
 
-    league = MockStorage.getLeague('league123');
+    league = MockStorage.getLeagueByGuild('guild123');
     expect(league?.rounds[0].submissions).toHaveLength(2);
 
     // Step 6: Start voting phase
@@ -130,7 +130,7 @@ describe('Full Flow Integration Test', () => {
 
     await startVoting(startVotingInteraction);
 
-    league = MockStorage.getLeague('league123');
+    league = MockStorage.getLeagueByGuild('guild123');
     expect(league?.rounds[0].status).toBe('voting');
 
     // Step 7: User A votes
@@ -163,7 +163,7 @@ describe('Full Flow Integration Test', () => {
     expect(replies[0].content).toContain('Votes cast: 2/2');
 
     // Final verification
-    league = MockStorage.getLeague('league123');
+    league = MockStorage.getLeagueByGuild('guild123');
     expect(league?.rounds[0].votes).toHaveLength(2);
     expect(league?.rounds[0].votes[0]).toEqual({
       voterId: 'userA',

@@ -9,7 +9,7 @@ jest.mock('../../utils/storage');
 describe('vote-modal', () => {
   beforeEach(() => {
     MockStorage.reset();
-    (Storage.getLeague as jest.Mock) = jest.fn((leagueId: string) => MockStorage.getLeague(leagueId));
+    (Storage.getLeagueByGuild as jest.Mock) = jest.fn((guildId: string) => MockStorage.getLeagueByGuild(guildId));
     (Storage.saveLeague as jest.Mock) = jest.fn((league: League) => MockStorage.saveLeague(league));
   });
 
@@ -19,11 +19,11 @@ describe('vote-modal', () => {
 
   it('should allow a participant to vote', async () => {
     const mockLeague: League = {
-      id: 'league123',
       name: 'Rock Classics',
       guildId: 'guild123',
       channelId: 'channel123',
       createdBy: 'user123',
+      admins: ['user123'],
       createdAt: Date.now(),
       currentRound: 1,
       rounds: [{
@@ -58,7 +58,7 @@ describe('vote-modal', () => {
     expect(replies[0].content).toContain('✅');
     expect(replies[0].content).toContain('Votes cast: 1/2');
 
-    const updatedLeague = MockStorage.getLeague('league123');
+    const updatedLeague = MockStorage.getLeagueByGuild('guild123');
     expect(updatedLeague?.rounds[0].votes).toHaveLength(1);
     expect(updatedLeague?.rounds[0].votes[0]).toEqual({
       voterId: 'user456',
@@ -68,11 +68,11 @@ describe('vote-modal', () => {
 
   it('should allow voting for multiple songs', async () => {
     const mockLeague: League = {
-      id: 'league123',
       name: 'Rock Classics',
       guildId: 'guild123',
       channelId: 'channel123',
       createdBy: 'user123',
+      admins: ['user123'],
       createdAt: Date.now(),
       currentRound: 1,
       rounds: [{
@@ -104,7 +104,7 @@ describe('vote-modal', () => {
 
     await execute(interaction);
 
-    const updatedLeague = MockStorage.getLeague('league123');
+    const updatedLeague = MockStorage.getLeagueByGuild('guild123');
     expect(updatedLeague?.rounds[0].votes[0].votes).toEqual([
       { submissionIndex: 1, points: 5 },
       { submissionIndex: 2, points: 3 },
@@ -113,11 +113,11 @@ describe('vote-modal', () => {
 
   it('should reject when voting for own song', async () => {
     const mockLeague: League = {
-      id: 'league123',
       name: 'Rock Classics',
       guildId: 'guild123',
       channelId: 'channel123',
       createdBy: 'user123',
+      admins: ['user123'],
       createdAt: Date.now(),
       currentRound: 1,
       rounds: [{
@@ -155,11 +155,11 @@ describe('vote-modal', () => {
 
   it('should reject when voting phase has not started', async () => {
     const mockLeague: League = {
-      id: 'league123',
       name: 'Rock Classics',
       guildId: 'guild123',
       channelId: 'channel123',
       createdBy: 'user123',
+      admins: ['user123'],
       createdAt: Date.now(),
       currentRound: 1,
       rounds: [{
@@ -191,11 +191,11 @@ describe('vote-modal', () => {
 
   it('should reject invalid vote format', async () => {
     const mockLeague: League = {
-      id: 'league123',
       name: 'Rock Classics',
       guildId: 'guild123',
       channelId: 'channel123',
       createdBy: 'user123',
+      admins: ['user123'],
       createdAt: Date.now(),
       currentRound: 1,
       rounds: [{

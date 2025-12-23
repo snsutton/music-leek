@@ -15,12 +15,12 @@ export class MockStorage {
     this.data = data;
   }
 
-  static getLeague(leagueId: string): League | null {
-    return this.data.leagues[leagueId] || null;
+  static getLeagueByGuild(guildId: string): League | null {
+    return this.data.leagues[guildId] || null;
   }
 
   static saveLeague(league: League): void {
-    this.data.leagues[league.id] = league;
+    this.data.leagues[league.guildId] = league;
   }
 
   static getAllLeagues(): League[] {

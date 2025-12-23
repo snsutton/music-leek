@@ -13,7 +13,7 @@ describe('join-league command', () => {
     MockStorage.reset();
 
     // Set up Storage mock methods
-    (Storage.getLeague as jest.Mock) = jest.fn((leagueId: string) => MockStorage.getLeague(leagueId));
+    (Storage.getLeagueByGuild as jest.Mock) = jest.fn((guildId: string) => MockStorage.getLeagueByGuild(guildId));
     (Storage.saveLeague as jest.Mock) = jest.fn((league: League) => MockStorage.saveLeague(league));
   });
 
@@ -23,11 +23,11 @@ describe('join-league command', () => {
 
   it('should allow a new user to join an existing league', async () => {
     const mockLeague: League = {
-      id: 'league123',
       name: 'Rock Classics',
       guildId: 'guild123',
       channelId: 'channel123',
       createdBy: 'user123',
+      admins: ['user123'],
       createdAt: Date.now(),
       currentRound: 0,
       rounds: [],
@@ -57,11 +57,11 @@ describe('join-league command', () => {
 
   it('should allow multiple users to join sequentially', async () => {
     const mockLeague: League = {
-      id: 'league123',
       name: 'Indie Favorites',
       guildId: 'guild123',
       channelId: 'channel123',
       createdBy: 'user123',
+      admins: ['user123'],
       createdAt: Date.now(),
       currentRound: 0,
       rounds: [],
@@ -84,7 +84,7 @@ describe('join-league command', () => {
     });
     await execute(interaction3);
 
-    const finalLeague = MockStorage.getLeague('league123');
+    const finalLeague = MockStorage.getLeagueByGuild('guild123');
     expect(finalLeague?.participants).toEqual(['user123', 'user456', 'user789']);
   });
 
@@ -104,11 +104,11 @@ describe('join-league command', () => {
 
   it('should reject when user is already in the league', async () => {
     const mockLeague: League = {
-      id: 'league123',
       name: 'Rock Classics',
       guildId: 'guild123',
       channelId: 'channel123',
       createdBy: 'user123',
+      admins: ['user123'],
       createdAt: Date.now(),
       currentRound: 0,
       rounds: [],
@@ -132,11 +132,11 @@ describe('join-league command', () => {
 
   it('should reject when league is in a different server', async () => {
     const mockLeague: League = {
-      id: 'league123',
       name: 'Rock Classics',
       guildId: 'guild123',
       channelId: 'channel123',
       createdBy: 'user123',
+      admins: ['user123'],
       createdAt: Date.now(),
       currentRound: 0,
       rounds: [],

@@ -36,7 +36,6 @@ describe('create-league command', () => {
 
     expect(Storage.saveLeague).toHaveBeenCalledWith(
       expect.objectContaining({
-        id: 'league123',
         name: 'Rock Classics',
         guildId: 'guild123',
         channelId: 'channel123',

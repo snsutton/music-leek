@@ -9,7 +9,7 @@ jest.mock('../../utils/storage');
 describe('submit-song-modal', () => {
   beforeEach(() => {
     MockStorage.reset();
-    (Storage.getLeague as jest.Mock) = jest.fn((leagueId: string) => MockStorage.getLeague(leagueId));
+    (Storage.getLeagueByGuild as jest.Mock) = jest.fn((guildId: string) => MockStorage.getLeagueByGuild(guildId));
     (Storage.saveLeague as jest.Mock) = jest.fn((league: League) => MockStorage.saveLeague(league));
   });
 
@@ -19,11 +19,11 @@ describe('submit-song-modal', () => {
 
   it('should allow a participant to submit a song', async () => {
     const mockLeague: League = {
-      id: 'league123',
       name: 'Rock Classics',
       guildId: 'guild123',
       channelId: 'channel123',
       createdBy: 'user123',
+      admins: ['user123'],
       createdAt: Date.now(),
       currentRound: 1,
       rounds: [{
@@ -59,7 +59,7 @@ describe('submit-song-modal', () => {
     expect(replies[0].content).toContain('Queen');
     expect(replies[0].content).toContain('Submissions: 1/2');
 
-    const updatedLeague = MockStorage.getLeague('league123');
+    const updatedLeague = MockStorage.getLeagueByGuild('guild123');
     expect(updatedLeague?.rounds[0].submissions).toHaveLength(1);
     expect(updatedLeague?.rounds[0].submissions[0]).toEqual({
       userId: 'user456',
@@ -84,11 +84,11 @@ describe('submit-song-modal', () => {
 
   it('should reject when user is not in the league', async () => {
     const mockLeague: League = {
-      id: 'league123',
       name: 'Rock Classics',
       guildId: 'guild123',
       channelId: 'channel123',
       createdBy: 'user123',
+      admins: ['user123'],
       createdAt: Date.now(),
       currentRound: 1,
       rounds: [{
@@ -120,11 +120,11 @@ describe('submit-song-modal', () => {
 
   it('should reject when user already submitted', async () => {
     const mockLeague: League = {
-      id: 'league123',
       name: 'Rock Classics',
       guildId: 'guild123',
       channelId: 'channel123',
       createdBy: 'user123',
+      admins: ['user123'],
       createdAt: Date.now(),
       currentRound: 1,
       rounds: [{
@@ -165,11 +165,11 @@ describe('submit-song-modal', () => {
 
   it('should reject when submission phase has ended', async () => {
     const mockLeague: League = {
-      id: 'league123',
       name: 'Rock Classics',
       guildId: 'guild123',
       channelId: 'channel123',
       createdBy: 'user123',
+      admins: ['user123'],
       createdAt: Date.now(),
       currentRound: 1,
       rounds: [{
