@@ -149,7 +149,7 @@ Each round has three phases:
 ### Admin Management
 
 League creators have full control and can:
-- Add up to 5 admins using `/add-admin <user>`
+- Add up to 2 admins using `/add-admin <user>` (3 admins total including the creator)
 - Remove non-creator admins using `/remove-admin <user>`
 - Delete the entire league using `/delete-league`
 - Start/manage rounds and voting
@@ -203,8 +203,8 @@ Use `/league-status` to quickly see:
 
 - Deadlines are shown as Discord timestamps that auto-update in your timezone
 - When creating a round, consider:
-  - **72 hours for submissions** gives everyone time to participate
-  - **48 hours for voting** ensures people can review and vote thoughtfully
+  - **7 days for submissions** gives everyone time to participate
+  - **7 days for voting** ensures people can review and vote thoughtfully
   - Adjust based on your community's activity patterns
 
 ### Spotify/Apple Music Links
@@ -281,28 +281,3 @@ Both platforms are supported:
 - Verify the URL is correct
 - Enter song details manually if needed
 - Contact bot admin if this persists (API credentials may be missing)
-
-## Best Practices
-
-### For Players
-
-- Submit songs early to avoid missing the deadline
-- Take time to listen to all submissions before voting
-- Use the full 10-point budget strategically
-- Complete vote selection and point allocation within 15 minutes
-
-### For Admins
-
-- Announce when you start a new round in your Discord channel
-- Give clear, creative prompts that inspire diverse submissions
-- Adjust deadline hours based on your community's timezone and activity
-- Remind participants when deadlines are approaching
-- End rounds promptly after voting closes to maintain momentum
-
-### For Communities
-
-- Establish consistent round schedules (e.g., weekly rounds)
-- Share playlists of submissions after voting
-- Discuss why people chose certain songs in your Discord channels
-- Celebrate winners and interesting submissions
-- Consider themed seasons or special event rounds
