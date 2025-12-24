@@ -3,16 +3,20 @@ import { Storage } from '../utils/storage';
 import { Round } from '../types';
 import { getCurrentRound } from '../utils/helpers';
 import { isAdmin } from '../utils/permissions';
+import { DEFAULT_SUBMISSION_DAYS, DEFAULT_VOTING_DAYS } from '../constants';
 
 export const customId = 'start-round-modal';
 
 export async function execute(interaction: ModalSubmitInteraction) {
   const prompt = interaction.fields.getTextInputValue('prompt');
-  const submissionHoursStr = interaction.fields.getTextInputValue('submission-hours');
-  const votingHoursStr = interaction.fields.getTextInputValue('voting-hours');
+  const submissionDaysStr = interaction.fields.getTextInputValue('submission-days');
+  const votingDaysStr = interaction.fields.getTextInputValue('voting-days');
 
-  const submissionHours = parseInt(submissionHoursStr) || 72;
-  const votingHours = parseInt(votingHoursStr) || 48;
+  const submissionDays = parseInt(submissionDaysStr) || DEFAULT_SUBMISSION_DAYS;
+  const votingDays = parseInt(votingDaysStr) || DEFAULT_VOTING_DAYS;
+
+  const submissionHours = submissionDays * 24;
+  const votingHours = votingDays * 24;
 
   if (!interaction.guildId) {
     await interaction.reply({ content: 'This command can only be used in a server!', flags: MessageFlags.Ephemeral });

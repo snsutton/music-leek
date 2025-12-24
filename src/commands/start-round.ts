@@ -1,4 +1,5 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } from 'discord.js';
+import { DEFAULT_SUBMISSION_DAYS, DEFAULT_VOTING_DAYS } from '../constants';
 
 export const data = new SlashCommandBuilder()
   .setName('start-round')
@@ -17,25 +18,25 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     .setPlaceholder('e.g., "Songs that make you feel nostalgic"')
     .setRequired(true);
 
-  const submissionHoursInput = new TextInputBuilder()
-    .setCustomId('submission-hours')
-    .setLabel('Submission Hours (default: 72)')
+  const submissionDaysInput = new TextInputBuilder()
+    .setCustomId('submission-days')
+    .setLabel(`Submission Days (default: ${DEFAULT_SUBMISSION_DAYS})`)
     .setStyle(TextInputStyle.Short)
-    .setPlaceholder('72')
-    .setValue('72')
+    .setPlaceholder(String(DEFAULT_SUBMISSION_DAYS))
+    .setValue(String(DEFAULT_SUBMISSION_DAYS))
     .setRequired(false);
 
-  const votingHoursInput = new TextInputBuilder()
-    .setCustomId('voting-hours')
-    .setLabel('Voting Hours (default: 48)')
+  const votingDaysInput = new TextInputBuilder()
+    .setCustomId('voting-days')
+    .setLabel(`Voting Days (default: ${DEFAULT_VOTING_DAYS})`)
     .setStyle(TextInputStyle.Short)
-    .setPlaceholder('48')
-    .setValue('48')
+    .setPlaceholder(String(DEFAULT_VOTING_DAYS))
+    .setValue(String(DEFAULT_VOTING_DAYS))
     .setRequired(false);
 
   const firstActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(promptInput);
-  const secondActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(submissionHoursInput);
-  const thirdActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(votingHoursInput);
+  const secondActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(submissionDaysInput);
+  const thirdActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(votingDaysInput);
 
   modal.addComponents(firstActionRow, secondActionRow, thirdActionRow);
 
