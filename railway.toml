@@ -1,0 +1,17 @@
+# Railway Config-as-Code
+# Documentation: https://docs.railway.com/guides/config-as-code
+
+[build]
+builder = "nixpacks"
+buildCommand = "npm run build"
+
+[deploy]
+# Auto-deploy commands to Discord on startup, then start the bot
+startCommand = "npm start"
+
+# Health check endpoint (Express server on port 3000)
+healthcheckPath = "/health"
+healthcheckTimeout = 100
+
+# Restart policy
+restartPolicyType = "on_failure"

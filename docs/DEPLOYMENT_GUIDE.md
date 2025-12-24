@@ -1,63 +1,26 @@
 # Deployment Guide for Music Leek Discord Bot
 
-This guide covers deploying your Discord bot for 24/7 operation.
+This guide covers setting up your Discord bot for local development testing and production deployment.
 
 ## Table of Contents
-1. [General Deployment Requirements](#general-deployment-requirements)
-2. [Prerequisites](#prerequisites)
-3. [Railway.app Deployment](#railwayapp-deployment)
+1. [Prerequisites](#prerequisites)
+2. [Local Development Setup](#local-development-setup)
+3. [Production Deployment (Railway)](#production-deployment-railway)
 4. [Configuration](#configuration)
 5. [Updating Your Bot](#updating-your-bot)
 
 ---
 
-## General Deployment Requirements
-
-### What Your Bot Needs to Run 24/7
-
-Any hosting platform you choose must provide:
-
-**Runtime Environment:**
-- Node.js v16 or higher (v20 recommended)
-- Package manager (npm or yarn)
-- Ability to run persistent processes
-
-**System Requirements:**
-- **Memory:** Minimum 256MB RAM (512MB+ recommended)
-- **CPU:** Minimal (bot is event-driven, only active during commands)
-- **Storage:** ~100MB for code + dependencies
-- **Network:** Stable outbound connection to Discord API (wss://gateway.discord.gg)
-
-**Environment Variables:**
-Your bot requires these secrets to be set:
-- `DISCORD_TOKEN` - Your Discord bot token
-- `DISCORD_CLIENT_ID` - Your Discord application ID
-
-**Build Process:**
-1. Install dependencies: `npm install`
-2. Compile TypeScript: `npm run build`
-3. Register slash commands: `npm run deploy` (one-time or on startup)
-4. Start bot: `npm start` (runs `node dist/index.js`)
-
-**Data Persistence:**
-- Bot stores league data in `data/leagues.json`
-- Requires persistent storage (not ephemeral filesystem)
-- Recommend using volumes/mounted storage for production
-
----
-
 ## Prerequisites
 
-Before deploying, ensure you have:
+Before starting, ensure you have:
 
-1. **GitHub Account** - [github.com/signup](https://github.com/signup)
-2. **Discord Bot Token** - Create at [Discord Developer Portal](https://discord.com/developers/applications)
-3. **Git Installed** - [git-scm.com/downloads](https://git-scm.com/downloads)
-4. **Your bot code in a GitHub repository**
+1. **Node.js** - v16 or higher (v20 recommended) - [nodejs.org](https://nodejs.org)
+2. **Git** - [git-scm.com/downloads](https://git-scm.com/downloads)
+3. **Discord Bot Token** - Create at [Discord Developer Portal](https://discord.com/developers/applications)
+4. **GitHub Account** - (for production deployment) - [github.com/signup](https://github.com/signup)
 
 ### Creating Your Discord Bot Token
-
-If you haven't already:
 
 1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
 2. Create a new application
@@ -68,50 +31,117 @@ If you haven't already:
    - Bot Permissions: Send Messages, Embed Links, Read Message History, Use Slash Commands
    - Copy and open the generated URL to invite the bot to your server
 
-**IMPORTANT:** Save your bot token and client ID - you'll need them for deployment.
+**IMPORTANT:** Save your bot token and client ID - you'll need them for setup.
 
-### Pushing Your Code to GitHub
+---
 
-If your bot isn't already on GitHub:
+## Local Development Setup
+
+This section covers running the bot on your local machine for development and testing.
+
+### Step 1: Clone the Repository
 
 ```bash
-# Navigate to your project directory
+# Clone the repository
+git clone https://github.com/YOUR_USERNAME/music-leek.git
 cd music-leek
 
-# Initialize git repository (if not already done)
-git init
-
-# Add all files
-git add .
-
-# Commit
-git commit -m "Initial commit"
-
-# Create a new repository on GitHub, then:
-git remote add origin https://github.com/YOUR_USERNAME/music-leek.git
-git branch -M main
-git push -u origin main
+# Install dependencies
+npm install
 ```
 
-**Verify `.gitignore` includes:**
+### Step 2: Configure Environment Variables
+
+Create a `.env` file in the project root:
+
+```bash
+# Required
+DISCORD_TOKEN=your_bot_token_here
+DISCORD_CLIENT_ID=your_client_id_here
+
+# Optional - Spotify support
+SPOTIFY_CLIENT_ID=your_spotify_client_id
+SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
+
+# Optional - Apple Music support (requires $99/year Apple Developer account)
+APPLE_MUSIC_TEAM_ID=your_apple_team_id
+APPLE_MUSIC_KEY_ID=your_musickit_key_id
+APPLE_MUSIC_PRIVATE_KEY=your_private_key_content
 ```
-.env
-node_modules/
-dist/
-data/leagues.json
+
+**Important:** The `.env` file is already in `.gitignore` and will never be committed to git.
+
+### Step 3: Build and Deploy Commands
+
+```bash
+# Build TypeScript
+npm run build
+
+# Deploy slash commands to Discord (one-time setup)
+npm run deploy
+```
+
+### Step 4: Run the Bot
+
+```bash
+# Development mode (with hot reload)
+npm run dev
+
+# Or production mode (uses compiled JavaScript)
+npm start
+```
+
+You should see: `Ready! Logged in as YourBotName#1234`
+
+### Step 5: Test in Discord
+
+In your Discord server, try:
+```
+/create-league name:Test League
+```
+
+If it works, your local setup is complete!
+
+### Local Development Commands
+
+```bash
+# Run in development mode
+npm run dev
+
+# Build TypeScript
+npm run build
+
+# Deploy commands to Discord
+npm run deploy
+
+# Start bot (production mode)
+npm start
+
+# Run tests
+npm test
+npm run test:watch
+npm run test:coverage
 ```
 
 ---
 
-## Railway.app Deployment
+## Production Deployment (Railway)
+
+This section covers deploying your bot to Railway for 24/7 operation.
 
 Railway.app is a Platform-as-a-Service that makes deployment simple with GitHub integration and a generous free tier.
+
+### Prerequisites for Railway Deployment
+
+Before deploying to Railway:
+1. Complete the [Local Development Setup](#local-development-setup) first
+2. Your code must be pushed to a GitHub repository
+3. Ensure `.gitignore` includes: `.env`, `node_modules/`, `dist/`, `data/leagues.json`
 
 ### Why Railway.app?
 
 **Key Benefits:**
-- Simple deployment - Deploy directly from GitHub in minutes
-- Zero configuration - Automatically detects Node.js and installs dependencies
+- Config-as-code deployment using `railway.toml`
 - Auto-deployments - Push to GitHub, Railway deploys automatically
 - Built-in monitoring - Real-time logs and resource metrics
 - No server management - No SSH, PM2, or manual setup needed
@@ -148,10 +178,11 @@ Railway.app is a Platform-as-a-Service that makes deployment simple with GitHub 
    - If you don't see it, click **"Configure GitHub App"** to grant access
 
 4. **Railway Starts Deployment**
-   - Railway automatically detects Node.js
+   - Railway automatically detects the `railway.toml` configuration
    - Runs `npm install`
-   - Runs `npm run build` (if build script exists)
-   - Attempts to start your bot with `npm start`
+   - Runs `npm run build` (as configured in railway.toml)
+   - Runs `npm start` (auto-deploys commands, then starts the bot)
+   - Configures health check at `/health` endpoint
 
 ### Step 3: Configure Environment Variables
 
@@ -192,41 +223,9 @@ Your bot will fail initially because it's missing the Discord token. Let's add i
    - Railway automatically redeploys when you add variables
    - Wait 30-60 seconds for deployment to complete
 
-### Step 4: Deploy Commands to Discord
+### Step 4: Verify Deployment
 
-Railway doesn't run `npm run deploy` automatically. You need to do this once:
-
-**Option 1: Run Locally (Recommended)**
-```bash
-# On your local machine
-npm run deploy
-```
-
-**Option 2: Add to package.json Start Script**
-
-Edit [package.json](../package.json):
-
-```json
-"scripts": {
-  "build": "tsc",
-  "start": "npm run deploy-if-needed && node dist/index.js",
-  "deploy-if-needed": "node dist/deploy-commands.js || true",
-  "dev": "ts-node src/index.ts",
-  "deploy": "ts-node src/deploy-commands.ts"
-}
-```
-
-This ensures commands are registered before the bot starts. Then push to GitHub:
-
-```bash
-git add package.json
-git commit -m "Auto-deploy commands on start"
-git push
-```
-
-Railway will automatically redeploy with the new start script.
-
-### Step 5: Verify Deployment
+Commands are automatically deployed on startup (configured in package.json).
 
 1. **Check Deployment Status:**
    - In Railway Dashboard → Your project → "Deployments" tab
@@ -242,6 +241,8 @@ Railway will automatically redeploy with the new start script.
      /create-league name:Test League
      ```
    - If it works, your bot is live!
+
+**Pushing your code to GitHub triggers a new Railway deployment.** 
 
 ---
 
@@ -286,51 +287,6 @@ This ensures league data persists across deployments by storing it in the mounte
 | `NODE_ENV` | No | Set to `production` for production mode |
 
 \* Required if you want users to be able to submit Spotify URLs. Without these, users will see "Spotify support is not configured on this bot" error.
-
-### Security Best Practices
-
-Even though Railway handles infrastructure security, follow these best practices:
-
-**1. Protect Your Bot Token (HIGH PRIORITY)**
-
-Never:
-- Commit `.env` file to git (already in `.gitignore`)
-- Share screenshots containing your token
-- Log your token in code
-
-Always:
-- Use environment variables for secrets
-- Regenerate token immediately if compromised:
-  - Discord Developer Portal → Bot → Reset Token
-  - Update Railway variable
-
-**2. Dependency Security (MEDIUM PRIORITY)**
-
-```bash
-# Check for vulnerabilities weekly
-npm audit
-
-# Update dependencies
-npm update
-
-# For critical vulnerabilities
-npm audit fix
-```
-
-**3. Code Security (MEDIUM PRIORITY)**
-
-- Validate user input in commands
-- Add rate limiting for heavy commands (if needed)
-- Implement permission checks for admin commands
-- Use TypeScript's type safety (already implemented)
-
-**4. Data Backups (LOW PRIORITY)**
-
-```bash
-# Backup league data weekly (local machine)
-# Download from Railway or backup local copy
-cp data/leagues.json backups/leagues-$(date +%Y%m%d).json
-```
 
 ---
 
@@ -393,24 +349,4 @@ This instantly reverts to the previous version.
 
 ---
 
-### Quick Reference Commands
-
-```bash
-# Update bot (local machine)
-git add .
-git commit -m "Update feature"
-git push  # Railway auto-deploys
-
-# Deploy commands to Discord
-npm run deploy
-
-# Test locally
-npm run dev
-
-# Build locally
-npm run build
-```
-
----
-
-**You're all set!** Your Music Leek Discord bot is now running 24/7 with automatic deployments, monitoring, and minimal maintenance.
+**You're all set!** Your Music Leek Discord bot is configured for both local development and production deployment with Railway.
