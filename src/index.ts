@@ -191,26 +191,42 @@ if (!token) {
 }
 
 // Set up health check HTTP server for Railway
-const app = express();
-const PORT = process.env.PORT || 3000;
+// Only start if PORT is set (production) or explicitly enabled
+const shouldStartHttpServer = process.env.PORT || process.env.ENABLE_HTTP_SERVER === 'true';
 
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'ok',
-    uptime: process.uptime(),
-    timestamp: new Date().toISOString(),
-    bot: client.user ? {
-      username: client.user.tag,
-      ready: client.isReady()
-    } : {
-      ready: false
-    }
-  });
-});
+if (shouldStartHttpServer) {
+  try {
+    const app = express();
+    const PORT = parseInt(process.env.PORT || '3000');
 
-app.listen(PORT, () => {
-  console.log(`Health check server listening on port ${PORT}`);
-});
+    console.log(`[HTTP] Attempting to start health check server on port ${PORT}...`);
+
+    app.get('/health', (req, res) => {
+      console.log(`[HTTP] Health check request received from ${req.ip}`);
+      res.status(200).json({
+        status: 'ok',
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString(),
+        bot: client.user ? {
+          username: client.user.tag,
+          ready: client.isReady()
+        } : {
+          ready: false
+        }
+      });
+    });
+
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`[HTTP] ✓ Health check server listening on port ${PORT}`);
+      console.log(`[HTTP] Health endpoint available at http://localhost:${PORT}/health`);
+    });
+  } catch (error) {
+    console.error('[HTTP] FATAL: Failed to start health check server:', error);
+    // Don't exit - let bot continue even if HTTP fails
+  }
+} else {
+  console.log('[HTTP] Skipping health check server (not needed in development)');
+}
 
 // Initialize music services and then login
 async function startBot() {
