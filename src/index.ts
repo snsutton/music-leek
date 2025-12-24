@@ -2,6 +2,7 @@ import { Client, Collection, GatewayIntentBits, Events, Partials } from 'discord
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
+import express from 'express';
 import { MusicServiceFactory } from './services/music-service-factory';
 
 // Load .env.local if it exists, otherwise fall back to .env
@@ -189,6 +190,28 @@ if (!token) {
   process.exit(1);
 }
 
+// Set up health check HTTP server for Railway
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+    bot: client.user ? {
+      username: client.user.tag,
+      ready: client.isReady()
+    } : {
+      ready: false
+    }
+  });
+});
+
+app.listen(PORT, () => {
+  console.log(`Health check server listening on port ${PORT}`);
+});
+
 // Initialize music services and then login
 async function startBot() {
   try {
@@ -205,4 +228,8 @@ async function startBot() {
   }
 }
 
-startBot();
+// Start the bot with proper error handling
+startBot().catch(error => {
+  console.error('Fatal error starting bot:', error);
+  process.exit(1);
+});
