@@ -56,26 +56,26 @@
 
 ### Player Commands
 
-| Command | Description | Works in DMs? |
-|---------|-------------|---------------|
-| `/join-league` | Join your server's league | ❌ Server only |
-| `/league-status` | Check current round status and deadlines | ✅ Yes |
-| `/leaderboard` | View overall standings across all rounds | ✅ Yes |
-| `/submit-song` | Submit a song (opens modal with auto-fill) | ❌ Server only |
-| `/vote` | Vote for songs (interactive select menu) | ❌ Server only |
+| Command | Description |
+|---------|-------------|
+| `/join-league` | Join your server's league |
+| `/league-status` | Check current round status and deadlines |
+| `/leaderboard` | View overall standings across all rounds |
+| `/submit-song` | Submit a song (opens modal with auto-fill) |
+| `/vote` | Vote for songs (interactive select menu) |
 
 ### Admin Commands
 
-| Command | Description | Works in DMs? |
-|---------|-------------|---------------|
-| `/create-league <name>` | Create a new league | ❌ Server only |
-| `/start-round` | Start a round (opens modal) | ❌ Server only |
-| `/start-voting` | Begin voting phase | ❌ Server only |
-| `/end-round` | End round & show results | ❌ Server only |
-| `/add-admin <user>` | Add an admin (max 5) | ❌ Server only |
-| `/remove-admin <user>` | Remove an admin (creator only) | ❌ Server only |
-| `/list-admins` | View all league admins | ❌ Server only |
-| `/delete-league` | Delete the entire league (creator only) | ❌ Server only |
+| Command | Description |
+|---------|-------------|
+| `/create-league <name>` | Create a new league |
+| `/start-round` | Start a round (opens modal) |
+| `/start-voting` | Begin voting phase |
+| `/end-round` | End round & show results |
+| `/add-admin <user>` | Add an admin (max 5) |
+| `/remove-admin <user>` | Remove an admin (creator only) |
+| `/list-admins` | View all league admins |
+| `/delete-league` | Delete the entire league (creator only) |
 
 ## Feature Guide
 

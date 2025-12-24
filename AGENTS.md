@@ -5,6 +5,31 @@
 ## Core Principle
 **When in doubt, ask.** Don't make assumptions about architecture, tooling, or implementation details.
 
+## Project Structure
+
+```
+music-leek/
+├── src/
+│   ├── commands/          # Slash command handlers (/join-league, /vote, etc.)
+│   ├── components/        # Discord components (vote select menus)
+│   ├── modals/            # Modal form handlers (submit-song, vote-points)
+│   ├── services/          # External API services (Spotify, Apple Music)
+│   ├── utils/             # Core utilities (storage, permissions, helpers)
+│   ├── types/             # TypeScript type definitions
+│   ├── __tests__/         # Jest test files
+│   ├── constants.ts       # App-wide constants
+│   ├── index.ts           # Bot entry point
+│   └── deploy-commands.ts # Command deployment script
+├── data/                  # JSON storage files (leagues.json)
+├── docs/                  # Documentation (USER_GUIDE.md, etc.)
+└── dist/                  # Compiled JavaScript output
+```
+
+### Key Files
+- `src/utils/storage.ts` - File-based persistence layer
+- `src/types/index.ts` - Core type definitions (League, Round, Submission, etc.)
+- `src/utils/permissions.ts` - Admin authorization checks
+
 ## Required Questions Before Action
 
 ### Tooling & Setup
