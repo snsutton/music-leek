@@ -35,8 +35,8 @@
    - Use `/start-round` to begin a new round
    - Fill out the form with:
      - **Round prompt** (the theme, e.g., "Songs that make you feel nostalgic")
-     - **Submission hours** (default: 72)
-     - **Voting hours** (default: 48)
+     - **Submission days** (default: 7)
+     - **Voting days** (default: 7)
 
 3. **Start Voting**
    - When submissions are in: `/start-voting`
@@ -107,10 +107,6 @@ The voting process has two steps:
 - You have a **budget of 10 points** to distribute
 - Assign 0-10 points to each song
 - You can give all 10 points to one song, or spread them across multiple songs
-- Examples:
-  - Give one song all 10 points: `10, 0, 0`
-  - Spread evenly: `5, 3, 2`
-  - Weighted voting: `7, 2, 1`
 
 **Important:**
 - You cannot exceed 10 total points
@@ -119,7 +115,7 @@ The voting process has two steps:
 - Vote sessions expire after **15 minutes** - complete both steps before the timeout
 - You can change your vote by using `/vote` again (before voting ends)
 
-**Limitation:** If a round has more than 25 submissions, the interactive voting UI won't work due to Discord's select menu limit. Contact an admin to handle this situation.
+**Limitation:** League are limited to 25 participants because if a round has more than 25 submissions, the interactive voting UI won't work due to Discord's select menu limit.
 
 ### Round Phases
 
@@ -127,7 +123,7 @@ Each round has three phases:
 
 1. **Submission Phase**
    - Players submit songs using `/submit-song`
-   - Default duration: 72 hours (configurable by admin)
+   - Default duration: 7 days (configurable by admin)
    - Submissions are private until voting starts
    - One submission per player per round
 
@@ -135,7 +131,7 @@ Each round has three phases:
    - Started by admin using `/start-voting`
    - All submissions are revealed
    - Players vote using the interactive `/vote` system
-   - Default duration: 48 hours (configurable by admin)
+   - Default duration: 7 days (configurable by admin)
    - Votes are always private
 
 3. **Completed**
@@ -244,8 +240,8 @@ Both platforms are supported:
 ### Start Round Modal (Admins)
 
 - **Round Prompt**: The theme (e.g., "Songs that make you feel nostalgic")
-- **Submission Hours**: How long players have to submit (default: 72)
-- **Voting Hours**: How long voting lasts (default: 48)
+- **Submission Days**: How long players have to submit (default: 7)
+- **Voting Days**: How long voting lasts (default: 7)
 
 ## Troubleshooting
 
