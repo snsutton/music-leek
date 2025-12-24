@@ -1,5 +1,6 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder, MessageFlags } from 'discord.js';
 import { Storage } from '../utils/storage';
+import { canAddParticipant, MAX_PARTICIPANTS } from '../utils/permissions';
 
 export const data = new SlashCommandBuilder()
   .setName('join-league')
@@ -21,6 +22,14 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
   if (league.participants.includes(interaction.user.id)) {
     await interaction.reply({ content: 'You are already in this league!', flags: MessageFlags.Ephemeral });
+    return;
+  }
+
+  if (!canAddParticipant(league)) {
+    await interaction.reply({
+      content: `This league is full! Maximum capacity is ${MAX_PARTICIPANTS} participants.`,
+      flags: MessageFlags.Ephemeral
+    });
     return;
   }
 

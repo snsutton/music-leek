@@ -1,6 +1,7 @@
 import { League } from '../types';
 
 export const MAX_ADMINS = 3;
+export const MAX_PARTICIPANTS = 25;
 
 /**
  * Check if a user is an admin of a league
@@ -35,4 +36,11 @@ export function canAddAdmin(league: League): boolean {
  */
 export function isParticipant(league: League, userId: string): boolean {
   return league.participants.includes(userId);
+}
+
+/**
+ * Check if a new participant can be added (not at max limit)
+ */
+export function canAddParticipant(league: League): boolean {
+  return league.participants.length < MAX_PARTICIPANTS;
 }
