@@ -244,6 +244,24 @@ async function startBot() {
   }
 }
 
+// Graceful shutdown handler for Railway zero-downtime deployments
+function gracefulShutdown(signal: string) {
+  console.log(`\n[SHUTDOWN] Received ${signal}, gracefully shutting down...`);
+
+  // Destroy Discord client connection
+  if (client) {
+    console.log('[SHUTDOWN] Closing Discord connection...');
+    client.destroy();
+  }
+
+  console.log('[SHUTDOWN] Shutdown complete');
+  process.exit(0);
+}
+
+// Register signal handlers
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
 // Start the bot with proper error handling
 startBot().catch(error => {
   console.error('Fatal error starting bot:', error);
