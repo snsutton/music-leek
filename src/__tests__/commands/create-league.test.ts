@@ -40,6 +40,8 @@ describe('create-league command', () => {
         channelId: 'channel123',
         createdBy: 'user123',
         participants: ['user123'],
+      totalRounds: 10,
+      isCompleted: false,
       })
     );
   });

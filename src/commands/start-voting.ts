@@ -2,6 +2,8 @@ import { ChatInputCommandInteraction, SlashCommandBuilder, EmbedBuilder, Message
 import { Storage } from '../utils/storage';
 import { getCurrentRound } from '../utils/helpers';
 import { isAdmin } from '../utils/permissions';
+import { NotificationService } from '../services/notification-service';
+import { NotificationTemplates } from '../services/notification-templates';
 
 export const data = new SlashCommandBuilder()
   .setName('start-voting')
@@ -46,6 +48,21 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   round.status = 'voting';
   Storage.saveLeague(league);
 
+  // Send voting started notification to all participants
+  const notificationEmbed = NotificationTemplates.votingStarted(league, round);
+  const results = await NotificationService.sendBulkDM(
+    interaction.client,
+    league.participants,
+    { embeds: [notificationEmbed] },
+    100
+  );
+
+  // Mark notification as sent
+  round.notificationsSent.votingStarted = true;
+  Storage.saveLeague(league);
+
+  const summary = NotificationService.getNotificationSummary(results);
+
   const embed = new EmbedBuilder()
     .setColor(0x1DB954)
     .setTitle(`🎵 Round ${round.roundNumber} - Voting Phase`)
@@ -60,7 +77,9 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   embed.setDescription(embed.data.description + submissionList);
 
   await interaction.reply({
-    content: `🗳️ **Voting has started for Round ${round.roundNumber}!**\n\nReview the submissions and use \`/vote\` to rank your favorites!`,
+    content: `🗳️ **Voting has started for Round ${round.roundNumber}!**\n\n` +
+             `Review the submissions and use \`/vote\` to rank your favorites!\n\n` +
+             `Notifications sent to ${summary.successful}/${summary.total} participants.`,
     embeds: [embed]
   });
 }

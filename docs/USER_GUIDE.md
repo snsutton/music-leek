@@ -50,7 +50,7 @@
    - Add helpers: `/add-admin <user>`
    - Remove helpers: `/remove-admin <user>`
    - View all admins: `/list-admins`
-   - Maximum 5 admins per league
+   - Maximum 3 admins per league
 
 ## Command Reference
 

@@ -8,6 +8,9 @@ export interface League {
   currentRound: number;
   rounds: Round[];
   participants: string[]; // user IDs
+  totalRounds: number; // Total number of rounds planned for this league
+  isCompleted: boolean; // Whether league has finished all rounds
+  completedAt?: number; // Timestamp when league was completed
 }
 
 export interface Round {
@@ -19,6 +22,13 @@ export interface Round {
   votingDeadline: number;
   submissions: Submission[];
   votes: Vote[];
+  notificationsSent: {
+    roundStarted: boolean;
+    submissionReminder: boolean;
+    votingStarted: boolean;
+    votingReminder: boolean;
+    allVotesReceived: boolean;
+  };
 }
 
 export interface Submission {
@@ -60,4 +70,39 @@ export interface ParsedMusicUrl {
   platform: MusicPlatform;
   trackId: string;
   originalUrl: string;
+}
+
+export type NotificationType =
+  | 'league_created'
+  | 'round_started'
+  | 'submission_reminder'
+  | 'voting_started'
+  | 'voting_reminder'
+  | 'league_ended'
+  | 'round_ready_to_start';
+
+export interface NotificationResult {
+  userId: string;
+  success: boolean;
+  error?: string;
+}
+
+export interface LeagueEndResults {
+  winners: Array<{
+    userId: string;
+    totalScore: number;
+    rank: number;
+  }>;
+  roundResults: Array<{
+    roundNumber: number;
+    prompt: string;
+    winners: Array<{
+      userId: string;
+      songTitle: string;
+      artist: string;
+      songUrl: string;
+      points: number;
+      rank: number;
+    }>;
+  }>;
 }

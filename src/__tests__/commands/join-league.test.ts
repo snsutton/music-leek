@@ -32,6 +32,8 @@ describe('join-league command', () => {
       currentRound: 0,
       rounds: [],
       participants: ['user123'],
+      totalRounds: 10,
+      isCompleted: false,
     };
 
     MockStorage.saveLeague(mockLeague);
@@ -51,6 +53,8 @@ describe('join-league command', () => {
     expect(Storage.saveLeague).toHaveBeenCalledWith(
       expect.objectContaining({
         participants: ['user123', 'user456'],
+      totalRounds: 10,
+      isCompleted: false,
       })
     );
   });
@@ -66,6 +70,8 @@ describe('join-league command', () => {
       currentRound: 0,
       rounds: [],
       participants: ['user123'],
+      totalRounds: 10,
+      isCompleted: false,
     };
 
     MockStorage.saveLeague(mockLeague);
@@ -113,6 +119,8 @@ describe('join-league command', () => {
       currentRound: 0,
       rounds: [],
       participants: ['user123'],
+      totalRounds: 10,
+      isCompleted: false,
     };
 
     MockStorage.saveLeague(mockLeague);
@@ -142,6 +150,8 @@ describe('join-league command', () => {
       currentRound: 0,
       rounds: [],
       participants: ['user123'],
+      totalRounds: 10,
+      isCompleted: false,
     };
 
     MockStorage.saveLeague(mockLeague);

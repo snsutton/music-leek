@@ -35,8 +35,17 @@ describe('submit-song-modal', () => {
         votingDeadline: Date.now() + 172800000,
         submissions: [],
         votes: [],
+        notificationsSent: {
+          roundStarted: false,
+          submissionReminder: false,
+          votingStarted: false,
+          votingReminder: false,
+          allVotesReceived: false
+        },
       }],
       participants: ['user123', 'user456'],
+      totalRounds: 10,
+      isCompleted: false,
     };
 
     MockStorage.saveLeague(mockLeague);
@@ -100,8 +109,17 @@ describe('submit-song-modal', () => {
         votingDeadline: Date.now() + 172800000,
         submissions: [],
         votes: [],
+        notificationsSent: {
+          roundStarted: false,
+          submissionReminder: false,
+          votingStarted: false,
+          votingReminder: false,
+          allVotesReceived: false
+        },
       }],
       participants: ['user123'],
+      totalRounds: 10,
+      isCompleted: false,
     };
 
     MockStorage.saveLeague(mockLeague);
@@ -142,8 +160,17 @@ describe('submit-song-modal', () => {
           submittedAt: Date.now(),
         }],
         votes: [],
+        notificationsSent: {
+          roundStarted: false,
+          submissionReminder: false,
+          votingStarted: false,
+          votingReminder: false,
+          allVotesReceived: false
+        },
       }],
       participants: ['user123', 'user456'],
+      totalRounds: 10,
+      isCompleted: false,
     };
 
     MockStorage.saveLeague(mockLeague);
@@ -181,8 +208,17 @@ describe('submit-song-modal', () => {
         votingDeadline: Date.now() + 172800000,
         submissions: [],
         votes: [],
+        notificationsSent: {
+          roundStarted: false,
+          submissionReminder: false,
+          votingStarted: false,
+          votingReminder: false,
+          allVotesReceived: false
+        },
       }],
       participants: ['user123', 'user456'],
+      totalRounds: 10,
+      isCompleted: false,
     };
 
     MockStorage.saveLeague(mockLeague);

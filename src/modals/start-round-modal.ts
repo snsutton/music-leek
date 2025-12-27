@@ -4,6 +4,8 @@ import { Round } from '../types';
 import { getCurrentRound } from '../utils/helpers';
 import { isAdmin } from '../utils/permissions';
 import { DEFAULT_SUBMISSION_DAYS, DEFAULT_VOTING_DAYS } from '../constants';
+import { NotificationService } from '../services/notification-service';
+import { NotificationTemplates } from '../services/notification-templates';
 
 export const customId = 'start-round-modal';
 
@@ -41,23 +43,59 @@ export async function execute(interaction: ModalSubmitInteraction) {
     return;
   }
 
+  // Check if starting round would exceed total rounds
+  const nextRoundNumber = league.rounds.length + 1;
+  if (nextRoundNumber > league.totalRounds) {
+    await interaction.reply({
+      content: `❌ Cannot start round ${nextRoundNumber}. This league is limited to ${league.totalRounds} rounds.\n\nThe league has been completed!`,
+      flags: MessageFlags.Ephemeral
+    });
+    return;
+  }
+
   const now = Date.now();
   const round: Round = {
-    roundNumber: league.rounds.length + 1,
+    roundNumber: nextRoundNumber,
     prompt,
     status: 'submission',
     startedAt: now,
     submissionDeadline: now + (submissionHours * 60 * 60 * 1000),
     votingDeadline: now + ((submissionHours + votingHours) * 60 * 60 * 1000),
     submissions: [],
-    votes: []
+    votes: [],
+    notificationsSent: {
+      roundStarted: false,
+      submissionReminder: false,
+      votingStarted: false,
+      votingReminder: false,
+      allVotesReceived: false
+    }
   };
 
   league.rounds.push(round);
   league.currentRound = league.rounds.length;
   Storage.saveLeague(league);
 
+  // Send round started notification to all participants
+  const embed = NotificationTemplates.roundStarted(league, round);
+  const results = await NotificationService.sendBulkDM(
+    interaction.client,
+    league.participants,
+    { embeds: [embed] },
+    100
+  );
+
+  // Mark notification as sent
+  round.notificationsSent.roundStarted = true;
+  Storage.saveLeague(league);
+
+  const summary = NotificationService.getNotificationSummary(results);
+
   await interaction.reply({
-    content: `🎵 **Round ${round.roundNumber}** has started in **${league.name}**!\n\n**Prompt:** ${prompt}\n**Submission Deadline:** <t:${Math.floor(round.submissionDeadline / 1000)}:F>\n\nUse \`/submit-song\` to submit your entry!`
+    content: `🎵 **Round ${round.roundNumber}** has started in **${league.name}**!\n\n` +
+             `**Prompt:** ${prompt}\n` +
+             `**Submission Deadline:** <t:${Math.floor(round.submissionDeadline / 1000)}:F>\n\n` +
+             `Notifications sent to ${summary.successful}/${summary.total} participants.\n\n` +
+             `Use \`/submit-song\` to submit your entry!`
   });
 }

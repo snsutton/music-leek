@@ -1,7 +1,9 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder, EmbedBuilder, MessageFlags } from 'discord.js';
 import { Storage } from '../utils/storage';
-import { getCurrentRound, calculateScores } from '../utils/helpers';
+import { getCurrentRound, calculateScores, calculateLeagueResults, calculateLeagueStandings } from '../utils/helpers';
 import { isAdmin } from '../utils/permissions';
+import { NotificationService } from '../services/notification-service';
+import { NotificationTemplates } from '../services/notification-templates';
 
 export const data = new SlashCommandBuilder()
   .setName('end-round')
@@ -46,32 +48,56 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   round.status = 'completed';
   Storage.saveLeague(league);
 
-  const scores = calculateScores(round);
-  const sortedScores = Array.from(scores.entries())
-    .sort((a, b) => b[1] - a[1]);
+  // Calculate current league standings
+  const leagueStandings = calculateLeagueStandings(league);
 
-  const embed = new EmbedBuilder()
-    .setColor(0xFFD700)
-    .setTitle(`🏆 Round ${round.roundNumber} Results`)
-    .setDescription(`**Prompt:** ${round.prompt}\n\n**Final Standings:**\n`);
+  // Check if this is the last round
+  const isLastRound = league.currentRound >= league.totalRounds;
 
-  let resultsText = '';
-  sortedScores.forEach(([userId, score], index) => {
-    const submission = round.submissions.find(s => s.userId === userId);
-    const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
+  // Get the league channel
+  const channel = await interaction.client.channels.fetch(league.channelId);
 
-    if (submission) {
-      resultsText += `\n${medal} **${submission.songTitle}** by ${submission.artist}\n`;
-      resultsText += `   Submitted by <@${userId}> - **${score} points**\n`;
-      resultsText += `   ${submission.songUrl}\n`;
-    }
-  });
+  if (!channel || !channel.isTextBased() || channel.isDMBased()) {
+    await interaction.reply({
+      content: 'Could not find league channel!',
+      flags: MessageFlags.Ephemeral
+    });
+    return;
+  }
 
-  embed.setDescription(embed.data.description + resultsText);
-  embed.setFooter({ text: `Votes cast: ${round.votes.length}/${league.participants.length}` });
+  if (isLastRound) {
+    // Mark league as completed
+    league.isCompleted = true;
+    league.completedAt = Date.now();
+    Storage.saveLeague(league);
 
-  await interaction.reply({
-    content: `🎉 **Round ${round.roundNumber} has ended!**`,
-    embeds: [embed]
-  });
+    // Calculate league-wide results
+    const results = calculateLeagueResults(league);
+
+    // Post final round results + league fanfare to channel
+    const fanfareMessage = NotificationTemplates.leagueEndedWithFanfare(league, round, results);
+    await channel.send(fanfareMessage);
+
+    await interaction.reply({
+      content: `🎉 **Round ${round.roundNumber} has ended!**\n\n🏆 **${league.name} has concluded!** Check the channel for final results.`,
+      flags: MessageFlags.Ephemeral
+    });
+  } else {
+    // Post round results + leaderboard to channel
+    const roundMessage = NotificationTemplates.roundEndedWithLeaderboard(league, round, leagueStandings);
+    await channel.send(roundMessage);
+
+    // Notify admins that next round can start
+    const adminEmbed = NotificationTemplates.roundReadyToStart(league);
+    await NotificationService.sendBulkDM(
+      interaction.client,
+      league.admins,
+      { embeds: [adminEmbed] }
+    );
+
+    await interaction.reply({
+      content: `🎉 **Round ${round.roundNumber} has ended!** Results posted to the channel.\n\nAdmins have been notified that Round ${league.currentRound + 1} can begin.`,
+      flags: MessageFlags.Ephemeral
+    });
+  }
 }

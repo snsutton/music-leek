@@ -1,4 +1,4 @@
-import { League, Round, Submission } from '../types';
+import { League, Round, Submission, LeagueEndResults } from '../types';
 
 export function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substring(2);
@@ -77,4 +77,67 @@ export function formatLeaderboard(league: League): string {
   });
 
   return leaderboard || 'No scores yet!';
+}
+
+export function calculateLeagueResults(league: League): LeagueEndResults {
+  const leagueScores = new Map<string, number>();
+  const roundResults = [];
+
+  for (const round of league.rounds) {
+    if (round.status !== 'completed') continue;
+
+    const roundScores = calculateScores(round);
+    const sortedRound = Array.from(roundScores.entries())
+      .sort((a, b) => b[1] - a[1]);
+
+    // Add to league totals
+    for (const [userId, score] of roundScores) {
+      leagueScores.set(userId, (leagueScores.get(userId) || 0) + score);
+    }
+
+    // Build round results (top 5 per round)
+    roundResults.push({
+      roundNumber: round.roundNumber,
+      prompt: round.prompt,
+      winners: sortedRound.slice(0, 5).map(([userId, points], index) => {
+        const sub = round.submissions.find(s => s.userId === userId);
+        return {
+          userId,
+          songTitle: sub?.songTitle || 'Unknown',
+          artist: sub?.artist || 'Unknown',
+          songUrl: sub?.songUrl || '',
+          points,
+          rank: index + 1
+        };
+      })
+    });
+  }
+
+  const sortedLeague = Array.from(leagueScores.entries())
+    .sort((a, b) => b[1] - a[1]);
+
+  return {
+    winners: sortedLeague.map(([userId, totalScore], index) => ({
+      userId,
+      totalScore,
+      rank: index + 1
+    })),
+    roundResults
+  };
+}
+
+export function calculateLeagueStandings(league: League): Map<string, number> {
+  const allScores = new Map<string, number>();
+
+  for (const round of league.rounds) {
+    if (round.status === 'completed') {
+      const roundScores = calculateScores(round);
+      for (const [userId, score] of roundScores) {
+        const current = allScores.get(userId) || 0;
+        allScores.set(userId, current + score);
+      }
+    }
+  }
+
+  return allScores;
 }

@@ -44,8 +44,17 @@ describe('vote-points-modal', () => {
           { userId: 'user789', songUrl: 'url3', songTitle: 'Song 3', artist: 'Artist 3', submittedAt: Date.now() },
         ],
         votes: [],
+        notificationsSent: {
+          roundStarted: false,
+          submissionReminder: false,
+          votingStarted: false,
+          votingReminder: false,
+          allVotesReceived: false
+        },
       }],
       participants: ['user123', 'user456', 'user789'],
+      totalRounds: 10,
+      isCompleted: false,
     };
 
     MockStorage.saveLeague(mockLeague);
@@ -97,8 +106,17 @@ describe('vote-points-modal', () => {
           { userId: 'user456', songUrl: 'url2', songTitle: 'Song 2', artist: 'Artist 2', submittedAt: Date.now() },
         ],
         votes: [],
+        notificationsSent: {
+          roundStarted: false,
+          submissionReminder: false,
+          votingStarted: false,
+          votingReminder: false,
+          allVotesReceived: false
+        },
       }],
       participants: ['user123', 'user456'],
+      totalRounds: 10,
+      isCompleted: false,
     };
 
     MockStorage.saveLeague(mockLeague);
@@ -146,8 +164,17 @@ describe('vote-points-modal', () => {
           { userId: 'user789', songUrl: 'url3', songTitle: 'Song 3', artist: 'Artist 3', submittedAt: Date.now() },
         ],
         votes: [],
+        notificationsSent: {
+          roundStarted: false,
+          submissionReminder: false,
+          votingStarted: false,
+          votingReminder: false,
+          allVotesReceived: false
+        },
       }],
       participants: ['user123', 'user456', 'user789'],
+      totalRounds: 10,
+      isCompleted: false,
     };
 
     MockStorage.saveLeague(mockLeague);
@@ -195,8 +222,17 @@ describe('vote-points-modal', () => {
           { userId: 'user456', songUrl: 'url2', songTitle: 'Song 2', artist: 'Artist 2', submittedAt: Date.now() },
         ],
         votes: [],
+        notificationsSent: {
+          roundStarted: false,
+          submissionReminder: false,
+          votingStarted: false,
+          votingReminder: false,
+          allVotesReceived: false
+        },
       }],
       participants: ['user123', 'user456'],
+      totalRounds: 10,
+      isCompleted: false,
     };
 
     MockStorage.saveLeague(mockLeague);
@@ -235,8 +271,17 @@ describe('vote-points-modal', () => {
           { userId: 'user789', songUrl: 'url2', songTitle: 'Song 2', artist: 'Artist 2', submittedAt: Date.now() },
         ],
         votes: [],
+        notificationsSent: {
+          roundStarted: false,
+          submissionReminder: false,
+          votingStarted: false,
+          votingReminder: false,
+          allVotesReceived: false
+        },
       }],
       participants: ['user456', 'user789'],
+      totalRounds: 10,
+      isCompleted: false,
     };
 
     MockStorage.saveLeague(mockLeague);
@@ -275,8 +320,17 @@ describe('vote-points-modal', () => {
         votingDeadline: Date.now() + 86400000,
         submissions: [],
         votes: [],
+        notificationsSent: {
+          roundStarted: false,
+          submissionReminder: false,
+          votingStarted: false,
+          votingReminder: false,
+          allVotesReceived: false
+        },
       }],
       participants: ['user123', 'user456'],
+      totalRounds: 10,
+      isCompleted: false,
     };
 
     MockStorage.saveLeague(mockLeague);
@@ -318,10 +372,19 @@ describe('vote-points-modal', () => {
           {
             voterId: 'user789',
             votes: [{ submissionIndex: 0, points: 10 }],
+        notificationsSent: {
+          roundStarted: false,
+          submissionReminder: false,
+          votingStarted: false,
+          votingReminder: false,
+          allVotesReceived: false
+        },
           },
         ],
       }],
       participants: ['user123', 'user456', 'user789'],
+      totalRounds: 10,
+      isCompleted: false,
     };
 
     MockStorage.saveLeague(mockLeague);

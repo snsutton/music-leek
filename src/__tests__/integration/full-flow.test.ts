@@ -156,10 +156,24 @@ describe('Full Flow Integration Test', () => {
     expect(league?.rounds[0].votes[0]).toEqual({
       voterId: 'userA',
       votes: [{ submissionIndex: 1, points: 5 }],
+        notificationsSent: {
+          roundStarted: false,
+          submissionReminder: false,
+          votingStarted: false,
+          votingReminder: false,
+          allVotesReceived: false
+        },
     });
     expect(league?.rounds[0].votes[1]).toEqual({
       voterId: 'userB',
       votes: [{ submissionIndex: 0, points: 5 }],
+        notificationsSent: {
+          roundStarted: false,
+          submissionReminder: false,
+          votingStarted: false,
+          votingReminder: false,
+          allVotesReceived: false
+        },
     });
   });
 });

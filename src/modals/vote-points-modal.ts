@@ -3,6 +3,8 @@ import { Storage } from '../utils/storage';
 import { Vote } from '../types';
 import { getCurrentRound } from '../utils/helpers';
 import { VoteSessionManager } from '../utils/vote-sessions';
+import { NotificationService } from '../services/notification-service';
+import { NotificationTemplates } from '../services/notification-templates';
 
 export const customId = 'vote-points-modal';
 
@@ -149,10 +151,27 @@ export async function execute(interaction: ModalSubmitInteraction) {
 
   VoteSessionManager.deleteSession(interaction.user.id, guildId);
 
+  const totalVotes = round.votes.length;
+  const totalParticipants = league.participants.length;
+
   await interaction.reply({
     content: `✅ Your votes have been recorded!\n\n` +
              `Points used: ${totalPoints}/${POINTS_BUDGET}\n` +
-             `Total votes in round: ${round.votes.length}/${league.participants.length}`,
+             `Total votes in round: ${totalVotes}/${totalParticipants}`,
     flags: MessageFlags.Ephemeral
   });
+
+  // Check if all participants have voted
+  if (totalVotes === totalParticipants && !round.notificationsSent.allVotesReceived) {
+    const adminEmbed = NotificationTemplates.allVotesReceived(league, round);
+
+    await NotificationService.sendBulkDM(
+      interaction.client,
+      league.admins,
+      { embeds: [adminEmbed] }
+    );
+
+    round.notificationsSent.allVotesReceived = true;
+    Storage.saveLeague(league);
+  }
 }

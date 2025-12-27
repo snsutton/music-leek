@@ -41,8 +41,17 @@ describe('vote-select component', () => {
           { userId: 'user789', songUrl: 'url3', songTitle: 'Song 3', artist: 'Artist 3', submittedAt: Date.now() },
         ],
         votes: [],
+        notificationsSent: {
+          roundStarted: false,
+          submissionReminder: false,
+          votingStarted: false,
+          votingReminder: false,
+          allVotesReceived: false
+        },
       }],
       participants: ['user123', 'user456', 'user789'],
+      totalRounds: 10,
+      isCompleted: false,
     };
 
     MockStorage.saveLeague(mockLeague);
@@ -99,8 +108,17 @@ describe('vote-select component', () => {
         votingDeadline: Date.now() + 172800000,
         submissions: [],
         votes: [],
+        notificationsSent: {
+          roundStarted: false,
+          submissionReminder: false,
+          votingStarted: false,
+          votingReminder: false,
+          allVotesReceived: false
+        },
       }],
       participants: ['user123', 'user456'],
+      totalRounds: 10,
+      isCompleted: false,
     };
 
     MockStorage.saveLeague(mockLeague);

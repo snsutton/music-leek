@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import express from 'express';
 import { MusicServiceFactory } from './services/music-service-factory';
+import { Scheduler } from './services/scheduler';
 
 // Load .env.local if it exists, otherwise fall back to .env
 dotenv.config({ path: '.env.local' });
@@ -238,6 +239,10 @@ async function startBot() {
 
     // Login to Discord
     await client.login(token);
+
+    // Start scheduler after bot is ready
+    Scheduler.start(client);
+    console.log('Background scheduler started');
   } catch (error) {
     console.error('Failed to start bot:', error);
     process.exit(1);
@@ -247,6 +252,10 @@ async function startBot() {
 // Graceful shutdown handler for Railway zero-downtime deployments
 function gracefulShutdown(signal: string) {
   console.log(`\n[SHUTDOWN] Received ${signal}, gracefully shutting down...`);
+
+  // Stop scheduler
+  Scheduler.stop();
+  console.log('[SHUTDOWN] Scheduler stopped');
 
   // Destroy Discord client connection
   if (client) {
