@@ -10,6 +10,9 @@ import { Scheduler } from './services/scheduler';
 dotenv.config({ path: '.env.local' });
 dotenv.config();
 
+// HTTP server reference for graceful shutdown
+let httpServer: any = null;
+
 interface Command {
   data: {
     name: string;
@@ -217,7 +220,7 @@ if (shouldStartHttpServer) {
       });
     });
 
-    app.listen(PORT, '0.0.0.0', () => {
+    httpServer = app.listen(PORT, '0.0.0.0', () => {
       console.log(`[HTTP] ✓ Health check server listening on port ${PORT}`);
       console.log(`[HTTP] Health endpoint available at http://localhost:${PORT}/health`);
     });
@@ -252,6 +255,13 @@ async function startBot() {
 // Graceful shutdown handler for Railway zero-downtime deployments
 function gracefulShutdown(signal: string) {
   console.log(`\n[SHUTDOWN] Received ${signal}, gracefully shutting down...`);
+
+  // Close HTTP server first to stop accepting new connections
+  if (httpServer) {
+    httpServer.close(() => {
+      console.log('[SHUTDOWN] HTTP server closed');
+    });
+  }
 
   // Stop scheduler
   Scheduler.stop();

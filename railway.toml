@@ -7,7 +7,8 @@ buildCommand = "npm run build"
 
 [deploy]
 # Auto-deploy commands to Discord on startup, then start the bot
-startCommand = "npm start"
+# Use direct node execution to ensure SIGTERM reaches the app (not npm)
+startCommand = "npm run deploy-commands && node dist/index.js"
 
 # Health check endpoint (Express server on port 3000)
 healthcheckPath = "/health"
