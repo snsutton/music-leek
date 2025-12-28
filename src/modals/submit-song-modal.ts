@@ -83,10 +83,13 @@ export async function execute(interaction: ModalSubmitInteraction) {
     return;
   }
 
-  const existingSubmission = round.submissions.find(s => s.userId === interaction.user.id);
-  if (existingSubmission) {
-    await interaction.editReply({ content: 'You have already submitted a song for this round!' });
-    return;
+  // Find and remove existing submission if it exists (allows resubmission)
+  const existingSubmissionIndex = round.submissions.findIndex(s => s.userId === interaction.user.id);
+  const isResubmission = existingSubmissionIndex !== -1;
+
+  if (isResubmission) {
+    // Remove the old submission so the new one can replace it
+    round.submissions.splice(existingSubmissionIndex, 1);
   }
 
   // Step 6: Create submission with auto-filled metadata
@@ -103,10 +106,11 @@ export async function execute(interaction: ModalSubmitInteraction) {
 
   // Step 7: Send confirmation with metadata
   await interaction.editReply({
-    content: `✅ Your submission has been recorded for **${league.name}**!\n\n` +
+    content: `✅ Your submission has been ${isResubmission ? 'updated' : 'recorded'} for **${league.name}**!\n\n` +
              `**${result.title}**\n` +
              `by **${result.artist}**\n` +
              `${result.albumName ? `from *${result.albumName}*\n` : ''}` +
+             `${isResubmission ? '\n*Your previous submission has been replaced.*\n' : ''}` +
              `\nSubmissions: ${round.submissions.length}/${league.participants.length}`
   });
 }

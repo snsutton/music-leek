@@ -1,5 +1,6 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, MessageFlags } from 'discord.js';
 import { Storage } from '../utils/storage';
+import { getCurrentRound } from '../utils/helpers';
 
 export const data = new SlashCommandBuilder()
   .setName('submit-song')
@@ -37,15 +38,48 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     return;
   }
 
+  // Get current round
+  const round = getCurrentRound(league);
+  if (!round) {
+    await interaction.reply({
+      content: 'No active round! Wait for an admin to start one.',
+      flags: MessageFlags.Ephemeral
+    });
+    return;
+  }
+
+  // Validate submission phase is active
+  if (round.status !== 'submission') {
+    await interaction.reply({
+      content: 'Submission phase has ended for this round!',
+      flags: MessageFlags.Ephemeral
+    });
+    return;
+  }
+
+  // Validate deadline hasn't passed
+  if (Date.now() > round.submissionDeadline) {
+    await interaction.reply({
+      content: 'Submission deadline has passed!',
+      flags: MessageFlags.Ephemeral
+    });
+    return;
+  }
+
   const modal = new ModalBuilder()
     .setCustomId(`submit-song-modal:${guildId}`)
-    .setTitle(`Submit to ${league.name}`);
+    .setTitle(`Submit: Round ${round.roundNumber}`);
+
+  // Show theme in placeholder so users see the full prompt
+  const themeTruncated = round.prompt.length > 50
+    ? round.prompt.substring(0, 50) + '...'
+    : round.prompt;
 
   const songUrlInput = new TextInputBuilder()
     .setCustomId('song-url')
-    .setLabel('Song URL (Spotify/Apple Music)')
+    .setLabel('Song URL (Spotify)')
     .setStyle(TextInputStyle.Short)
-    .setPlaceholder('https://open.spotify.com/track/... or https://music.apple.com/...')
+    .setPlaceholder(`Theme: "${themeTruncated}"`)
     .setRequired(true);
 
   const firstActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(songUrlInput);
