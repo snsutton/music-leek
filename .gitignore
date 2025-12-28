@@ -8,3 +8,4 @@ data/*.json
 !data/.gitkeep
 coverage/
 .claude/settings.local.json
+.markdownlint.json
