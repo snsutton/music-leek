@@ -85,7 +85,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     .setDescription(
       `**Prompt:** ${round.prompt}\n\n` +
       (round.playlist
-        ? `🎧 **[Listen to all submissions on Spotify](${round.playlist.playlistUrl})**\n\n`
+        ? `🎧 **[Listen to all submissions with this Spotify playlist](${round.playlist.playlistUrl})**\n\n`
         : ''
       ) +
       `**Submissions:**\n`

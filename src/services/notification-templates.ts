@@ -68,7 +68,7 @@ export class NotificationTemplates {
         `**Prompt:** ${round.prompt}\n` +
         `**Voting Deadline:** <t:${Math.floor(round.votingDeadline / 1000)}:F>\n\n` +
         (round.playlist
-          ? `🎧 **[Listen to all submissions on Spotify](${round.playlist.playlistUrl})**\n\n`
+          ? `🎧 **[Listen to all submissions with this Spotify playlist](${round.playlist.playlistUrl})**\n\n`
           : ''
         ) +
         `Review the submissions and use \`/vote\` in the league channel to rank your favorites!`
@@ -89,7 +89,7 @@ export class NotificationTemplates {
         `**Prompt:** "${round.prompt}"\n` +
         `**Deadline:** <t:${Math.floor(round.votingDeadline / 1000)}:F>\n\n` +
         (round.playlist
-          ? `🎧 **[Listen to all submissions on Spotify](${round.playlist.playlistUrl})**\n\n`
+          ? `🎧 **[Listen to all submissions with this Spotify playlist](${round.playlist.playlistUrl})**\n\n`
           : ''
         ) +
         `Make sure to cast your votes using \`/vote\` in the league channel!`
