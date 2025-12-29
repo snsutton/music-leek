@@ -41,10 +41,14 @@ export function extractSongInfo(url: string): { songTitle: string; artist: strin
 export function calculateScores(round: Round): Map<string, number> {
   const scores = new Map<string, number>();
 
+  // Get set of user IDs who voted in this round
+  const voterIds = new Set(round.votes.map(vote => vote.voterId));
+
   for (const vote of round.votes) {
     for (const v of vote.votes) {
       const submission = round.submissions[v.submissionIndex];
-      if (submission) {
+      // Only award points if the submission owner also voted in this round
+      if (submission && voterIds.has(submission.userId)) {
         const currentScore = scores.get(submission.userId) || 0;
         scores.set(submission.userId, currentScore + v.points);
       }

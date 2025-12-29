@@ -372,15 +372,15 @@ describe('vote-points-modal', () => {
           {
             voterId: 'user789',
             votes: [{ submissionIndex: 0, points: 10 }],
+          },
+        ],
         notificationsSent: {
           roundStarted: false,
           submissionReminder: false,
           votingStarted: false,
           votingReminder: false,
-          allVotesReceived: false
+          allVotesReceived: false,
         },
-          },
-        ],
       }],
       participants: ['user123', 'user456', 'user789'],
       totalRounds: 10,
