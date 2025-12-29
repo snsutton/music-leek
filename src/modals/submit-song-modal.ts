@@ -1,7 +1,7 @@
 import { ModalSubmitInteraction, MessageFlags } from 'discord.js';
 import { Storage } from '../utils/storage';
 import { Submission } from '../types';
-import { getCurrentRound } from '../utils/helpers';
+import { getCurrentRound, getMissingSubmitters } from '../utils/helpers';
 import { parseMusicUrl } from '../utils/url-validator';
 import { MusicServiceFactory } from '../services/music-service-factory';
 
@@ -103,6 +103,61 @@ export async function execute(interaction: ModalSubmitInteraction) {
 
   round.submissions.push(submission);
   Storage.saveLeague(league);
+
+  // Send public confirmation message to the channel
+  try {
+    const channel = await interaction.client.channels.fetch(league.channelId);
+    if (channel && channel.isTextBased() && !channel.isDMBased()) {
+      // Calculate missing submitters
+      const missingSubmitterIds = getMissingSubmitters(league, round);
+
+      // Fetch usernames for missing submitters
+      const usernameResults = await Promise.allSettled(
+        missingSubmitterIds.map(id => interaction.client.users.fetch(id))
+      );
+
+      const missingUsernames = usernameResults.map((result, index) => {
+        if (result.status === 'fulfilled') {
+          return result.value.username;
+        }
+        return `Unknown User`;
+      });
+
+      // Build confirmation message
+      let confirmationMessage = `✅ **${interaction.user.username}** just submitted their song!\n\n`;
+      confirmationMessage += `**Submissions received:** ${round.submissions.length}/${league.participants.length}\n`;
+
+      if (missingSubmitterIds.length > 0) {
+        // Handle Discord's 2000 char limit
+        const maxLength = 1500;
+        let usernameList = missingUsernames.join(', ');
+
+        if (usernameList.length > maxLength) {
+          // Truncate and show count
+          const truncated = [];
+          let currentLength = 0;
+
+          for (const username of missingUsernames) {
+            if (currentLength + username.length + 2 > maxLength) break;
+            truncated.push(username);
+            currentLength += username.length + 2;
+          }
+
+          const remaining = missingUsernames.length - truncated.length;
+          usernameList = truncated.join(', ') + ` ... and ${remaining} more`;
+        }
+
+        confirmationMessage += `\n**Still waiting for:** ${usernameList}`;
+      } else {
+        confirmationMessage += `\n🎉 **All submissions are in!**`;
+      }
+
+      await channel.send(confirmationMessage);
+    }
+  } catch (error) {
+    console.error('Failed to send public confirmation:', error);
+    // Don't block user's ephemeral confirmation
+  }
 
   // Step 7: Send confirmation with metadata
   await interaction.editReply({

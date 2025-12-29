@@ -30,6 +30,16 @@ export function formatLeagueStatus(league: League): string {
 **Submissions:** ${round.submissions.length}/${league.participants.length}`;
 }
 
+export function getMissingSubmitters(league: League, round: Round): string[] {
+  const submitterIds = new Set(round.submissions.map(s => s.userId));
+  return league.participants.filter(id => !submitterIds.has(id));
+}
+
+export function getMissingVoters(league: League, round: Round): string[] {
+  const voterIds = new Set(round.votes.map(v => v.voterId));
+  return league.participants.filter(id => !voterIds.has(id));
+}
+
 export function extractSongInfo(url: string): { songTitle: string; artist: string } {
   // Basic parsing - can be enhanced with actual API integration
   return {
