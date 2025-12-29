@@ -1,8 +1,9 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder, MessageFlags } from 'discord.js';
+import { ChatInputCommandInteraction, SlashCommandBuilder, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { Storage } from '../utils/storage';
 import { League } from '../types';
 import { NotificationService } from '../services/notification-service';
 import { NotificationTemplates } from '../services/notification-templates';
+import { SpotifyOAuthService } from '../services/spotify-oauth-service';
 
 export const data = new SlashCommandBuilder()
   .setName('create-league')
@@ -60,7 +61,33 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   const embed = NotificationTemplates.leagueCreated(league);
   await NotificationService.sendDM(interaction.client, interaction.user.id, { embeds: [embed] });
 
-  await interaction.reply({
-    content: `🎵 **${name}** has been created with ${totalRounds} rounds!\n\nYou've automatically joined as a participant and admin.\nUse \`/start-round\` to begin the first round!`
-  });
+  // Prompt user to connect Spotify
+  try {
+    const authUrl = SpotifyOAuthService.generateAuthUrl(interaction.user.id, interaction.guildId);
+
+    const button = new ButtonBuilder()
+      .setLabel('Connect Spotify Account')
+      .setStyle(ButtonStyle.Link)
+      .setURL(authUrl);
+
+    const row = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(button);
+
+    await interaction.reply({
+      content: `🎵 **${name}** has been created with ${totalRounds} rounds!\n\n` +
+               `You've automatically joined as a participant and admin.\n\n` +
+               `**Next Step:** Connect your Spotify account to enable automatic playlist creation for voting rounds.\n` +
+               `Click the button below to authorize Music Leek:`,
+      components: [row]
+    });
+  } catch (error) {
+    console.error('[CreateLeague] Failed to generate Spotify auth URL:', error);
+
+    // Fallback if Spotify OAuth isn't configured
+    await interaction.reply({
+      content: `🎵 **${name}** has been created with ${totalRounds} rounds!\n\n` +
+               `You've automatically joined as a participant and admin.\n` +
+               `Use \`/start-round\` to begin the first round!`
+    });
+  }
 }

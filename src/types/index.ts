@@ -11,6 +11,11 @@ export interface League {
   totalRounds: number; // Total number of rounds planned for this league
   isCompleted: boolean; // Whether league has finished all rounds
   completedAt?: number; // Timestamp when league was completed
+  spotifyIntegration?: {
+    userId: string; // Spotify user ID (e.g., "abc123xyz")
+    connectedBy: string; // Discord user ID who connected
+    connectedAt: number; // Unix timestamp
+  };
 }
 
 export interface Round {
@@ -28,6 +33,12 @@ export interface Round {
     votingStarted: boolean;
     votingReminder: boolean;
     allVotesReceived: boolean;
+  };
+  playlist?: {
+    playlistId: string; // Spotify playlist ID
+    playlistUrl: string; // Full URL to playlist
+    createdAt: number; // Unix timestamp
+    trackCount: number; // Number of tracks added
   };
 }
 
@@ -105,4 +116,18 @@ export interface LeagueEndResults {
       rank: number;
     }>;
   }>;
+}
+
+export interface SpotifyTokenData {
+  accessToken: string; // OAuth access token for Spotify API
+  refreshToken: string; // Used to get new access token when expired
+  expiresAt: number; // Unix timestamp (tokens expire after 1 hour)
+  scope: string[]; // Permissions granted by user
+  tokenType: 'Bearer';
+}
+
+export interface TokenStorage {
+  spotify: {
+    [discordUserId: string]: SpotifyTokenData;
+  };
 }

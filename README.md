@@ -13,12 +13,9 @@ A Discord bot for music sharing and voting - a game where participants submit so
 - 🎵 Create and manage music leagues
 - 🎯 Start themed rounds with custom prompts
 - 📝 Submit songs using interactive modal forms
-- 🎼 Automatic song metadata from Spotify/Apple Music URLs
+- 🎼 Automatic song metadata from Spotify Music URLs
 - 🗳️ Vote on submissions with visual submission lists
 - 📊 Automatic scoring and leaderboards
-- 💬 Full DM support - submit and vote privately!
-- 🎨 Modern modal-based UI for better user experience
-- 🌐 Support for multiple leagues per server and across servers
 
 ## Setup
 

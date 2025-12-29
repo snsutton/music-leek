@@ -67,6 +67,10 @@ export class NotificationTemplates {
         `Submissions are in! It's time to vote in **${league.name}**.\n\n` +
         `**Prompt:** ${round.prompt}\n` +
         `**Voting Deadline:** <t:${Math.floor(round.votingDeadline / 1000)}:F>\n\n` +
+        (round.playlist
+          ? `🎧 **[Listen to all submissions on Spotify](${round.playlist.playlistUrl})**\n\n`
+          : ''
+        ) +
         `Review the submissions and use \`/vote\` in the league channel to rank your favorites!`
       )
       .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
@@ -84,6 +88,10 @@ export class NotificationTemplates {
         `You have approximately 24 hours left to vote in **${league.name}**!\n\n` +
         `**Prompt:** "${round.prompt}"\n` +
         `**Deadline:** <t:${Math.floor(round.votingDeadline / 1000)}:F>\n\n` +
+        (round.playlist
+          ? `🎧 **[Listen to all submissions on Spotify](${round.playlist.playlistUrl})**\n\n`
+          : ''
+        ) +
         `Make sure to cast your votes using \`/vote\` in the league channel!`
       )
       .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })

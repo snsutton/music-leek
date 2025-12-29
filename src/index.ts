@@ -220,6 +220,135 @@ if (shouldStartHttpServer) {
       });
     });
 
+    // Spotify OAuth callback
+    app.get('/spotify/callback', async (req, res) => {
+      const { code, state, error } = req.query;
+
+      if (error) {
+        console.error(`[HTTP] Spotify OAuth error: ${error}`);
+        res.status(400).send(`
+          <!DOCTYPE html>
+          <html>
+          <head><title>Spotify Connection Failed</title></head>
+          <body style="font-family: sans-serif; text-align: center; padding: 50px;">
+            <h1>❌ Connection Failed</h1>
+            <p>Error: ${error}</p>
+            <p>Please try again in Discord.</p>
+          </body>
+          </html>
+        `);
+        return;
+      }
+
+      if (!code || !state || typeof code !== 'string' || typeof state !== 'string') {
+        res.status(400).send('Missing or invalid code/state parameters');
+        return;
+      }
+
+      try {
+        const { SpotifyOAuthService } = await import('./services/spotify-oauth-service');
+        const { Storage } = await import('./utils/storage');
+        const result = await SpotifyOAuthService.handleCallback(code, state);
+
+        console.log(`[HTTP] Spotify OAuth successful for Discord user ${result.discordUserId}`);
+
+        // Update league with Spotify integration
+        const league = Storage.getLeagueByGuild(result.guildId);
+        if (league) {
+          league.spotifyIntegration = {
+            userId: result.spotifyUserId,
+            connectedBy: result.discordUserId,
+            connectedAt: Date.now()
+          };
+          Storage.saveLeague(league);
+          console.log(`[HTTP] Updated league ${league.name} with Spotify integration`);
+        }
+
+        res.send(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Spotify Connected</title>
+            <style>
+              body { font-family: sans-serif; text-align: center; padding: 50px; background-color: #f5f5f5; }
+              .container { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 500px; margin: 0 auto; }
+              h1 { color: #1DB954; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h1>✅ Spotify Connected Successfully!</h1>
+              <p>You can now close this window and return to Discord.</p>
+              <p>Music Leek can now create playlists for your league.</p>
+            </div>
+          </body>
+          </html>
+        `);
+      } catch (error) {
+        console.error('[HTTP] Spotify OAuth callback error:', error);
+        res.status(500).send(`
+          <!DOCTYPE html>
+          <html>
+          <head><title>Connection Failed</title></head>
+          <body style="font-family: sans-serif; text-align: center; padding: 50px;">
+            <h1>❌ Connection Failed</h1>
+            <p>An error occurred while connecting your Spotify account.</p>
+            <p>Please try again in Discord.</p>
+          </body>
+          </html>
+        `);
+      }
+    });
+
+    // Privacy policy (required by Spotify)
+    app.get('/privacy', (req, res) => {
+      res.send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Music Leek - Privacy Policy</title>
+          <style>
+            body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 40px; line-height: 1.6; }
+            h1 { color: #1DB954; }
+          </style>
+        </head>
+        <body>
+          <h1>Music Leek Privacy Policy</h1>
+          <p><strong>Last updated:</strong> ${new Date().toLocaleDateString()}</p>
+
+          <h2>What We Store</h2>
+          <p>Music Leek stores only the information necessary to create Spotify playlists on your behalf:</p>
+          <ul>
+            <li>Your Spotify user ID</li>
+            <li>OAuth access and refresh tokens (encrypted)</li>
+          </ul>
+
+          <h2>What We Don't Access</h2>
+          <p>We do NOT access or store:</p>
+          <ul>
+            <li>Your Spotify password</li>
+            <li>Your listening history</li>
+            <li>Your saved songs or playlists (except playlists we create for you)</li>
+            <li>Your payment information</li>
+            <li>Your email address or personal information</li>
+          </ul>
+
+          <h2>How We Use Your Data</h2>
+          <p>We use your Spotify tokens exclusively to create playlists containing submitted songs when voting begins in your Music Leek league.</p>
+
+          <h2>Data Security</h2>
+          <p>All OAuth tokens are encrypted at rest using AES-256 encryption.</p>
+
+          <h2>Revoking Access</h2>
+          <p>You can revoke Music Leek's access to your Spotify account at any time through your Spotify account settings.</p>
+
+          <h2>Contact</h2>
+          <p>For questions about this privacy policy, please create an issue on our GitHub repository.</p>
+        </body>
+        </html>
+      `);
+    });
+
     httpServer = app.listen(PORT, '0.0.0.0', () => {
       console.log(`[HTTP] ✓ Health check server listening on port ${PORT}`);
       console.log(`[HTTP] Health endpoint available at http://localhost:${PORT}/health`);

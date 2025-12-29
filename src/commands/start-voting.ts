@@ -4,6 +4,7 @@ import { getCurrentRound } from '../utils/helpers';
 import { isAdmin } from '../utils/permissions';
 import { NotificationService } from '../services/notification-service';
 import { NotificationTemplates } from '../services/notification-templates';
+import { SpotifyPlaylistService } from '../services/spotify-playlist-service';
 
 export const data = new SlashCommandBuilder()
   .setName('start-voting')
@@ -45,6 +46,21 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     return;
   }
 
+  // Create Spotify playlist if integration exists
+  if (league.spotifyIntegration) {
+    try {
+      console.log(`[StartVoting] Creating Spotify playlist for round ${round.roundNumber}...`);
+      const playlistData = await SpotifyPlaylistService.createRoundPlaylist(league, round);
+      if (playlistData) {
+        round.playlist = playlistData;
+        console.log(`[StartVoting] Playlist created: ${playlistData.playlistUrl}`);
+      }
+    } catch (error) {
+      console.error('[StartVoting] Failed to create playlist:', error);
+      // Continue with voting anyway - playlist creation failure shouldn't block voting
+    }
+  }
+
   round.status = 'voting';
   Storage.saveLeague(league);
 
@@ -66,7 +82,14 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   const embed = new EmbedBuilder()
     .setColor(0x1DB954)
     .setTitle(`🎵 Round ${round.roundNumber} - Voting Phase`)
-    .setDescription(`**Prompt:** ${round.prompt}\n\n**Submissions:**\n`)
+    .setDescription(
+      `**Prompt:** ${round.prompt}\n\n` +
+      (round.playlist
+        ? `🎧 **[Listen to all submissions on Spotify](${round.playlist.playlistUrl})**\n\n`
+        : ''
+      ) +
+      `**Submissions:**\n`
+    )
     .setFooter({ text: `Use /vote to cast your votes! Deadline: ${new Date(round.votingDeadline).toLocaleString()}` });
 
   let submissionList = '';

@@ -59,9 +59,16 @@ Create a `.env` file in the project root:
 DISCORD_TOKEN=your_bot_token_here
 DISCORD_CLIENT_ID=your_client_id_here
 
-# Optional - Spotify support
+# Spotify API - Required for Spotify URL support
 SPOTIFY_CLIENT_ID=your_spotify_client_id
 SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
+
+# Spotify OAuth - Required for automatic playlist creation
+SPOTIFY_REDIRECT_URI=https://your-app.railway.app/spotify/callback
+TOKEN_ENCRYPTION_KEY=your-random-32-character-encryption-key
+
+# For local development, create .env.local and override:
+# SPOTIFY_REDIRECT_URI=http://localhost:3000/spotify/callback
 
 # Optional - Apple Music support (requires $99/year Apple Developer account)
 APPLE_MUSIC_TEAM_ID=your_apple_team_id
@@ -70,6 +77,35 @@ APPLE_MUSIC_PRIVATE_KEY=your_private_key_content
 ```
 
 **Important:** The `.env` file is already in `.gitignore` and will never be committed to git.
+
+**Tip for Development:** Create a `.env.local` file to override any variables for local development (like `DISCORD_CLIENT_ID` and `SPOTIFY_REDIRECT_URI`). The bot loads `.env.local` first, then falls back to `.env`.
+
+#### Getting Spotify Credentials
+
+1. **Create a Spotify App:**
+   - Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
+   - Click "Create App"
+   - Fill in:
+     - **App name:** Music Leek (or your choice)
+     - **App description:** Discord bot for music leagues
+     - **Redirect URI:** `http://127.0.0.1:3000/spotify/callback` (you'll add production URI later)
+   - Accept terms and click "Save"
+
+2. **Get Client ID and Secret:**
+   - In your app's dashboard, click "Settings"
+   - Copy the **Client ID** → Use for `SPOTIFY_CLIENT_ID`
+   - Click "View client secret" → Copy → Use for `SPOTIFY_CLIENT_SECRET`
+
+3. **Generate Encryption Key:**
+   ```bash
+   # Generate a random 32-character key (Linux/Mac)
+   openssl rand -base64 32
+
+   # Or on Windows PowerShell
+   -join ((65..90) + (97..122) + (48..57) | Get-Random -Count 32 | % {[char]$_})
+
+   # Use the output for TOKEN_ENCRYPTION_KEY
+   ```
 
 ### Step 3: Build and Deploy Commands
 
@@ -205,9 +241,24 @@ Your bot will fail initially because it's missing the Discord token. Let's add i
 
    **Spotify API (Required for Spotify URL support):**
    - **Name:** `SPOTIFY_CLIENT_ID`
-     - **Value:** `your_spotify_client_id`
+     - **Value:** `your_spotify_client_id` (from Spotify Developer Dashboard)
    - **Name:** `SPOTIFY_CLIENT_SECRET`
-     - **Value:** `your_spotify_client_secret`
+     - **Value:** `your_spotify_client_secret` (from Spotify Developer Dashboard)
+
+   **Spotify OAuth (Required for automatic playlist creation):**
+   - **Name:** `SPOTIFY_REDIRECT_URI`
+     - **Value:** `https://YOUR-APP-NAME.railway.app/spotify/callback`
+     - Replace `YOUR-APP-NAME` with your Railway app's domain (found in Settings → Domains, you may need to select Generate Domain)
+   - **Name:** `TOKEN_ENCRYPTION_KEY`
+     - **Value:** Generate a random 32+ character string:
+       ```bash
+       # Linux/Mac
+       openssl rand -base64 32
+
+       # Windows PowerShell
+       -join ((65..90) + (97..122) + (48..57) | Get-Random -Count 32 | % {[char]$_})
+       ```
+     - **IMPORTANT:** Keep this secret secure! Anyone with this key can decrypt stored tokens.
 
    **Apple Music API (Optional - requires $99/year Apple Developer account):**
    - **Name:** `APPLE_MUSIC_TEAM_ID`
@@ -219,7 +270,16 @@ Your bot will fail initially because it's missing the Discord token. Let's add i
 
    > **Note:** If you skip the Spotify credentials, users will see "Spotify support is not configured on this bot" when submitting Spotify URLs. Apple Music credentials are optional.
 
-3. **Redeploy:**
+3. **Update Spotify App Settings:**
+   - Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
+   - Click on your app → Settings
+   - Under **Redirect URIs**, add your Railway callback URL:
+     - Click **"Add"**
+     - Paste: `https://YOUR-APP-NAME.railway.app/spotify/callback`
+     - Get your Railway domain from: Railway Dashboard → Settings → Domains
+   - Click **"Save"**
+
+4. **Redeploy:**
    - Railway automatically redeploys when you add variables
    - Wait 30-60 seconds for deployment to complete
 
@@ -242,7 +302,7 @@ Commands are automatically deployed on startup (configured in package.json).
      ```
    - If it works, your bot is live!
 
-**Pushing your code to GitHub triggers a new Railway deployment.** 
+**Pushing your code to GitHub triggers a new Railway deployment.**
 
 ---
 
@@ -274,19 +334,23 @@ This ensures league data persists across deployments by storing it in the mounte
 
 ### Environment Variables Reference
 
-| Variable | Required | Description |
-| --- | --- | --- |
-| `DISCORD_TOKEN` | Yes | Your Discord bot token |
-| `DISCORD_CLIENT_ID` | Yes | Your Discord application ID |
-| `SPOTIFY_CLIENT_ID` | Yes* | Spotify API client ID (required for Spotify URL support) |
-| `SPOTIFY_CLIENT_SECRET` | Yes* | Spotify API client secret (required for Spotify URL support) |
-| `APPLE_MUSIC_TEAM_ID` | No | Apple Developer Team ID (optional, for Apple Music support) |
-| `APPLE_MUSIC_KEY_ID` | No | Apple MusicKit Key ID (optional, for Apple Music support) |
-| `APPLE_MUSIC_PRIVATE_KEY` | No | Apple MusicKit private key content from .p8 file (optional) |
-| `DATA_DIR` | No | Path to data directory (default: `./data`) |
-| `NODE_ENV` | No | Set to `production` for production mode |
+| Variable | Required | Description | Where to Get It |
+| --- | --- | --- | --- |
+| `DISCORD_TOKEN` | Yes | Your Discord bot token | [Discord Developer Portal](https://discord.com/developers/applications) → Your App → Bot |
+| `DISCORD_CLIENT_ID` | Yes | Your Discord application ID | [Discord Developer Portal](https://discord.com/developers/applications) → Your App → General Information |
+| `SPOTIFY_CLIENT_ID` | Yes* | Spotify API client ID | [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) → Your App → Settings |
+| `SPOTIFY_CLIENT_SECRET` | Yes* | Spotify API client secret | [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) → Your App → Settings → View client secret |
+| `SPOTIFY_REDIRECT_URI` | Yes** | OAuth callback URL | `https://YOUR-APP.railway.app/spotify/callback` (use localhost for local dev) |
+| `TOKEN_ENCRYPTION_KEY` | Yes** | Secret key for token encryption | Generate: `openssl rand -base64 32` or similar random string |
+| `APPLE_MUSIC_TEAM_ID` | No | Apple Developer Team ID | Apple Developer Account (optional) |
+| `APPLE_MUSIC_KEY_ID` | No | Apple MusicKit Key ID | Apple Developer Account (optional) |
+| `APPLE_MUSIC_PRIVATE_KEY` | No | Apple MusicKit private key | Contents of .p8 file from Apple Developer (optional) |
+| `DATA_DIR` | No | Path to data directory | Set to `/app/data` if using Railway volumes (default: `./data`) |
+| `NODE_ENV` | No | Set to `production` for production | Set automatically by Railway |
 
 \* Required if you want users to be able to submit Spotify URLs. Without these, users will see "Spotify support is not configured on this bot" error.
+
+\*\* Required for automatic Spotify playlist creation feature. Without these, playlists won't be created but the bot will still function normally.
 
 ---
 
