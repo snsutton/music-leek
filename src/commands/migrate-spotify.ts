@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 import { Storage } from '../utils/storage';
+import { League } from '../types';
 import { TokenStorageService } from '../services/token-storage';
 import axios from 'axios';
 
@@ -14,10 +15,10 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
   try {
     // Check if user is an admin of any league
-    const leagues = Storage.getLeagues();
-    const userLeagues = leagues.filter(league =>
+    const leagues = Storage.getAllLeagues();
+    const userLeagues = leagues.filter((league: League) =>
       league.guildId === interaction.guildId &&
-      league.adminId === interaction.user.id
+      league.admins.includes(interaction.user.id)
     );
 
     if (userLeagues.length === 0) {
@@ -46,11 +47,10 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       await interaction.editReply({
         content: '❌ You need to connect your Spotify account first.\n\n' +
                  '**Steps:**\n' +
-                 '1. Create a temporary test league: `/create-league name:SpotifyTest total-rounds:1`\n' +
+                 '1. Run `/connect-spotify`\n' +
                  '2. Click the "Connect Spotify Account" button\n' +
                  '3. Authorize on Spotify\n' +
-                 '4. Run this command again\n' +
-                 '5. Delete the test league: `/delete-league`'
+                 '4. Run this command again'
       });
       return;
     }
@@ -68,7 +68,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       console.error('[MigrateSpotify] Failed to get Spotify user ID:', error.response?.data || error.message);
       await interaction.editReply({
         content: '❌ Failed to verify your Spotify account. Your token may have expired.\n\n' +
-                 'Please reconnect your Spotify account by creating a temporary league.'
+                 'Please reconnect using `/connect-spotify`.'
       });
       return;
     }
@@ -83,7 +83,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     // Save the updated league
     Storage.saveLeague(league);
 
-    console.log(`[MigrateSpotify] Successfully migrated league "${league.name}" (ID: ${league.id}) for user ${interaction.user.id}, Spotify ID: ${spotifyUserId}`);
+    console.log(`[MigrateSpotify] Successfully migrated league "${league.name}" for user ${interaction.user.id}, Spotify ID: ${spotifyUserId}`);
 
     await interaction.editReply({
       content: `✅ **Migration successful!**\n\n` +
