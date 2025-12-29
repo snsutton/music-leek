@@ -155,3 +155,51 @@ export function calculateLeagueStandings(league: League): Map<string, number> {
 
   return allScores;
 }
+
+/**
+ * Normalize song title and artist for cross-platform duplicate detection.
+ * Handles variations in capitalization, whitespace, special characters, and featured artists.
+ *
+ * @param title - Song title
+ * @param artist - Artist name(s)
+ * @returns Normalized identifier string in format "title::artist"
+ */
+export function normalizeSongIdentifier(title: string, artist: string): string {
+  if (!title || !artist) {
+    return '';
+  }
+
+  // Normalize title: lowercase, remove parenthetical content, special chars, normalize whitespace
+  const normalizedTitle = title
+    .toLowerCase()
+    .trim()
+    // Remove content in parentheses/brackets (often features/versions)
+    .replace(/\s*[\(\[\{].*?[\)\]\}]\s*/g, ' ')
+    // Remove special characters but keep spaces
+    .replace(/[^\w\s]/g, ' ')
+    // Normalize whitespace
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  // Normalize artist: lowercase, handle featuring indicators, split and sort
+  const normalizedArtist = artist
+    .toLowerCase()
+    .trim()
+    // Remove featuring/feat/ft indicators and replace with comma
+    .replace(/\b(feat\.?|ft\.?|featuring|with)\b/gi, ',')
+    // Split by common delimiters
+    .split(/[,&]/)
+    // Clean each artist name
+    .map(name => name
+      .replace(/[^\w\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+    )
+    // Remove empty entries
+    .filter(name => name.length > 0)
+    // Sort alphabetically for consistent comparison
+    .sort()
+    .join(' ');
+
+  return `${normalizedTitle}::${normalizedArtist}`;
+}

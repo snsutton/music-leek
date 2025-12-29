@@ -1,7 +1,7 @@
 import { ModalSubmitInteraction, MessageFlags } from 'discord.js';
 import { Storage } from '../utils/storage';
 import { Submission } from '../types';
-import { getCurrentRound, getMissingSubmitters } from '../utils/helpers';
+import { getCurrentRound, getMissingSubmitters, normalizeSongIdentifier } from '../utils/helpers';
 import { parseMusicUrl } from '../utils/url-validator';
 import { MusicServiceFactory } from '../services/music-service-factory';
 
@@ -83,7 +83,31 @@ export async function execute(interaction: ModalSubmitInteraction) {
     return;
   }
 
-  // Find and remove existing submission if it exists (allows resubmission)
+  // Step 6: Check for duplicate songs by other players
+  const newSongIdentifier = normalizeSongIdentifier(result.title, result.artist);
+
+  const duplicateSubmission = round.submissions.find(s => {
+    // Skip the current user's submission (they can change their own song)
+    if (s.userId === interaction.user.id) {
+      return false;
+    }
+
+    // Compare normalized identifiers
+    const existingIdentifier = normalizeSongIdentifier(s.songTitle, s.artist);
+    return existingIdentifier === newSongIdentifier;
+  });
+
+  if (duplicateSubmission) {
+    await interaction.editReply({
+      content: `❌ This song has already been submitted by another player!\n\n` +
+               `**${result.title}**\n` +
+               `by **${result.artist}**\n\n` +
+               `Please choose a different song.`
+    });
+    return;
+  }
+
+  // Step 7: Find and remove existing submission if it exists (allows resubmission)
   const existingSubmissionIndex = round.submissions.findIndex(s => s.userId === interaction.user.id);
   const isResubmission = existingSubmissionIndex !== -1;
 
@@ -92,7 +116,7 @@ export async function execute(interaction: ModalSubmitInteraction) {
     round.submissions.splice(existingSubmissionIndex, 1);
   }
 
-  // Step 6: Create submission with auto-filled metadata
+  // Step 8: Create submission with auto-filled metadata
   const submission: Submission = {
     userId: interaction.user.id,
     songUrl: parsedUrl.originalUrl,
@@ -159,7 +183,7 @@ export async function execute(interaction: ModalSubmitInteraction) {
     // Don't block user's ephemeral confirmation
   }
 
-  // Step 7: Send confirmation with metadata
+  // Step 9: Send confirmation with metadata
   await interaction.editReply({
     content: `✅ Your submission has been ${isResubmission ? 'updated' : 'recorded'} for **${league.name}**!\n\n` +
              `**${result.title}**\n` +
