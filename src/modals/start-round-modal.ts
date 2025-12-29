@@ -1,4 +1,4 @@
-import { ModalSubmitInteraction, MessageFlags } from 'discord.js';
+import { ModalSubmitInteraction, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { Storage } from '../utils/storage';
 import { Round } from '../types';
 import { getCurrentRound } from '../utils/helpers';
@@ -6,6 +6,7 @@ import { isAdmin } from '../utils/permissions';
 import { DEFAULT_SUBMISSION_DAYS, DEFAULT_VOTING_DAYS } from '../constants';
 import { NotificationService } from '../services/notification-service';
 import { NotificationTemplates } from '../services/notification-templates';
+import { SpotifyOAuthService } from '../services/spotify-oauth-service';
 
 export const customId = 'start-round-modal';
 
@@ -51,6 +52,75 @@ export async function execute(interaction: ModalSubmitInteraction) {
       flags: MessageFlags.Ephemeral
     });
     return;
+  }
+
+  // Check if this is the first round and Spotify is required
+  const isFirstRound = league.rounds.length === 0;
+  if (isFirstRound) {
+    // Check if Spotify integration exists
+    if (!league.spotifyIntegration) {
+      try {
+        const authUrl = SpotifyOAuthService.generateAuthUrl(league.createdBy, interaction.guildId);
+
+        const button = new ButtonBuilder()
+          .setLabel('Connect Spotify Account')
+          .setStyle(ButtonStyle.Link)
+          .setURL(authUrl);
+
+        const row = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(button);
+
+        await interaction.reply({
+          content: '🎵 **Spotify Connection Required**\n\n' +
+                   'Before starting the first round, you need to connect a Spotify account to enable automatic playlist creation during voting rounds.\n\n' +
+                   'Click the button below to connect your Spotify account:',
+          components: [row],
+          flags: MessageFlags.Ephemeral
+        });
+      } catch (error) {
+        console.error('[StartRound] Failed to generate Spotify auth URL:', error);
+        await interaction.reply({
+          content: '❌ **Configuration Error**\n\n' +
+                   'Spotify integration is not properly configured on this bot. Please contact the bot administrator.\n\n' +
+                   'The first round cannot be started without Spotify integration.',
+          flags: MessageFlags.Ephemeral
+        });
+      }
+      return;
+    }
+
+    // Check if the token is still valid
+    try {
+      const validToken = await SpotifyOAuthService.getValidToken(league.createdBy);
+      if (!validToken) {
+        const authUrl = SpotifyOAuthService.generateAuthUrl(league.createdBy, interaction.guildId);
+
+        const button = new ButtonBuilder()
+          .setLabel('Reconnect Spotify Account')
+          .setStyle(ButtonStyle.Link)
+          .setURL(authUrl);
+
+        const row = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(button);
+
+        await interaction.reply({
+          content: '🎵 **Spotify Connection Expired**\n\n' +
+                   'Your Spotify connection has expired or is no longer valid. Please reconnect your account to start the first round.\n\n' +
+                   'Click the button below to reconnect:',
+          components: [row],
+          flags: MessageFlags.Ephemeral
+        });
+        return;
+      }
+    } catch (error) {
+      console.error('[StartRound] Error validating Spotify token:', error);
+      await interaction.reply({
+        content: '❌ **Error Checking Spotify Connection**\n\n' +
+                 'An error occurred while validating your Spotify connection. Please try again later or contact the bot administrator.',
+        flags: MessageFlags.Ephemeral
+      });
+      return;
+    }
   }
 
   const now = Date.now();
