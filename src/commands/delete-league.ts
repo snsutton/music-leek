@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder, MessageFlags } from 'discord.js';
+import { ChatInputCommandInteraction, SlashCommandBuilder, MessageFlags, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } from 'discord.js';
 import { Storage } from '../utils/storage';
 import { isCreator } from '../utils/permissions';
 
@@ -25,17 +25,19 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     return;
   }
 
-  const leagueName = league.name;
-  const success = Storage.deleteLeague(interaction.guildId);
+  const modal = new ModalBuilder()
+    .setCustomId(`delete-league-modal:${interaction.guildId}`)
+    .setTitle('⚠️ Confirm League Deletion');
 
-  if (success) {
-    await interaction.reply({
-      content: `🗑️ League **${leagueName}** has been deleted.`
-    });
-  } else {
-    await interaction.reply({
-      content: 'Failed to delete the league. Please try again.',
-      flags: MessageFlags.Ephemeral
-    });
-  }
+  const confirmInput = new TextInputBuilder()
+    .setCustomId('league-name-confirmation')
+    .setLabel(`Type "${league.name}" to confirm deletion`)
+    .setStyle(TextInputStyle.Short)
+    .setPlaceholder(league.name)
+    .setRequired(true);
+
+  const actionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(confirmInput);
+  modal.addComponents(actionRow);
+
+  await interaction.showModal(modal);
 }
