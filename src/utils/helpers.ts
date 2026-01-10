@@ -33,6 +33,10 @@ export function formatLeagueStatus(league: League): string {
     statusText += `\n**Votes:** ${round.votes.length}/${league.participants.length}`;
   }
 
+  if (round.playlist?.playlistUrl) {
+    statusText += `\n**Playlist:** ${round.playlist.playlistUrl}`;
+  }
+
   return statusText;
 }
 
