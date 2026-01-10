@@ -1,3 +1,9 @@
+export interface ThemeSubmission {
+  userId: string;
+  theme: string;
+  submittedAt: number;
+}
+
 export interface League {
   name: string;
   guildId: string;
@@ -21,15 +27,20 @@ export interface League {
 export interface Round {
   roundNumber: number;
   prompt: string;
-  status: 'submission' | 'voting' | 'completed';
+  adminPrompt?: string; // Admin's original prompt (used as fallback if no themes submitted)
+  status: 'theme-submission' | 'submission' | 'voting' | 'completed';
   startedAt: number;
+  themeSubmissionDeadline?: number; // 24h from round start
   submissionDeadline: number;
   votingDeadline: number;
   votingDurationMs?: number; // Duration of voting phase in milliseconds (for recalculating deadline when voting starts early)
+  themeSubmissions?: ThemeSubmission[]; // Theme ideas submitted by players
   submissions: Submission[];
   votes: Vote[];
   notificationsSent: {
     roundStarted: boolean;
+    themeSubmissionReminder?: boolean; // 24h before theme deadline
+    themeSelected?: boolean; // When theme is selected (auto or manual)
     submissionReminder: boolean;
     votingStarted: boolean;
     votingReminder: boolean;
@@ -87,6 +98,8 @@ export interface ParsedMusicUrl {
 export type NotificationType =
   | 'league_created'
   | 'round_started'
+  | 'theme_submission_reminder'
+  | 'theme_selected'
   | 'submission_reminder'
   | 'voting_started'
   | 'voting_reminder'

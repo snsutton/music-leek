@@ -127,18 +127,30 @@ export async function execute(interaction: ModalSubmitInteraction) {
   }
 
   const now = Date.now();
+  const themeDeadline = now + (24 * 60 * 60 * 1000); // Fixed 24h for theme phase
   const round: Round = {
     roundNumber: nextRoundNumber,
-    prompt,
-    status: 'submission',
+    prompt: '', // Empty initially - will be set when theme is selected
+    adminPrompt: prompt, // Store admin's prompt as fallback
+    status: 'theme-submission', // Start in theme submission phase
     startedAt: now,
-    submissionDeadline: now + (submissionHours * 60 * 60 * 1000),
-    votingDeadline: now + ((submissionHours + votingHours) * 60 * 60 * 1000), // Placeholder - will be recalculated when voting starts
+    themeSubmissionDeadline: themeDeadline,
+    submissionDeadline: themeDeadline + (submissionHours * 60 * 60 * 1000),
+    votingDeadline: themeDeadline + ((submissionHours + votingHours) * 60 * 60 * 1000), // Placeholder - will be recalculated when voting starts
     votingDurationMs: votingHours * 60 * 60 * 1000, // Store voting duration for recalculation
+    themeSubmissions: [
+      {
+        userId: interaction.user.id,
+        theme: prompt,
+        submittedAt: now
+      }
+    ], // Include admin's theme in the drawing
     submissions: [],
     votes: [],
     notificationsSent: {
       roundStarted: false,
+      themeSubmissionReminder: false,
+      themeSelected: false,
       submissionReminder: false,
       votingStarted: false,
       votingReminder: false,
@@ -150,8 +162,8 @@ export async function execute(interaction: ModalSubmitInteraction) {
   league.currentRound = league.rounds.length;
   Storage.saveLeague(league);
 
-  // Send round started notification to all participants
-  const embed = NotificationTemplates.roundStarted(league, round);
+  // Send round started notification to all participants (with theme phase)
+  const embed = NotificationTemplates.roundStartedWithThemePhase(league, round);
   const results = await NotificationService.sendBulkDM(
     interaction.client,
     league.participants,
@@ -169,9 +181,11 @@ export async function execute(interaction: ModalSubmitInteraction) {
 
   await interaction.reply({
     content: `🎵 **Round ${round.roundNumber}** has started in **${league.name}**!\n\n` +
-             `**Prompt:** ${prompt}\n` +
-             `**Submission Deadline:** <t:${Math.floor(round.submissionDeadline / 1000)}:F>\n\n` +
+             `**Theme Submission Phase:** Players have 24 hours to submit theme ideas!\n` +
+             `**Theme Deadline:** <t:${Math.floor(round.themeSubmissionDeadline! / 1000)}:F>\n\n` +
+             `Your fallback theme has been submitted and will be included in the random drawing.\n` +
+             `**Themes submitted:** 1/${league.participants.length}\n\n` +
              `Notifications sent to ${summary.successful}/${summary.total} participants.\n\n` +
-             `Use \`/submit-song\` to submit your entry!`
+             `Players can use \`/submit-theme\` to submit their theme ideas!`
   });
 }

@@ -1,5 +1,5 @@
 import { EmbedBuilder } from 'discord.js';
-import { League, Round, LeagueEndResults } from '../types';
+import { League, Round, LeagueEndResults, ThemeSubmission } from '../types';
 import { calculateScores } from '../utils/helpers';
 
 /**
@@ -34,6 +34,74 @@ export class NotificationTemplates {
         `**Prompt:** ${round.prompt}\n\n` +
         `**Submission Deadline:** <t:${Math.floor(round.submissionDeadline / 1000)}:F>\n\n` +
         `Submit your song using \`/submit-song\` in the league channel!`
+      )
+      .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
+      .setTimestamp();
+  }
+
+  /**
+   * DM Notification: Round started with theme submission phase
+   */
+  static roundStartedWithThemePhase(league: League, round: Round): EmbedBuilder {
+    return new EmbedBuilder()
+      .setColor(0x3498DB)
+      .setTitle(`🎵 Round ${round.roundNumber} Started in ${league.name}!`)
+      .setDescription(
+        `**Theme Submission Phase**\n\n` +
+        `For the next 24 hours, submit your theme ideas using \`/submit-theme\` in the league channel!\n\n` +
+        `**Theme Deadline:** <t:${Math.floor(round.themeSubmissionDeadline! / 1000)}:F>\n\n` +
+        `After the deadline, one theme will be randomly selected and you'll submit songs based on that theme.`
+      )
+      .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
+      .setTimestamp();
+  }
+
+  /**
+   * DM Notification: Theme submission reminder (24h notice)
+   */
+  static themeSubmissionReminder(league: League, round: Round): EmbedBuilder {
+    return new EmbedBuilder()
+      .setColor(0xF39C12)
+      .setTitle(`⏰ Reminder: Theme Submissions Due Soon!`)
+      .setDescription(
+        `You have approximately 24 hours left to submit a theme idea for **${league.name}**!\n\n` +
+        `**Deadline:** <t:${Math.floor(round.themeSubmissionDeadline! / 1000)}:F>\n\n` +
+        `Don't miss out! Use \`/submit-theme\` in the league channel to submit your idea.`
+      )
+      .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
+      .setTimestamp();
+  }
+
+  /**
+   * DM Notification: Theme selected (random)
+   */
+  static themeSelected(league: League, round: Round, selectedTheme: ThemeSubmission): EmbedBuilder {
+    return new EmbedBuilder()
+      .setColor(0x2ECC71)
+      .setTitle(`🎲 Theme Selected for Round ${round.roundNumber}!`)
+      .setDescription(
+        `The theme has been randomly selected from all submissions!\n\n` +
+        `**"${round.prompt}"**\n\n` +
+        `Submitted by <@${selectedTheme.userId}>\n\n` +
+        `Now it's time to submit your song! Use \`/submit-song\` in the league channel.\n\n` +
+        `**Song Submission Deadline:** <t:${Math.floor(round.submissionDeadline / 1000)}:F>`
+      )
+      .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
+      .setTimestamp();
+  }
+
+  /**
+   * DM Notification: Theme selected (fallback - admin's original)
+   */
+  static themeSelectedFallback(league: League, round: Round): EmbedBuilder {
+    return new EmbedBuilder()
+      .setColor(0xE67E22)
+      .setTitle(`📋 Theme Set for Round ${round.roundNumber}`)
+      .setDescription(
+        `No themes were submitted during the theme phase.\n\n` +
+        `Using admin's original prompt:\n**"${round.prompt}"**\n\n` +
+        `Now it's time to submit your song! Use \`/submit-song\` in the league channel.\n\n` +
+        `**Song Submission Deadline:** <t:${Math.floor(round.submissionDeadline / 1000)}:F>`
       )
       .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
       .setTimestamp();
@@ -248,27 +316,31 @@ export class NotificationTemplates {
     let spoilerText = '\n';
     const top3 = results.winners.slice(0, 3);
 
-    spoilerText += `||🏆 **LEAGUE CHAMPION** 🏆||\n`;
-    spoilerText += `||🥇 <@${top3[0].userId}> - **${top3[0].totalScore} total points**||\n\n`;
+    if (top3.length > 0) {
+      spoilerText += `||🏆 **LEAGUE CHAMPION** 🏆||\n`;
+      spoilerText += `||🥇 <@${top3[0].userId}> - **${top3[0].totalScore} total points**||\n\n`;
 
-    if (top3.length > 1) {
-      spoilerText += `||🥈 Runner-up: <@${top3[1].userId}> - **${top3[1].totalScore} points**||\n`;
-    }
-    if (top3.length > 2) {
-      spoilerText += `||🥉 Third Place: <@${top3[2].userId}> - **${top3[2].totalScore} points**||\n\n`;
-    }
-
-    // Add round-by-round results
-    spoilerText += `||**📜 Round-by-Round Results**||\n\n`;
-
-    for (const roundResult of results.roundResults) {
-      spoilerText += `||**Round ${roundResult.roundNumber}: ${roundResult.prompt}**||\n`;
-
-      for (const winner of roundResult.winners.slice(0, 3)) {
-        const medal = winner.rank === 1 ? '🥇' : winner.rank === 2 ? '🥈' : '🥉';
-        spoilerText += `||  ${medal} ${winner.songTitle} - <@${winner.userId}> (${winner.points} pts)||\n`;
+      if (top3.length > 1) {
+        spoilerText += `||🥈 Runner-up: <@${top3[1].userId}> - **${top3[1].totalScore} points**||\n`;
       }
-      spoilerText += '\n';
+      if (top3.length > 2) {
+        spoilerText += `||🥉 Third Place: <@${top3[2].userId}> - **${top3[2].totalScore} points**||\n\n`;
+      }
+
+      // Add round-by-round results
+      spoilerText += `||**📜 Round-by-Round Results**||\n\n`;
+
+      for (const roundResult of results.roundResults) {
+        spoilerText += `||**Round ${roundResult.roundNumber}: ${roundResult.prompt}**||\n`;
+
+        for (const winner of roundResult.winners.slice(0, 3)) {
+          const medal = winner.rank === 1 ? '🥇' : winner.rank === 2 ? '🥈' : '🥉';
+          spoilerText += `||  ${medal} ${winner.songTitle} - <@${winner.userId}> (${winner.points} pts)||\n`;
+        }
+        spoilerText += '\n';
+      }
+    } else {
+      spoilerText = '\nNo standings to display - no completed rounds with votes.';
     }
 
     fanfareEmbed.addFields({

@@ -79,6 +79,23 @@ export class Scheduler {
       const round = getCurrentRound(league);
       if (!round) continue;
 
+      // Check theme submission reminder
+      if (round.status === 'theme-submission' && !round.notificationsSent.themeSubmissionReminder && round.themeSubmissionDeadline) {
+        const timeUntilDeadline = round.themeSubmissionDeadline - now;
+
+        if (timeUntilDeadline >= this.REMINDER_WINDOW_MIN &&
+            timeUntilDeadline <= this.REMINDER_WINDOW_MAX) {
+          await this.sendThemeSubmissionReminder(client, league, round);
+          remindersCount++;
+        }
+      }
+
+      // Auto-select theme when deadline passes
+      if (round.status === 'theme-submission' && round.themeSubmissionDeadline && now > round.themeSubmissionDeadline) {
+        await this.autoSelectTheme(client, league, round);
+        remindersCount++;
+      }
+
       // Check submission reminder
       if (round.status === 'submission' && !round.notificationsSent.submissionReminder) {
         const timeUntilDeadline = round.submissionDeadline - now;
@@ -109,6 +126,34 @@ export class Scheduler {
     }
 
     console.log(`[Scheduler] ✓ Check complete. Sent ${remindersCount} reminders.`);
+  }
+
+  /**
+   * Send theme submission deadline reminder
+   */
+  private static async sendThemeSubmissionReminder(
+    client: Client,
+    league: League,
+    round: Round
+  ): Promise<void> {
+    console.log(`[Scheduler] Sending theme submission reminder for ${league.name} Round ${round.roundNumber}`);
+
+    const embed = NotificationTemplates.themeSubmissionReminder(league, round);
+    const results = await NotificationService.sendBulkDM(
+      client,
+      league.participants,
+      { embeds: [embed] },
+      100,
+      league.guildId,
+      'theme_submission_reminder'
+    );
+
+    // Mark as sent
+    round.notificationsSent.themeSubmissionReminder = true;
+    Storage.saveLeague(league);
+
+    const summary = NotificationService.getNotificationSummary(results);
+    console.log(`[Scheduler] Theme submission reminder sent to ${summary.successful}/${summary.total} participants`);
   }
 
   /**
@@ -231,5 +276,88 @@ export class Scheduler {
     } catch (error) {
       console.error(`[Scheduler] Error auto-ending round for ${league.name}:`, error);
     }
+  }
+
+  /**
+   * Automatically select theme when deadline passes
+   */
+  private static async autoSelectTheme(
+    client: Client,
+    league: League,
+    round: Round
+  ): Promise<void> {
+    console.log(`[Scheduler] Auto-selecting theme for ${league.name} Round ${round.roundNumber}`);
+
+    if (round.themeSubmissions && round.themeSubmissions.length > 0) {
+      // Random selection from submitted themes
+      const randomIndex = Math.floor(Math.random() * round.themeSubmissions.length);
+      const selectedTheme = round.themeSubmissions[randomIndex];
+      round.prompt = selectedTheme.theme;
+
+      // Post to channel
+      try {
+        const channel = await client.channels.fetch(league.channelId);
+        if (channel && channel.isTextBased() && !channel.isDMBased()) {
+          await channel.send(
+            `🎲 **Theme selected for Round ${round.roundNumber}!**\n\n` +
+            `**"${selectedTheme.theme}"**\n\n` +
+            `Submitted by <@${selectedTheme.userId}>\n\n` +
+            `Get ready to submit your songs! Deadline: <t:${Math.floor(round.submissionDeadline / 1000)}:F>`
+          );
+        }
+      } catch (error) {
+        console.error(`[Scheduler] Error posting theme selection to channel:`, error);
+      }
+
+      // Send DM notifications
+      const embed = NotificationTemplates.themeSelected(league, round, selectedTheme);
+      await NotificationService.sendBulkDM(
+        client,
+        league.participants,
+        { embeds: [embed] },
+        100,
+        league.guildId,
+        'theme_selected'
+      );
+
+      console.log(`[Scheduler] Theme selected: "${selectedTheme.theme}" by ${selectedTheme.userId}`);
+    } else {
+      // No themes submitted - use admin's original prompt as fallback
+      round.prompt = round.adminPrompt || 'No theme provided';
+
+      // Post to channel
+      try {
+        const channel = await client.channels.fetch(league.channelId);
+        if (channel && channel.isTextBased() && !channel.isDMBased()) {
+          await channel.send(
+            `⚠️ **No themes were submitted!**\n\n` +
+            `Using admin's original prompt:\n**"${round.prompt}"**\n\n` +
+            `Get ready to submit your songs! Deadline: <t:${Math.floor(round.submissionDeadline / 1000)}:F>`
+          );
+        }
+      } catch (error) {
+        console.error(`[Scheduler] Error posting theme fallback to channel:`, error);
+      }
+
+      // Send DM notifications
+      const embed = NotificationTemplates.themeSelectedFallback(league, round);
+      await NotificationService.sendBulkDM(
+        client,
+        league.participants,
+        { embeds: [embed] },
+        100,
+        league.guildId,
+        'theme_selected'
+      );
+
+      console.log(`[Scheduler] No themes submitted - using admin prompt: "${round.prompt}"`);
+    }
+
+    // Transition to submission phase
+    round.status = 'submission';
+    round.notificationsSent.themeSelected = true;
+    Storage.saveLeague(league);
+
+    console.log(`[Scheduler] Theme selected and transitioned to submission phase`);
   }
 }

@@ -9,7 +9,7 @@ import { resolveGuildContext } from '../utils/dm-context';
 
 export const data = new SlashCommandBuilder()
   .setName('start-voting')
-  .setDescription('Start the voting phase (admin only)')
+  .setDescription('End song submission phase and start voting early (admin only)')
   .setDMPermission(true);
 
 export async function execute(interaction: ChatInputCommandInteraction) {

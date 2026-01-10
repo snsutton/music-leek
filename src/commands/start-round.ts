@@ -27,14 +27,14 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
   const promptInput = new TextInputBuilder()
     .setCustomId('prompt')
-    .setLabel('Round Prompt')
+    .setLabel('Your Theme Submission')
     .setStyle(TextInputStyle.Paragraph)
     .setPlaceholder('e.g., "Songs that make you feel nostalgic"')
     .setRequired(true);
 
   const submissionDaysInput = new TextInputBuilder()
     .setCustomId('submission-days')
-    .setLabel(`Submission Days (default: ${DEFAULT_SUBMISSION_DAYS})`)
+    .setLabel(`Song Submission Days (default: ${DEFAULT_SUBMISSION_DAYS})`)
     .setStyle(TextInputStyle.Short)
     .setPlaceholder(String(DEFAULT_SUBMISSION_DAYS))
     .setValue(String(DEFAULT_SUBMISSION_DAYS))

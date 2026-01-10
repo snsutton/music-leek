@@ -15,19 +15,28 @@ export function formatLeagueStatus(league: League): string {
     return `**${league.name}**\nNo active rounds. Use \`/start-round\` to begin!`;
   }
 
-  const status = round.status === 'submission' ? 'Submission Phase' :
+  const status = round.status === 'theme-submission' ? 'Theme Submission Phase' :
+                 round.status === 'submission' ? 'Song Submission Phase' :
                  round.status === 'voting' ? 'Voting Phase' : 'Completed';
 
-  const deadline = round.status === 'submission' ? round.submissionDeadline : round.votingDeadline;
+  const deadline = round.status === 'theme-submission' ? (round.themeSubmissionDeadline || round.submissionDeadline) :
+                   round.status === 'submission' ? round.submissionDeadline : round.votingDeadline;
   const timeLeft = deadline - Date.now();
   const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
   const daysLeft = Math.floor(hoursLeft / 24);
 
-  let statusText = `**${league.name}** - Round ${round.roundNumber}
-**Theme:** ${round.prompt}
-**Status:** ${status}
-**Time Remaining:** ${daysLeft}d ${hoursLeft % 24}h
-**Submissions:** ${round.submissions.length}/${league.participants.length}`;
+  let statusText = `**${league.name}** - Round ${round.roundNumber}\n`;
+
+  if (round.status === 'theme-submission') {
+    statusText += `**Status:** ${status}\n`;
+    statusText += `**Time Remaining:** ${daysLeft}d ${hoursLeft % 24}h\n`;
+    statusText += `**Theme Submissions:** ${round.themeSubmissions?.length || 0}/${league.participants.length}`;
+  } else {
+    statusText += `**Theme:** ${round.prompt}\n`;
+    statusText += `**Status:** ${status}\n`;
+    statusText += `**Time Remaining:** ${daysLeft}d ${hoursLeft % 24}h\n`;
+    statusText += `**Submissions:** ${round.submissions.length}/${league.participants.length}`;
+  }
 
   if (round.status === 'voting') {
     statusText += `\n**Votes:** ${round.votes.length}/${league.participants.length}`;
