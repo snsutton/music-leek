@@ -1,19 +1,22 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, MessageFlags } from 'discord.js';
 import { Storage } from '../utils/storage';
 import { getCurrentRound } from '../utils/helpers';
+import { resolveGuildContext } from '../utils/dm-context';
 
 export const data = new SlashCommandBuilder()
   .setName('submit-song')
   .setDescription('Submit a song for the current round (opens DM)')
-  .setDMPermission(false);
+  .setDMPermission(true);
 
 export async function execute(interaction: ChatInputCommandInteraction) {
-  // This command can be used in server or DM, but we need a guildId
-  const guildId = interaction.guildId;
+  // Resolve guild context (server or DM)
+  const { guildId } = resolveGuildContext(interaction);
 
   if (!guildId) {
     await interaction.reply({
-      content: 'Please run this command from the server where the league is hosted!',
+      content: '❌ This command requires league context.\n\n' +
+               'Please run this command from the server where your league is hosted, ' +
+               'or wait for a notification from your league.',
       flags: MessageFlags.Ephemeral
     });
     return;

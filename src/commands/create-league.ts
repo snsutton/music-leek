@@ -59,7 +59,13 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
   // Send DM notification to creator
   const embed = NotificationTemplates.leagueCreated(league);
-  await NotificationService.sendDM(interaction.client, interaction.user.id, { embeds: [embed] });
+  await NotificationService.sendDM(
+    interaction.client,
+    interaction.user.id,
+    { embeds: [embed] },
+    league.guildId,
+    'league_created'
+  );
 
   // Prompt user to connect Spotify
   try {

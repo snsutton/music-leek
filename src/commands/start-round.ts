@@ -1,14 +1,28 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } from 'discord.js';
+import { ChatInputCommandInteraction, SlashCommandBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, MessageFlags } from 'discord.js';
 import { DEFAULT_SUBMISSION_DAYS, DEFAULT_VOTING_DAYS } from '../constants';
+import { resolveGuildContext } from '../utils/dm-context';
 
 export const data = new SlashCommandBuilder()
   .setName('start-round')
   .setDescription('Start a new round in the league (admin only)')
-  .setDMPermission(false);
+  .setDMPermission(true);
 
 export async function execute(interaction: ChatInputCommandInteraction) {
+  // Resolve guild context (server or DM)
+  const { guildId } = resolveGuildContext(interaction);
+
+  if (!guildId) {
+    await interaction.reply({
+      content: '❌ This command requires league context.\n\n' +
+               'Please run this command from the server where your league is hosted, ' +
+               'or wait for a notification from your league.',
+      flags: MessageFlags.Ephemeral
+    });
+    return;
+  }
+
   const modal = new ModalBuilder()
-    .setCustomId('start-round-modal')
+    .setCustomId(`start-round-modal:${guildId}`)
     .setTitle('Start a New Round');
 
   const promptInput = new TextInputBuilder()

@@ -5,19 +5,28 @@ import { isAdmin } from '../utils/permissions';
 import { NotificationService } from '../services/notification-service';
 import { NotificationTemplates } from '../services/notification-templates';
 import { SpotifyPlaylistService } from '../services/spotify-playlist-service';
+import { resolveGuildContext } from '../utils/dm-context';
 
 export const data = new SlashCommandBuilder()
   .setName('start-voting')
   .setDescription('Start the voting phase (admin only)')
-  .setDMPermission(false);
+  .setDMPermission(true);
 
 export async function execute(interaction: ChatInputCommandInteraction) {
-  if (!interaction.guildId) {
-    await interaction.reply({ content: 'This command can only be used in a server!', flags: MessageFlags.Ephemeral });
+  // Resolve guild context (server or DM)
+  const { guildId } = resolveGuildContext(interaction);
+
+  if (!guildId) {
+    await interaction.reply({
+      content: '❌ This command requires league context.\n\n' +
+               'Please run this command from the server where your league is hosted, ' +
+               'or wait for a notification from your league.',
+      flags: MessageFlags.Ephemeral
+    });
     return;
   }
 
-  const league = Storage.getLeagueByGuild(interaction.guildId);
+  const league = Storage.getLeagueByGuild(guildId);
 
   if (!league) {
     await interaction.reply({ content: 'No league found for this server!', flags: MessageFlags.Ephemeral });
@@ -77,7 +86,9 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     interaction.client,
     league.participants,
     { embeds: [notificationEmbed] },
-    100
+    100,
+    league.guildId,
+    'voting_started'
   );
 
   // Mark notification as sent

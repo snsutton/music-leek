@@ -4,6 +4,7 @@ import { getCurrentRound, calculateScores, calculateLeagueResults, calculateLeag
 import { League, Round } from '../types';
 import { NotificationService } from './notification-service';
 import { NotificationTemplates } from './notification-templates';
+import { DmContextManager } from '../utils/dm-context';
 
 /**
  * Background scheduler that checks for upcoming deadlines every hour
@@ -14,6 +15,7 @@ export class Scheduler {
   private static readonly CHECK_INTERVAL = 60 * 60 * 1000; // 1 hour
   private static readonly REMINDER_WINDOW_MIN = 24 * 60 * 60 * 1000; // 24 hours
   private static readonly REMINDER_WINDOW_MAX = 36 * 60 * 60 * 1000; // 36 hours
+  private static lastCleanupDate: string = '';
 
   /**
    * Start the scheduler
@@ -57,6 +59,14 @@ export class Scheduler {
    */
   private static async checkDeadlines(client: Client): Promise<void> {
     console.log('[Scheduler] Checking deadlines...');
+
+    // Daily DM context cleanup
+    const today = new Date().toDateString();
+    if (this.lastCleanupDate !== today) {
+      DmContextManager.cleanupExpired();
+      this.lastCleanupDate = today;
+      console.log('[Scheduler] Cleaned up expired DM contexts');
+    }
 
     const leagues = Storage.getAllLeagues();
     const now = Date.now();
@@ -116,7 +126,9 @@ export class Scheduler {
       client,
       league.participants,
       { embeds: [embed] },
-      100
+      100,
+      league.guildId,
+      'submission_reminder'
     );
 
     // Mark as sent
@@ -142,7 +154,9 @@ export class Scheduler {
       client,
       league.participants,
       { embeds: [embed] },
-      100
+      100,
+      league.guildId,
+      'voting_reminder'
     );
 
     // Mark as sent
@@ -206,7 +220,10 @@ export class Scheduler {
         await NotificationService.sendBulkDM(
           client,
           league.admins,
-          { embeds: [adminEmbed] }
+          { embeds: [adminEmbed] },
+          100,
+          league.guildId,
+          'round_ready_to_start'
         );
 
         console.log(`[Scheduler] Round ${round.roundNumber} ended for ${league.name}`);

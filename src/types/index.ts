@@ -132,3 +132,14 @@ export interface TokenStorage {
     [discordUserId: string]: SpotifyTokenData;
   };
 }
+
+export interface DmContext {
+  userId: string;
+  guildId: string;
+  lastNotificationAt: number;
+  notificationType: string;
+}
+
+export interface DmContextStorage {
+  contexts: { [userId: string]: DmContext };
+}

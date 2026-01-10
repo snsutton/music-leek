@@ -1,19 +1,28 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder, EmbedBuilder, MessageFlags } from 'discord.js';
 import { Storage } from '../utils/storage';
 import { formatLeaderboard } from '../utils/helpers';
+import { resolveGuildContext } from '../utils/dm-context';
 
 export const data = new SlashCommandBuilder()
   .setName('leaderboard')
   .setDescription('Display the overall league leaderboard')
-  .setDMPermission(false);
+  .setDMPermission(true);
 
 export async function execute(interaction: ChatInputCommandInteraction) {
-  if (!interaction.guildId) {
-    await interaction.reply({ content: 'This command can only be used in a server!', flags: MessageFlags.Ephemeral });
+  // Resolve guild context (server or DM)
+  const { guildId } = resolveGuildContext(interaction);
+
+  if (!guildId) {
+    await interaction.reply({
+      content: '❌ This command requires league context.\n\n' +
+               'Please run this command from the server where your league is hosted, ' +
+               'or wait for a notification from your league.',
+      flags: MessageFlags.Ephemeral
+    });
     return;
   }
 
-  const league = Storage.getLeagueByGuild(interaction.guildId);
+  const league = Storage.getLeagueByGuild(guildId);
 
   if (!league) {
     await interaction.reply({ content: 'No league found for this server! Use `/create-league` to create one.', flags: MessageFlags.Ephemeral });

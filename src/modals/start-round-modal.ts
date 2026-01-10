@@ -21,12 +21,15 @@ export async function execute(interaction: ModalSubmitInteraction) {
   const submissionHours = submissionDays * 24;
   const votingHours = votingDays * 24;
 
-  if (!interaction.guildId) {
+  // Extract guildId from customId (format: start-round-modal:guildId)
+  const guildId = interaction.customId.split(':')[1] || interaction.guildId;
+
+  if (!guildId) {
     await interaction.reply({ content: 'This command can only be used in a server!', flags: MessageFlags.Ephemeral });
     return;
   }
 
-  const league = Storage.getLeagueByGuild(interaction.guildId);
+  const league = Storage.getLeagueByGuild(guildId);
 
   if (!league) {
     await interaction.reply({ content: 'No league found for this server! Use `/create-league` to create one.', flags: MessageFlags.Ephemeral });
@@ -60,7 +63,7 @@ export async function execute(interaction: ModalSubmitInteraction) {
     // Check if Spotify integration exists
     if (!league.spotifyIntegration) {
       try {
-        const authUrl = SpotifyOAuthService.generateAuthUrl(league.createdBy, interaction.guildId);
+        const authUrl = SpotifyOAuthService.generateAuthUrl(league.createdBy, guildId);
 
         const button = new ButtonBuilder()
           .setLabel('Connect Spotify Account')
@@ -93,7 +96,7 @@ export async function execute(interaction: ModalSubmitInteraction) {
     try {
       const validToken = await SpotifyOAuthService.getValidToken(league.createdBy);
       if (!validToken) {
-        const authUrl = SpotifyOAuthService.generateAuthUrl(league.createdBy, interaction.guildId);
+        const authUrl = SpotifyOAuthService.generateAuthUrl(league.createdBy, guildId);
 
         const button = new ButtonBuilder()
           .setLabel('Reconnect Spotify Account')
@@ -153,7 +156,9 @@ export async function execute(interaction: ModalSubmitInteraction) {
     interaction.client,
     league.participants,
     { embeds: [embed] },
-    100
+    100,
+    league.guildId,
+    'round_started'
   );
 
   // Mark notification as sent

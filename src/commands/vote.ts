@@ -1,22 +1,28 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder, StringSelectMenuBuilder, ActionRowBuilder, MessageFlags } from 'discord.js';
 import { Storage } from '../utils/storage';
 import { getCurrentRound } from '../utils/helpers';
+import { resolveGuildContext } from '../utils/dm-context';
 
 export const data = new SlashCommandBuilder()
   .setName('vote')
   .setDescription('Vote for songs in the current round')
-  .setDMPermission(false);
+  .setDMPermission(true);
 
 export async function execute(interaction: ChatInputCommandInteraction) {
-  if (!interaction.guildId) {
+  // Resolve guild context (server or DM)
+  const { guildId } = resolveGuildContext(interaction);
+
+  if (!guildId) {
     await interaction.reply({
-      content: 'This command can only be used in a server!',
+      content: '❌ This command requires league context.\n\n' +
+               'Please run this command from the server where your league is hosted, ' +
+               'or wait for a notification from your league.',
       flags: MessageFlags.Ephemeral
     });
     return;
   }
 
-  const league = Storage.getLeagueByGuild(interaction.guildId);
+  const league = Storage.getLeagueByGuild(guildId);
   if (!league) {
     await interaction.reply({
       content: 'No league found for this server!',
@@ -86,7 +92,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
   // Build select menu
   const selectMenu = new StringSelectMenuBuilder()
-    .setCustomId(`vote-select:${interaction.guildId}`)
+    .setCustomId(`vote-select:${guildId}`)
     .setPlaceholder('Select songs to vote for...')
     .setMinValues(1)
     .setMaxValues(Math.min(votableSubmissions.length, 10))

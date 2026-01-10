@@ -1,6 +1,7 @@
 import { ModalSubmitInteraction, MessageFlags } from 'discord.js';
 import { Storage } from '../utils/storage';
 import { isCreator } from '../utils/permissions';
+import { DmContextManager } from '../utils/dm-context';
 
 export const customId = 'delete-league-modal';
 
@@ -54,6 +55,9 @@ export async function execute(interaction: ModalSubmitInteraction) {
   const success = Storage.deleteLeague(guildId);
 
   if (success) {
+    // Clear DM contexts for this guild
+    DmContextManager.clearGuildContexts(guildId);
+
     await interaction.reply({
       content: `🗑️ League **${leagueName}** has been permanently deleted.`
     });

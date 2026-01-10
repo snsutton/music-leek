@@ -170,7 +170,10 @@ export async function execute(interaction: ModalSubmitInteraction) {
     await NotificationService.sendBulkDM(
       interaction.client,
       missingVoterIds,
-      { embeds: [reminderEmbed] }
+      { embeds: [reminderEmbed] },
+      100,
+      league.guildId,
+      'voting_reminder'
     );
   }
 
@@ -181,7 +184,10 @@ export async function execute(interaction: ModalSubmitInteraction) {
     await NotificationService.sendBulkDM(
       interaction.client,
       league.admins,
-      { embeds: [adminEmbed] }
+      { embeds: [adminEmbed] },
+      100,
+      league.guildId,
+      'round_ready_to_start'
     );
 
     round.notificationsSent.allVotesReceived = true;

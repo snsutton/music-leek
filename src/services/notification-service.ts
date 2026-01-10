@@ -1,5 +1,6 @@
 import { Client, EmbedBuilder } from 'discord.js';
 import { NotificationResult } from '../types';
+import { DmContextManager } from '../utils/dm-context';
 
 /**
  * Service for sending DM notifications to users
@@ -8,11 +9,15 @@ export class NotificationService {
   /**
    * Send a DM to a single user with error handling
    * Respects user's Discord DM privacy settings
+   * @param guildId - Optional guild context to enable DM commands
+   * @param notificationType - Type of notification being sent
    */
   static async sendDM(
     client: Client,
     userId: string,
-    content: string | { embeds: EmbedBuilder[] }
+    content: string | { embeds: EmbedBuilder[] },
+    guildId?: string,
+    notificationType?: string
   ): Promise<NotificationResult> {
     try {
       const user = await client.users.fetch(userId);
@@ -21,6 +26,11 @@ export class NotificationService {
         await user.send(content);
       } else {
         await user.send(content);
+      }
+
+      // Record DM context for future command resolution
+      if (guildId && notificationType) {
+        DmContextManager.recordContext(userId, guildId, notificationType);
       }
 
       return { userId, success: true };
@@ -47,12 +57,16 @@ export class NotificationService {
   /**
    * Send DMs to multiple users in parallel with rate limiting
    * @param delayMs - Delay between sends to avoid rate limits (default: 100ms)
+   * @param guildId - Optional guild context to enable DM commands
+   * @param notificationType - Type of notification being sent
    */
   static async sendBulkDM(
     client: Client,
     userIds: string[],
     content: string | { embeds: EmbedBuilder[] },
-    delayMs: number = 100
+    delayMs: number = 100,
+    guildId?: string,
+    notificationType?: string
   ): Promise<NotificationResult[]> {
     const results: NotificationResult[] = [];
 
@@ -60,7 +74,7 @@ export class NotificationService {
       const userId = userIds[i];
 
       // Send DM
-      const result = await this.sendDM(client, userId, content);
+      const result = await this.sendDM(client, userId, content, guildId, notificationType);
       results.push(result);
 
       // Rate limit delay (except for last message)
