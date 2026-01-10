@@ -27,9 +27,6 @@ To test changes safely before deployment:
    npm run dev     # Run test bot locally
    ```
 
-5. **When satisfied**, delete or rename `.env.local` and deploy to production
-   - Bot will fall back to `.env` (production credentials)
-
 This keeps production running while you test changes with a separate bot instance.
 
 ## Prerequisites
@@ -50,27 +47,3 @@ This keeps production running while you test changes with a separate bot instanc
 6. `/vote` - Opens modal with submissions list (format: `1:5,2:4`)
 7. `/end-round` - Show ranked results
 8. `/leaderboard` - Overall standings
-
-### Key Features to Test
-
-- **Pre-filled league IDs**: Commands can take league ID as parameter or ask via modal
-- **Vote format**: Must be `songNumber:points,songNumber:points` (no spaces)
-- **Cannot vote for own song**: Validation prevents self-voting
-- **Multi-user testing**: Use alt account or invite friend to test full workflow
-- **Data persistence**: Stop/restart bot and verify data survives in `data/leagues.json`
-
-## Testing Checklist
-
-- [ ] Create and join league
-- [ ] Start round with modal
-- [ ] Submit song with modal
-- [ ] Pre-filled league ID works
-- [ ] Manual league ID entry works
-- [ ] Start voting phase
-- [ ] Vote with modal
-- [ ] Cannot vote for own song
-- [ ] End round and see results
-- [ ] View leaderboard
-- [ ] Check league status
-- [ ] Admin commands (add/remove/list admins)
-- [ ] Admin-only commands restricted properly

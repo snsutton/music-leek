@@ -4,7 +4,7 @@ import { isCreator } from '../utils/permissions';
 
 export const data = new SlashCommandBuilder()
   .setName('delete-league')
-  .setDescription('Delete this server\'s league (creator only)')
+  .setDescription('Permanently delete this server\'s league and all data (creator only)')
   .setDMPermission(false);
 
 export async function execute(interaction: ChatInputCommandInteraction) {
@@ -25,6 +25,12 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     return;
   }
 
+  // Suggest using /end-league instead if league is active
+  const hasActiveRounds = league.rounds.some(r => r.status !== 'completed');
+  const warningText = hasActiveRounds
+    ? `\n\n⚠️ **Note:** This league has active rounds. Consider using \`/end-league\` instead to end the league gracefully and preserve results.`
+    : '';
+
   const modal = new ModalBuilder()
     .setCustomId(`delete-league-modal:${interaction.guildId}`)
     .setTitle('⚠️ Confirm League Deletion');
@@ -36,8 +42,23 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     .setPlaceholder(league.name)
     .setRequired(true);
 
-  const actionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(confirmInput);
-  modal.addComponents(actionRow);
+  const warningInput = new TextInputBuilder()
+    .setCustomId('deletion-warning')
+    .setLabel('This will permanently delete all league data!')
+    .setStyle(TextInputStyle.Paragraph)
+    .setValue(
+      `All data will be permanently deleted:\n` +
+      `• ${league.rounds.length} round${league.rounds.length === 1 ? '' : 's'}\n` +
+      `• ${league.rounds.reduce((sum, r) => sum + r.submissions.length, 0)} submissions\n` +
+      `• ${league.rounds.reduce((sum, r) => sum + r.votes.length, 0)} votes\n` +
+      `• ${league.participants.length} participants${warningText}`
+    )
+    .setRequired(false);
+
+  const firstActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(warningInput);
+  const secondActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(confirmInput);
+
+  modal.addComponents(firstActionRow, secondActionRow);
 
   await interaction.showModal(modal);
 }
