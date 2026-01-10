@@ -162,6 +162,9 @@ export async function execute(interaction: ModalSubmitInteraction) {
   league.currentRound = league.rounds.length;
   Storage.saveLeague(league);
 
+  // Defer reply immediately to avoid Discord timeout
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
   // Send round started notification to all participants (with theme phase)
   const embed = NotificationTemplates.roundStartedWithThemePhase(league, round);
   const results = await NotificationService.sendBulkDM(
