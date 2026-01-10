@@ -6,12 +6,12 @@ import { NotificationService } from './notification-service';
 import { NotificationTemplates } from './notification-templates';
 
 /**
- * Background scheduler that checks for upcoming deadlines every 12 hours
+ * Background scheduler that checks for upcoming deadlines every hour
  * and sends reminder notifications 24-36 hours before deadlines
  */
 export class Scheduler {
   private static intervalId: NodeJS.Timeout | null = null;
-  private static readonly CHECK_INTERVAL = 12 * 60 * 60 * 1000; // 12 hours
+  private static readonly CHECK_INTERVAL = 60 * 60 * 1000; // 1 hour
   private static readonly REMINDER_WINDOW_MIN = 24 * 60 * 60 * 1000; // 24 hours
   private static readonly REMINDER_WINDOW_MAX = 36 * 60 * 60 * 1000; // 36 hours
 
@@ -31,14 +31,14 @@ export class Scheduler {
       console.error('[Scheduler] Error in initial check:', err);
     });
 
-    // Then run every 12 hours
+    // Then run every hour
     this.intervalId = setInterval(() => {
       this.checkDeadlines(client).catch(err => {
         console.error('[Scheduler] Error checking deadlines:', err);
       });
     }, this.CHECK_INTERVAL);
 
-    console.log(`[Scheduler] ✓ Scheduler started (checking every 12 hours)`);
+    console.log(`[Scheduler] ✓ Scheduler started (checking every hour)`);
   }
 
   /**
@@ -53,7 +53,7 @@ export class Scheduler {
   }
 
   /**
-   * Main check logic - called every 12 hours
+   * Main check logic - called every hour
    */
   private static async checkDeadlines(client: Client): Promise<void> {
     console.log('[Scheduler] Checking deadlines...');
