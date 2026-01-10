@@ -1,6 +1,6 @@
 import { Client } from 'discord.js';
 import { Storage } from '../utils/storage';
-import { getCurrentRound } from '../utils/helpers';
+import { getCurrentRound, calculateScores, calculateLeagueResults, calculateLeagueStandings } from '../utils/helpers';
 import { League, Round } from '../types';
 import { NotificationService } from './notification-service';
 import { NotificationTemplates } from './notification-templates';
@@ -90,6 +90,12 @@ export class Scheduler {
           remindersCount++;
         }
       }
+
+      // Auto-close voting if deadline has passed
+      if (round.status === 'voting' && now > round.votingDeadline) {
+        await this.autoEndRound(client, league, round);
+        remindersCount++;
+      }
     }
 
     console.log(`[Scheduler] ✓ Check complete. Sent ${remindersCount} reminders.`);
@@ -145,5 +151,68 @@ export class Scheduler {
 
     const summary = NotificationService.getNotificationSummary(results);
     console.log(`[Scheduler] Voting reminder sent to ${summary.successful}/${summary.total} participants`);
+  }
+
+  /**
+   * Automatically end round when voting deadline passes
+   */
+  private static async autoEndRound(
+    client: Client,
+    league: League,
+    round: Round
+  ): Promise<void> {
+    console.log(`[Scheduler] Auto-ending round ${round.roundNumber} for ${league.name} (voting deadline passed)`);
+
+    // Mark round as completed
+    round.status = 'completed';
+    Storage.saveLeague(league);
+
+    // Calculate current league standings
+    const leagueStandings = calculateLeagueStandings(league);
+
+    // Check if this is the last round
+    const isLastRound = league.currentRound >= league.totalRounds;
+
+    // Get the league channel
+    try {
+      const channel = await client.channels.fetch(league.channelId);
+
+      if (!channel || !channel.isTextBased() || channel.isDMBased()) {
+        console.error(`[Scheduler] Could not find league channel for ${league.name}`);
+        return;
+      }
+
+      if (isLastRound) {
+        // Mark league as completed
+        league.isCompleted = true;
+        league.completedAt = Date.now();
+        Storage.saveLeague(league);
+
+        // Calculate league-wide results
+        const results = calculateLeagueResults(league);
+
+        // Post final round results + league fanfare to channel
+        const fanfareMessage = NotificationTemplates.leagueEndedWithFanfare(league, round, results);
+        await channel.send(fanfareMessage);
+
+        console.log(`[Scheduler] League ${league.name} completed!`);
+      } else {
+        // Post round results + leaderboard to channel
+        const roundMessage = NotificationTemplates.roundEndedWithLeaderboard(league, round, leagueStandings);
+        await channel.send(roundMessage);
+
+        // Notify admins that next round can start
+        const adminEmbed = NotificationTemplates.roundReadyToStart(league);
+        await NotificationService.sendBulkDM(
+          client,
+          league.admins,
+          { embeds: [adminEmbed] }
+        );
+
+        console.log(`[Scheduler] Round ${round.roundNumber} ended for ${league.name}`);
+      }
+    } catch (error) {
+      console.error(`[Scheduler] Error auto-ending round for ${league.name}:`, error);
+    }
   }
 }

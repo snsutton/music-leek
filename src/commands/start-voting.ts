@@ -62,6 +62,13 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   }
 
   round.status = 'voting';
+
+  // Recalculate voting deadline based on when voting actually starts (not from round start)
+  if (round.votingDurationMs) {
+    const now = Date.now();
+    round.votingDeadline = now + round.votingDurationMs;
+  }
+
   Storage.saveLeague(league);
 
   // Send voting started notification to all participants

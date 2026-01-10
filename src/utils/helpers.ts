@@ -23,11 +23,17 @@ export function formatLeagueStatus(league: League): string {
   const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
   const daysLeft = Math.floor(hoursLeft / 24);
 
-  return `**${league.name}** - Round ${round.roundNumber}
-**Prompt:** ${round.prompt}
+  let statusText = `**${league.name}** - Round ${round.roundNumber}
+**Theme:** ${round.prompt}
 **Status:** ${status}
 **Time Remaining:** ${daysLeft}d ${hoursLeft % 24}h
 **Submissions:** ${round.submissions.length}/${league.participants.length}`;
+
+  if (round.status === 'voting') {
+    statusText += `\n**Votes:** ${round.votes.length}/${league.participants.length}`;
+  }
+
+  return statusText;
 }
 
 export function getMissingSubmitters(league: League, round: Round): string[] {
@@ -57,6 +63,25 @@ export function calculateScores(round: Round): Map<string, number> {
   for (const vote of round.votes) {
     for (const v of vote.votes) {
       const submission = round.submissions[v.submissionIndex];
+      if (submission) {
+        const currentScore = scores.get(submission.userId) || 0;
+        scores.set(submission.userId, currentScore + v.points);
+      }
+    }
+  }
+
+  return scores;
+}
+
+export function calculateQualifiedScores(round: Round): Map<string, number> {
+  const scores = new Map<string, number>();
+
+  // Get set of user IDs who voted in this round
+  const voterIds = new Set(round.votes.map(vote => vote.voterId));
+
+  for (const vote of round.votes) {
+    for (const v of vote.votes) {
+      const submission = round.submissions[v.submissionIndex];
       // Only award points if the submission owner also voted in this round
       if (submission && voterIds.has(submission.userId)) {
         const currentScore = scores.get(submission.userId) || 0;
@@ -73,7 +98,7 @@ export function formatLeaderboard(league: League): string {
 
   for (const round of league.rounds) {
     if (round.status === 'completed') {
-      const roundScores = calculateScores(round);
+      const roundScores = calculateQualifiedScores(round);
       for (const [userId, score] of roundScores) {
         const current = allScores.get(userId) || 0;
         allScores.set(userId, current + score);
@@ -101,15 +126,16 @@ export function calculateLeagueResults(league: League): LeagueEndResults {
     if (round.status !== 'completed') continue;
 
     const roundScores = calculateScores(round);
+    const qualifiedScores = calculateQualifiedScores(round);
     const sortedRound = Array.from(roundScores.entries())
       .sort((a, b) => b[1] - a[1]);
 
-    // Add to league totals
-    for (const [userId, score] of roundScores) {
+    // Add to league totals (only qualified scores count toward league standings)
+    for (const [userId, score] of qualifiedScores) {
       leagueScores.set(userId, (leagueScores.get(userId) || 0) + score);
     }
 
-    // Build round results (top 5 per round)
+    // Build round results (top 5 per round, showing all scores but marking disqualified)
     roundResults.push({
       roundNumber: round.roundNumber,
       prompt: round.prompt,
@@ -145,7 +171,7 @@ export function calculateLeagueStandings(league: League): Map<string, number> {
 
   for (const round of league.rounds) {
     if (round.status === 'completed') {
-      const roundScores = calculateScores(round);
+      const roundScores = calculateQualifiedScores(round);
       for (const [userId, score] of roundScores) {
         const current = allScores.get(userId) || 0;
         allScores.set(userId, current + score);

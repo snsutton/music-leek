@@ -50,6 +50,16 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     return;
   }
 
+  // Check if user submitted a song
+  const userSubmitted = round.submissions.some(s => s.userId === interaction.user.id);
+  if (!userSubmitted) {
+    await interaction.reply({
+      content: 'You must submit a song to vote! Only players who submitted are eligible to vote.',
+      flags: MessageFlags.Ephemeral
+    });
+    return;
+  }
+
   // Check if >25 submissions (Discord select menu limit)
   if (round.submissions.length > 25) {
     await interaction.reply({

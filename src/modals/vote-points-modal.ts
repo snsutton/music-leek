@@ -1,7 +1,7 @@
 import { ModalSubmitInteraction, MessageFlags } from 'discord.js';
 import { Storage } from '../utils/storage';
 import { Vote } from '../types';
-import { getCurrentRound } from '../utils/helpers';
+import { getCurrentRound, getMissingVoters } from '../utils/helpers';
 import { VoteSessionManager } from '../utils/vote-sessions';
 import { NotificationService } from '../services/notification-service';
 import { NotificationTemplates } from '../services/notification-templates';
@@ -160,6 +160,19 @@ export async function execute(interaction: ModalSubmitInteraction) {
              `Total votes in round: ${totalVotes}/${totalParticipants}`,
     flags: MessageFlags.Ephemeral
   });
+
+  // Get missing voters
+  const missingVoterIds = getMissingVoters(league, round);
+
+  // Send reminders when 3 or fewer voters remain (similar to submission logic)
+  if (missingVoterIds.length > 0 && missingVoterIds.length <= 3) {
+    const reminderEmbed = NotificationTemplates.votingRunningOut(league, round, missingVoterIds.length);
+    await NotificationService.sendBulkDM(
+      interaction.client,
+      missingVoterIds,
+      { embeds: [reminderEmbed] }
+    );
+  }
 
   // Check if all participants have voted
   if (totalVotes === totalParticipants && !round.notificationsSent.allVotesReceived) {

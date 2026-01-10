@@ -130,7 +130,8 @@ export async function execute(interaction: ModalSubmitInteraction) {
     status: 'submission',
     startedAt: now,
     submissionDeadline: now + (submissionHours * 60 * 60 * 1000),
-    votingDeadline: now + ((submissionHours + votingHours) * 60 * 60 * 1000),
+    votingDeadline: now + ((submissionHours + votingHours) * 60 * 60 * 1000), // Placeholder - will be recalculated when voting starts
+    votingDurationMs: votingHours * 60 * 60 * 1000, // Store voting duration for recalculation
     submissions: [],
     votes: [],
     notificationsSent: {

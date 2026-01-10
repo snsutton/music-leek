@@ -116,6 +116,27 @@ export class NotificationTemplates {
   }
 
   /**
+   * DM Notification: Voting running out reminder (when few people left)
+   */
+  static votingRunningOut(league: League, round: Round, missingVotersCount: number): EmbedBuilder {
+    return new EmbedBuilder()
+      .setColor(0xE74C3C)
+      .setTitle(`⚠️ Voting Closing Soon!`)
+      .setDescription(
+        `Only **${missingVotersCount}** ${missingVotersCount === 1 ? 'person is' : 'people are'} left to vote in **${league.name}**!\n\n` +
+        `**Prompt:** "${round.prompt}"\n` +
+        `**Deadline:** <t:${Math.floor(round.votingDeadline / 1000)}:F>\n\n` +
+        (round.playlist
+          ? `🎧 **[Listen to all submissions with this Spotify playlist](${round.playlist.playlistUrl})**\n\n`
+          : ''
+        ) +
+        `Don't forget to cast your votes using \`/vote\` in the league channel!`
+      )
+      .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
+      .setTimestamp();
+  }
+
+  /**
    * DM Notification: Admin - all votes received
    */
   static allVotesReceived(league: League, round: Round): EmbedBuilder {
@@ -141,6 +162,9 @@ export class NotificationTemplates {
     const scores = calculateScores(round);
     const sortedScores = Array.from(scores.entries()).sort((a, b) => b[1] - a[1]);
 
+    // Get set of voters to identify disqualified players
+    const voterIds = new Set(round.votes.map(v => v.voterId));
+
     // Round results embed
     const roundEmbed = new EmbedBuilder()
       .setColor(0xFFD700)
@@ -151,10 +175,11 @@ export class NotificationTemplates {
     sortedScores.forEach(([userId, score], index) => {
       const submission = round.submissions.find(s => s.userId === userId);
       const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
+      const didNotVote = !voterIds.has(userId);
 
       if (submission) {
         resultsText += `\n${medal} **${submission.songTitle}** by ${submission.artist}\n`;
-        resultsText += `   Submitted by <@${userId}> - **${score} points**\n`;
+        resultsText += `   Submitted by <@${userId}> - **${score} points**${didNotVote ? ' ⚠️ (DQ - did not vote)' : ''}\n`;
         resultsText += `   ${submission.songUrl}\n`;
       }
     });
@@ -186,6 +211,9 @@ export class NotificationTemplates {
     const scores = calculateScores(round);
     const sortedScores = Array.from(scores.entries()).sort((a, b) => b[1] - a[1]);
 
+    // Get set of voters to identify disqualified players
+    const voterIds = new Set(round.votes.map(v => v.voterId));
+
     // Final round results embed
     const roundEmbed = new EmbedBuilder()
       .setColor(0xFFD700)
@@ -196,10 +224,11 @@ export class NotificationTemplates {
     sortedScores.forEach(([userId, score], index) => {
       const submission = round.submissions.find(s => s.userId === userId);
       const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
+      const didNotVote = !voterIds.has(userId);
 
       if (submission) {
         resultsText += `\n${medal} **${submission.songTitle}** by ${submission.artist}\n`;
-        resultsText += `   Submitted by <@${userId}> - **${score} points**\n`;
+        resultsText += `   Submitted by <@${userId}> - **${score} points**${didNotVote ? ' ⚠️ (DQ - did not vote)' : ''}\n`;
         resultsText += `   ${submission.songUrl}\n`;
       }
     });
@@ -250,6 +279,64 @@ export class NotificationTemplates {
     return {
       content: `━━━━━━━━━━━━━━━━━━━━\n\n🎵 **${league.name}** has concluded! 🎵`,
       embeds: [roundEmbed, fanfareEmbed]
+    };
+  }
+
+  /**
+   * Channel Message: League ended early (via /end-league command)
+   */
+  static leagueEndedEarlyWithFanfare(
+    league: League,
+    results: LeagueEndResults
+  ): { content: string; embeds: EmbedBuilder[] } {
+    // League end fanfare with spoilers
+    const fanfareEmbed = new EmbedBuilder()
+      .setColor(0xFF1493)
+      .setTitle(`🎉 ${league.name} Has Concluded! 🎉`)
+      .setDescription(
+        `The league has been ended early by an admin after **${league.rounds.filter(r => r.status === 'completed').length} completed round${league.rounds.filter(r => r.status === 'completed').length === 1 ? '' : 's'}**.\n\n` +
+        `Click the spoilers below to reveal the final standings:`
+      );
+
+    // Add spoiler champion section
+    let spoilerText = '\n';
+    const top3 = results.winners.slice(0, 3);
+
+    if (top3.length > 0) {
+      spoilerText += `||🏆 **LEAGUE CHAMPION** 🏆||\n`;
+      spoilerText += `||🥇 <@${top3[0].userId}> - **${top3[0].totalScore} total points**||\n\n`;
+
+      if (top3.length > 1) {
+        spoilerText += `||🥈 Runner-up: <@${top3[1].userId}> - **${top3[1].totalScore} points**||\n`;
+      }
+      if (top3.length > 2) {
+        spoilerText += `||🥉 Third Place: <@${top3[2].userId}> - **${top3[2].totalScore} points**||\n\n`;
+      }
+
+      // Add round-by-round results
+      spoilerText += `||**📜 Round-by-Round Results**||\n\n`;
+
+      for (const roundResult of results.roundResults) {
+        spoilerText += `||**Round ${roundResult.roundNumber}: ${roundResult.prompt}**||\n`;
+
+        for (const winner of roundResult.winners.slice(0, 3)) {
+          const medal = winner.rank === 1 ? '🥇' : winner.rank === 2 ? '🥈' : '🥉';
+          spoilerText += `||  ${medal} ${winner.songTitle} - <@${winner.userId}> (${winner.points} pts)||\n`;
+        }
+        spoilerText += '\n';
+      }
+    } else {
+      spoilerText = '\nNo standings to display - no completed rounds with votes.';
+    }
+
+    fanfareEmbed.addFields({
+      name: '\u200B',
+      value: spoilerText
+    });
+
+    return {
+      content: `━━━━━━━━━━━━━━━━━━━━\n\n🎵 **${league.name}** has concluded! 🎵`,
+      embeds: [fanfareEmbed]
     };
   }
 

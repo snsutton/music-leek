@@ -25,6 +25,7 @@ export interface Round {
   startedAt: number;
   submissionDeadline: number;
   votingDeadline: number;
+  votingDurationMs?: number; // Duration of voting phase in milliseconds (for recalculating deadline when voting starts early)
   submissions: Submission[];
   votes: Vote[];
   notificationsSent: {
