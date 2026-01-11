@@ -59,7 +59,8 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   if (league.spotifyIntegration) {
     try {
       console.log(`[StartVoting] Creating Spotify playlist for round ${round.roundNumber}...`);
-      const playlistData = await SpotifyPlaylistService.createRoundPlaylist(league, round);
+      const guild = interaction.guild || await interaction.client.guilds.fetch(guildId);
+      const playlistData = await SpotifyPlaylistService.createRoundPlaylist(league, round, guild?.name);
       if (playlistData) {
         round.playlist = playlistData;
         console.log(`[StartVoting] Playlist created: ${playlistData.playlistUrl}`);

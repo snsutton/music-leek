@@ -79,43 +79,10 @@ export class Scheduler {
       const round = getCurrentRound(league);
       if (!round) continue;
 
-      // Check theme submission reminder
-      if (round.status === 'theme-submission' && !round.notificationsSent.themeSubmissionReminder && round.themeSubmissionDeadline) {
-        const timeUntilDeadline = round.themeSubmissionDeadline - now;
-
-        if (timeUntilDeadline >= this.REMINDER_WINDOW_MIN &&
-            timeUntilDeadline <= this.REMINDER_WINDOW_MAX) {
-          await this.sendThemeSubmissionReminder(client, league, round);
-          remindersCount++;
-        }
-      }
-
       // Auto-select theme when deadline passes
       if (round.status === 'theme-submission' && round.themeSubmissionDeadline && now > round.themeSubmissionDeadline) {
         await this.autoSelectTheme(client, league, round);
         remindersCount++;
-      }
-
-      // Check submission reminder
-      if (round.status === 'submission' && !round.notificationsSent.submissionReminder) {
-        const timeUntilDeadline = round.submissionDeadline - now;
-
-        if (timeUntilDeadline >= this.REMINDER_WINDOW_MIN &&
-            timeUntilDeadline <= this.REMINDER_WINDOW_MAX) {
-          await this.sendSubmissionReminder(client, league, round);
-          remindersCount++;
-        }
-      }
-
-      // Check voting reminder
-      if (round.status === 'voting' && !round.notificationsSent.votingReminder) {
-        const timeUntilDeadline = round.votingDeadline - now;
-
-        if (timeUntilDeadline >= this.REMINDER_WINDOW_MIN &&
-            timeUntilDeadline <= this.REMINDER_WINDOW_MAX) {
-          await this.sendVotingReminder(client, league, round);
-          remindersCount++;
-        }
       }
 
       // Auto-close voting if deadline has passed
@@ -126,90 +93,6 @@ export class Scheduler {
     }
 
     console.log(`[Scheduler] ✓ Check complete. Sent ${remindersCount} reminders.`);
-  }
-
-  /**
-   * Send theme submission deadline reminder
-   */
-  private static async sendThemeSubmissionReminder(
-    client: Client,
-    league: League,
-    round: Round
-  ): Promise<void> {
-    console.log(`[Scheduler] Sending theme submission reminder for ${league.name} Round ${round.roundNumber}`);
-
-    const embed = NotificationTemplates.themeSubmissionReminder(league, round);
-    const results = await NotificationService.sendBulkDM(
-      client,
-      league.participants,
-      { embeds: [embed] },
-      100,
-      league.guildId,
-      'theme_submission_reminder'
-    );
-
-    // Mark as sent
-    round.notificationsSent.themeSubmissionReminder = true;
-    Storage.saveLeague(league);
-
-    const summary = NotificationService.getNotificationSummary(results);
-    console.log(`[Scheduler] Theme submission reminder sent to ${summary.successful}/${summary.total} participants`);
-  }
-
-  /**
-   * Send submission deadline reminder
-   */
-  private static async sendSubmissionReminder(
-    client: Client,
-    league: League,
-    round: Round
-  ): Promise<void> {
-    console.log(`[Scheduler] Sending submission reminder for ${league.name} Round ${round.roundNumber}`);
-
-    const embed = NotificationTemplates.submissionReminder(league, round);
-    const results = await NotificationService.sendBulkDM(
-      client,
-      league.participants,
-      { embeds: [embed] },
-      100,
-      league.guildId,
-      'submission_reminder'
-    );
-
-    // Mark as sent
-    round.notificationsSent.submissionReminder = true;
-    Storage.saveLeague(league);
-
-    const summary = NotificationService.getNotificationSummary(results);
-    console.log(`[Scheduler] Submission reminder sent to ${summary.successful}/${summary.total} participants`);
-  }
-
-  /**
-   * Send voting deadline reminder
-   */
-  private static async sendVotingReminder(
-    client: Client,
-    league: League,
-    round: Round
-  ): Promise<void> {
-    console.log(`[Scheduler] Sending voting reminder for ${league.name} Round ${round.roundNumber}`);
-
-    const embed = NotificationTemplates.votingReminder(league, round);
-    const results = await NotificationService.sendBulkDM(
-      client,
-      league.participants,
-      { embeds: [embed] },
-      100,
-      league.guildId,
-      'voting_reminder'
-    );
-
-    // Mark as sent
-    round.notificationsSent.votingReminder = true;
-    Storage.saveLeague(league);
-
-    const summary = NotificationService.getNotificationSummary(results);
-    console.log(`[Scheduler] Voting reminder sent to ${summary.successful}/${summary.total} participants`);
   }
 
   /**

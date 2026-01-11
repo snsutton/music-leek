@@ -35,7 +35,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     .setColor(0x1DB954)
     .setTitle(`📊 ${league.name}`)
     .setDescription(leaderboardText)
-    .setFooter({ text: `Total rounds: ${league.rounds.filter(r => r.status === 'completed').length}` });
+    .setFooter({ text: `Completed rounds: ${league.rounds.filter(r => r.status === 'completed').length} | Use /league-status for current round` });
 
   await interaction.reply({
     embeds: [embed]

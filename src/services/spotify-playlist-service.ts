@@ -16,7 +16,7 @@ export class SpotifyPlaylistService {
   /**
    * Create a playlist for a voting round
    */
-  static async createRoundPlaylist(league: League, round: Round): Promise<PlaylistData | null> {
+  static async createRoundPlaylist(league: League, round: Round, guildName?: string): Promise<PlaylistData | null> {
     if (!league.spotifyIntegration) {
       console.log('[SpotifyPlaylist] No Spotify integration for league, skipping playlist creation');
       return null;
@@ -54,8 +54,10 @@ export class SpotifyPlaylistService {
 
     try {
       // Create playlist
-      const playlistName = `Music Leek - ${league.name} - Round ${round.roundNumber}`;
-      const playlistDescription = `${round.prompt} | ${trackUris.length} submissions`;
+      const playlistName = `${round.prompt}`;
+      const playlistDescription = guildName
+        ? `Music Leek - ${guildName} - ${league.name} - Round ${round.roundNumber}\nhttps://github.com/snsutton/music-leek`
+        : `Music Leek - ${league.name} - Round ${round.roundNumber}\nhttps://github.com/snsutton/music-leek`;
 
       const playlistId = await this.createPlaylist(
         accessToken,

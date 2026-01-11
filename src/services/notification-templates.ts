@@ -167,6 +167,23 @@ export class NotificationTemplates {
   }
 
   /**
+   * DM Notification: Submission running out reminder (when few people left)
+   */
+  static submissionRunningOut(league: League, round: Round, missingSubmittersCount: number): EmbedBuilder {
+    return new EmbedBuilder()
+      .setColor(0xE74C3C)
+      .setTitle(`⚠️ Submissions Closing Soon!`)
+      .setDescription(
+        `Only **${missingSubmittersCount}** ${missingSubmittersCount === 1 ? 'person is' : 'people are'} left to submit in **${league.name}**!\n\n` +
+        `**Prompt:** "${round.prompt}"\n` +
+        `**Deadline:** <t:${Math.floor(round.submissionDeadline / 1000)}:F>\n\n` +
+        `Don't forget to submit your song using \`/submit-song\`!`
+      )
+      .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
+      .setTimestamp();
+  }
+
+  /**
    * DM Notification: Admin - new round can be started
    */
   static roundReadyToStart(league: League): EmbedBuilder {

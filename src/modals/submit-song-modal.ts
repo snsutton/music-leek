@@ -4,6 +4,8 @@ import { Submission } from '../types';
 import { getCurrentRound, getMissingSubmitters, normalizeSongIdentifier } from '../utils/helpers';
 import { parseMusicUrl } from '../utils/url-validator';
 import { MusicServiceFactory } from '../services/music-service-factory';
+import { NotificationTemplates } from '../services/notification-templates';
+import { NotificationService } from '../services/notification-service';
 
 export const customId = 'submit-song-modal';
 
@@ -128,59 +130,36 @@ export async function execute(interaction: ModalSubmitInteraction) {
   round.submissions.push(submission);
   Storage.saveLeague(league);
 
-  // Send public confirmation message to the channel
-  try {
-    const channel = await interaction.client.channels.fetch(league.channelId);
-    if (channel && channel.isTextBased() && !channel.isDMBased()) {
-      // Calculate missing submitters
-      const missingSubmitterIds = getMissingSubmitters(league, round);
+  // Calculate missing submitters
+  const missingSubmitterIds = getMissingSubmitters(league, round);
 
-      // Fetch usernames for missing submitters
-      const usernameResults = await Promise.allSettled(
-        missingSubmitterIds.map(id => interaction.client.users.fetch(id))
-      );
-
-      const missingUsernames = usernameResults.map((result, index) => {
-        if (result.status === 'fulfilled') {
-          return result.value.username;
-        }
-        return `Unknown User`;
-      });
-
-      // Build confirmation message
-      let confirmationMessage = `✅ **${interaction.user.username}** just submitted their song!\n\n`;
-      confirmationMessage += `**Submissions received:** ${round.submissions.length}/${league.participants.length}\n`;
-
-      if (missingSubmitterIds.length > 0) {
-        // Handle Discord's 2000 char limit
-        const maxLength = 1500;
-        let usernameList = missingUsernames.join(', ');
-
-        if (usernameList.length > maxLength) {
-          // Truncate and show count
-          const truncated = [];
-          let currentLength = 0;
-
-          for (const username of missingUsernames) {
-            if (currentLength + username.length + 2 > maxLength) break;
-            truncated.push(username);
-            currentLength += username.length + 2;
-          }
-
-          const remaining = missingUsernames.length - truncated.length;
-          usernameList = truncated.join(', ') + ` ... and ${remaining} more`;
-        }
-
-        confirmationMessage += `\n**Still waiting for:** ${usernameList}`;
-      } else {
-        confirmationMessage += `\n🎉 **All submissions are in!**`;
+  // Channel message: When 1 player remains (holding up the stage)
+  if (missingSubmitterIds.length === 1) {
+    try {
+      const channel = await interaction.client.channels.fetch(league.channelId);
+      if (channel && channel.isTextBased() && !channel.isDMBased()) {
+        await channel.send(
+          `⏰ **Waiting on 1 player to submit their song!**\n\n` +
+          `<@${missingSubmitterIds[0]}>, we're waiting for you!\n\n` +
+          `Use \`/submit-song\` to submit your song.`
+        );
       }
-
-      await channel.send(confirmationMessage);
+    } catch (error) {
+      console.error('Failed to send final player notification:', error);
     }
-  } catch (error) {
-    console.error('Failed to send public confirmation:', error);
-    // Don't block user's ephemeral confirmation
+  }
+
+  // DM reminder: When ≤3 players remain
+  if (missingSubmitterIds.length > 0 && missingSubmitterIds.length <= 3) {
+    const reminderEmbed = NotificationTemplates.submissionRunningOut(league, round, missingSubmitterIds.length);
+    await NotificationService.sendBulkDM(
+      interaction.client,
+      missingSubmitterIds,
+      { embeds: [reminderEmbed] },
+      100,
+      league.guildId,
+      'submission_reminder'
+    );
   }
 
   // Step 9: Send confirmation with metadata

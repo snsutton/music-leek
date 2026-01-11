@@ -95,60 +95,23 @@ export async function execute(interaction: ModalSubmitInteraction) {
   round.themeSubmissions.push(submission);
   Storage.saveLeague(league);
 
-  // Send public confirmation message to the channel
-  try {
-    const channel = await interaction.client.channels.fetch(league.channelId);
-    if (channel && channel.isTextBased() && !channel.isDMBased()) {
-      // Calculate missing submitters
-      const submitterIds = new Set(round.themeSubmissions.map(t => t.userId));
-      const missingSubmitterIds = league.participants.filter(id => !submitterIds.has(id));
+  // Only send channel message when 1 player remains (holding up the stage)
+  const submitterIds = new Set(round.themeSubmissions.map(t => t.userId));
+  const missingSubmitterIds = league.participants.filter(id => !submitterIds.has(id));
 
-      // Fetch usernames for missing submitters
-      const usernameResults = await Promise.allSettled(
-        missingSubmitterIds.map(id => interaction.client.users.fetch(id))
-      );
-
-      const missingUsernames = usernameResults.map((result) => {
-        if (result.status === 'fulfilled') {
-          return result.value.username;
-        }
-        return `Unknown User`;
-      });
-
-      // Build confirmation message
-      let confirmationMessage = `✅ **${interaction.user.username}** just submitted a theme!\n\n`;
-      confirmationMessage += `**Themes submitted:** ${round.themeSubmissions.length}/${league.participants.length}\n`;
-
-      if (missingSubmitterIds.length > 0) {
-        // Handle Discord's 2000 char limit
-        const maxLength = 1500;
-        let usernameList = missingUsernames.join(', ');
-
-        if (usernameList.length > maxLength) {
-          // Truncate and show count
-          const truncated = [];
-          let currentLength = 0;
-
-          for (const username of missingUsernames) {
-            if (currentLength + username.length + 2 > maxLength) break;
-            truncated.push(username);
-            currentLength += username.length + 2;
-          }
-
-          const remaining = missingUsernames.length - truncated.length;
-          usernameList = truncated.join(', ') + ` ... and ${remaining} more`;
-        }
-
-        confirmationMessage += `\n**Still waiting for:** ${usernameList}`;
-      } else {
-        confirmationMessage += `\n🎉 **All themes are in!**`;
+  if (missingSubmitterIds.length === 1) {
+    try {
+      const channel = await interaction.client.channels.fetch(league.channelId);
+      if (channel && channel.isTextBased() && !channel.isDMBased()) {
+        await channel.send(
+          `⏰ **Waiting on 1 player to submit their theme!**\n\n` +
+          `<@${missingSubmitterIds[0]}>, we're waiting for you!\n\n` +
+          `Use \`/submit-theme\` to submit your theme idea.`
+        );
       }
-
-      await channel.send(confirmationMessage);
+    } catch (error) {
+      console.error('Failed to send final player notification:', error);
     }
-  } catch (error) {
-    console.error('Failed to send public confirmation:', error);
-    // Don't block user's ephemeral confirmation
   }
 
   // Send confirmation

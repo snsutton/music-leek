@@ -164,7 +164,23 @@ export async function execute(interaction: ModalSubmitInteraction) {
   // Get missing voters
   const missingVoterIds = getMissingVoters(league, round);
 
-  // Send reminders when 3 or fewer voters remain (similar to submission logic)
+  // Channel message: When 1 voter remains (holding up the stage)
+  if (missingVoterIds.length === 1) {
+    try {
+      const channel = await interaction.client.channels.fetch(league.channelId);
+      if (channel && channel.isTextBased() && !channel.isDMBased()) {
+        await channel.send(
+          `⏰ **Waiting on 1 player to vote!**\n\n` +
+          `<@${missingVoterIds[0]}>, we're waiting for you!\n\n` +
+          `Use \`/vote\` to cast your votes.`
+        );
+      }
+    } catch (error) {
+      console.error('Failed to send final voter notification:', error);
+    }
+  }
+
+  // Send reminders when 3 or fewer voters remain
   if (missingVoterIds.length > 0 && missingVoterIds.length <= 3) {
     const reminderEmbed = NotificationTemplates.votingRunningOut(league, round, missingVoterIds.length);
     await NotificationService.sendBulkDM(

@@ -182,7 +182,22 @@ export async function execute(interaction: ModalSubmitInteraction) {
 
   const summary = NotificationService.getNotificationSummary(results);
 
-  await interaction.reply({
+  // Post round start notification to league channel
+  try {
+    const channel = await interaction.client.channels.fetch(league.channelId);
+    if (channel && channel.isTextBased() && !channel.isDMBased()) {
+      await channel.send(
+        `🎵 **Round ${round.roundNumber} has started!**\n\n` +
+        `**Theme Submission Phase:** Submit your theme ideas for the next 24 hours!\n` +
+        `**Theme Deadline:** <t:${Math.floor(round.themeSubmissionDeadline! / 1000)}:F>\n\n` +
+        `Use \`/submit-theme\` to submit your theme ideas. One theme will be randomly selected!`
+      );
+    }
+  } catch (error) {
+    console.error(`[StartRound] Error posting round start to channel:`, error);
+  }
+
+  await interaction.editReply({
     content: `🎵 **Round ${round.roundNumber}** has started in **${league.name}**!\n\n` +
              `**Theme Submission Phase:** Players have 24 hours to submit theme ideas!\n` +
              `**Theme Deadline:** <t:${Math.floor(round.themeSubmissionDeadline! / 1000)}:F>\n\n` +

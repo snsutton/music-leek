@@ -43,7 +43,7 @@ export function formatLeagueStatus(league: League): string {
   }
 
   if (round.playlist?.playlistUrl) {
-    statusText += `\n**Playlist:** ${round.playlist.playlistUrl}`;
+    statusText += `\n**Playlist:** [${round.prompt}](${round.playlist.playlistUrl})`;
   }
 
   return statusText;
@@ -109,6 +109,7 @@ export function calculateQualifiedScores(round: Round): Map<string, number> {
 export function formatLeaderboard(league: League): string {
   const allScores = new Map<string, number>();
 
+  // Calculate overall scores
   for (const round of league.rounds) {
     if (round.status === 'completed') {
       const roundScores = calculateQualifiedScores(round);
@@ -122,13 +123,51 @@ export function formatLeaderboard(league: League): string {
   const sorted = Array.from(allScores.entries())
     .sort((a, b) => b[1] - a[1]);
 
-  let leaderboard = `**${league.name} - Leaderboard**\n\n`;
-  sorted.forEach(([userId, score], index) => {
-    const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
-    leaderboard += `${medal} <@${userId}>: ${score} points\n`;
-  });
+  // Overall standings
+  let leaderboard = `**Overall Standings**\n\n`;
 
-  return leaderboard || 'No scores yet!';
+  if (sorted.length === 0) {
+    leaderboard += 'No scores yet!\n\n';
+  } else {
+    sorted.forEach(([userId, score], index) => {
+      const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
+      leaderboard += `${medal} <@${userId}>: ${score} points\n`;
+    });
+  }
+
+  // Round-by-round results with playlists
+  const completedRounds = league.rounds.filter(r => r.status === 'completed');
+
+  if (completedRounds.length > 0) {
+    leaderboard += '\n━━━━━━━━━━━━━━━━━━\n\n**Round-by-Round Results**\n\n';
+
+    for (const round of completedRounds) {
+      const roundScores = calculateScores(round);
+      const sortedRound = Array.from(roundScores.entries())
+        .sort((a, b) => b[1] - a[1]);
+
+      const winner = sortedRound.length > 0 ? sortedRound[0] : null;
+
+      leaderboard += `**Round ${round.roundNumber}:** ${round.prompt}\n`;
+
+      if (winner) {
+        const winnerSub = round.submissions.find(s => s.userId === winner[0]);
+        leaderboard += `🏆 Winner: <@${winner[0]}> (${winner[1]} pts)\n`;
+        if (winnerSub) {
+          leaderboard += `   *${winnerSub.songTitle}* by ${winnerSub.artist}\n`;
+        }
+      }
+
+      // Add playlist link if available
+      if (round.playlist?.playlistUrl) {
+        leaderboard += `🎧 [Playlist](${round.playlist.playlistUrl})\n`;
+      }
+
+      leaderboard += '\n';
+    }
+  }
+
+  return leaderboard;
 }
 
 export function calculateLeagueResults(league: League): LeagueEndResults {
