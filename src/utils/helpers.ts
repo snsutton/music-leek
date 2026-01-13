@@ -43,7 +43,7 @@ export function formatLeagueStatus(league: League): string {
   }
 
   if (round.playlist?.playlistUrl) {
-    statusText += `\n**Playlist:** [${round.prompt}](${round.playlist.playlistUrl})`;
+    statusText += `\n🎧 **[Listen on Spotify](${round.playlist.playlistUrl})**`;
   }
 
   return statusText;

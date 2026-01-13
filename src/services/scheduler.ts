@@ -5,6 +5,7 @@ import { League, Round } from '../types';
 import { NotificationService } from './notification-service';
 import { NotificationTemplates } from './notification-templates';
 import { DmContextManager } from '../utils/dm-context';
+import { VotingService } from './voting-service';
 
 /**
  * Background scheduler that checks for upcoming deadlines every hour
@@ -85,6 +86,12 @@ export class Scheduler {
         remindersCount++;
       }
 
+      // Auto-start voting if submission deadline has passed
+      if (round.status === 'submission' && now > round.submissionDeadline) {
+        await this.autoStartVoting(client, league, round);
+        remindersCount++;
+      }
+
       // Auto-close voting if deadline has passed
       if (round.status === 'voting' && now > round.votingDeadline) {
         await this.autoEndRound(client, league, round);
@@ -93,6 +100,28 @@ export class Scheduler {
     }
 
     console.log(`[Scheduler] ✓ Check complete. Sent ${remindersCount} reminders.`);
+  }
+
+  /**
+   * Automatically start voting when submission deadline passes
+   */
+  private static async autoStartVoting(
+    client: Client,
+    league: League,
+    round: Round
+  ): Promise<void> {
+    console.log(`[Scheduler] Auto-starting voting for ${league.name} Round ${round.roundNumber} (submission deadline passed)`);
+
+    if (round.submissions.length === 0) {
+      console.log(`[Scheduler] No submissions for round ${round.roundNumber}, skipping voting phase`);
+      return;
+    }
+
+    try {
+      await VotingService.startVoting(client, league, round, { logPrefix: 'Scheduler' });
+    } catch (error) {
+      console.error(`[Scheduler] Failed to start voting for round ${round.roundNumber}:`, error);
+    }
   }
 
   /**

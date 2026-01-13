@@ -2,9 +2,7 @@ import { ChatInputCommandInteraction, SlashCommandBuilder, EmbedBuilder, Message
 import { Storage } from '../utils/storage';
 import { getCurrentRound } from '../utils/helpers';
 import { isAdmin } from '../utils/permissions';
-import { NotificationService } from '../services/notification-service';
-import { NotificationTemplates } from '../services/notification-templates';
-import { SpotifyPlaylistService } from '../services/spotify-playlist-service';
+import { VotingService } from '../services/voting-service';
 import { resolveGuildContext } from '../utils/dm-context';
 
 export const data = new SlashCommandBuilder()
@@ -55,73 +53,48 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     return;
   }
 
-  // Create Spotify playlist if integration exists
-  if (league.spotifyIntegration) {
-    try {
-      console.log(`[StartVoting] Creating Spotify playlist for round ${round.roundNumber}...`);
-      const guild = interaction.guild || await interaction.client.guilds.fetch(guildId);
-      const playlistData = await SpotifyPlaylistService.createRoundPlaylist(league, round, guild?.name);
-      if (playlistData) {
-        round.playlist = playlistData;
-        console.log(`[StartVoting] Playlist created: ${playlistData.playlistUrl}`);
-      }
-    } catch (error) {
-      console.error('[StartVoting] Failed to create playlist:', error);
-      // Continue with voting anyway - playlist creation failure shouldn't block voting
-    }
+  // Start voting using shared service (skip channel post since we'll show detailed embed)
+  try {
+    await VotingService.startVoting(interaction.client, league, round, {
+      logPrefix: 'StartVoting',
+      skipChannelPost: true
+    });
+  } catch (error) {
+    await interaction.reply({
+      content: '❌ Failed to start voting. Please try again.',
+      flags: MessageFlags.Ephemeral
+    });
+    return;
   }
 
-  round.status = 'voting';
-
-  // Recalculate voting deadline based on when voting actually starts (not from round start)
-  if (round.votingDurationMs) {
-    const now = Date.now();
-    round.votingDeadline = now + round.votingDurationMs;
-  }
-
-  Storage.saveLeague(league);
-
-  // Send voting started notification to all participants
-  const notificationEmbed = NotificationTemplates.votingStarted(league, round);
-  const results = await NotificationService.sendBulkDM(
-    interaction.client,
-    league.participants,
-    { embeds: [notificationEmbed] },
-    100,
-    league.guildId,
-    'voting_started'
-  );
-
-  // Mark notification as sent
-  round.notificationsSent.votingStarted = true;
-  Storage.saveLeague(league);
-
-  const summary = NotificationService.getNotificationSummary(results);
+  // Reload league to get updated round data
+  const updatedLeague = Storage.getLeagueByGuild(guildId)!;
+  const updatedRound = getCurrentRound(updatedLeague)!;
 
   const embed = new EmbedBuilder()
     .setColor(0x1DB954)
-    .setTitle(`🎵 Round ${round.roundNumber} - Voting Phase`)
+    .setTitle(`🎵 Round ${updatedRound.roundNumber} - Voting Phase`)
     .setDescription(
-      `**Prompt:** ${round.prompt}\n\n` +
-      (round.playlist
-        ? `🎧 **[Listen to all submissions with this Spotify playlist](${round.playlist.playlistUrl})**\n\n`
+      `**Prompt:** ${updatedRound.prompt}\n\n` +
+      (updatedRound.playlist
+        ? `🎧 **[Listen to all submissions with this Spotify playlist](${updatedRound.playlist.playlistUrl})**\n\n`
         : ''
       ) +
       `**Submissions:**\n`
     )
-    .setFooter({ text: `Use /vote to cast your votes! Deadline: ${new Date(round.votingDeadline).toLocaleString()}` });
+    .setFooter({ text: `Use /vote to cast your votes! Deadline: ${new Date(updatedRound.votingDeadline).toLocaleString()}` });
 
   let submissionList = '';
-  round.submissions.forEach((sub, index) => {
+  updatedRound.submissions.forEach((sub, index) => {
     submissionList += `\n**${index + 1}.** ${sub.songTitle} - ${sub.artist}\n${sub.songUrl}\n`;
   });
 
   embed.setDescription(embed.data.description + submissionList);
 
   await interaction.reply({
-    content: `🗳️ **Voting has started for Round ${round.roundNumber}!**\n\n` +
+    content: `🗳️ **Voting has started for Round ${updatedRound.roundNumber}!**\n\n` +
              `Review the submissions and use \`/vote\` to rank your favorites!\n\n` +
-             `Notifications sent to ${summary.successful}/${summary.total} participants.`,
+             `Notifications sent to ${updatedLeague.participants.length} participants.`,
     embeds: [embed]
   });
 }
