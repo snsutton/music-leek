@@ -73,7 +73,7 @@ export class SpotifyPlaylistService {
         league.spotifyIntegration.userId,
         playlistName,
         playlistDescription,
-        false // private playlist
+        true // public playlist because private ones can only be accessed by the creator
       );
 
       // Add tracks to playlist
