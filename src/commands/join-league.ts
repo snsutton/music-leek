@@ -1,6 +1,9 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder, MessageFlags } from 'discord.js';
 import { Storage } from '../utils/storage';
 import { canAddParticipant, MAX_PARTICIPANTS } from '../utils/permissions';
+import { NotificationService } from '../services/notification-service';
+import { NotificationTemplates } from '../services/notification-templates';
+import { getCurrentRound } from '../utils/helpers';
 
 export const data = new SlashCommandBuilder()
   .setName('join-league')
@@ -35,6 +38,20 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
   league.participants.push(interaction.user.id);
   Storage.saveLeague(league);
+
+  // Send welcome DM with stage-aware guidance
+  const currentRound = getCurrentRound(league);
+  const welcomeEmbed = NotificationTemplates.playerJoinedLeague(league, currentRound);
+  NotificationService.sendDM(
+    interaction.client,
+    interaction.user.id,
+    { embeds: [welcomeEmbed] },
+    league.guildId,
+    'player_joined'
+  ).catch(error => {
+    // Log but don't block join if DM fails (user may have DMs disabled)
+    console.error(`[JoinLeague] Failed to send welcome DM to ${interaction.user.id}:`, error);
+  });
 
   await interaction.reply({
     content: `🎵 <@${interaction.user.id}> joined **${league.name}**!\n\nTotal participants: ${league.participants.length}`

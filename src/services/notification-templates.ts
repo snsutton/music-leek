@@ -7,6 +7,13 @@ import { calculateScores } from '../utils/helpers';
  */
 export class NotificationTemplates {
   /**
+   * Helper: Get join-league discovery blurb for channel messages
+   */
+  static getJoinLeagueBlurb(): string {
+    return "\n\n💡 Want to join this league? Use `/join-league` to participate!";
+  }
+
+  /**
    * DM Notification: League created
    */
   static leagueCreated(league: League): EmbedBuilder {
@@ -21,6 +28,52 @@ export class NotificationTemplates {
       )
       .setFooter({ text: 'You can leave the league anytime with /leave-league' })
       .setTimestamp();
+  }
+
+  /**
+   * DM Notification: Player joined league (stage-aware welcome)
+   */
+  static playerJoinedLeague(league: League, round: Round | null): EmbedBuilder {
+    const embed = new EmbedBuilder()
+      .setColor(0x00FF00)
+      .setTitle(`🎵 Welcome to ${league.name}!`)
+      .setTimestamp();
+
+    let description =
+      `You've joined the league! Here's what you need to know:\n\n` +
+      `**Total Rounds:** ${league.totalRounds}\n` +
+      `**Current Round:** ${league.currentRound}/${league.totalRounds}\n\n`;
+
+    // Stage-specific guidance
+    if (!round || round.status === 'completed') {
+      description +=
+        `**Status:** Between rounds\n\n` +
+        `The next round will start soon. Watch for notifications!`;
+    } else if (round.status === 'theme-submission') {
+      description +=
+        `**Status:** Round ${round.roundNumber} - Theme Submission Phase\n\n` +
+        `Submit your theme idea with \`/submit-theme\`!\n` +
+        `**Deadline:** <t:${Math.floor(round.themeSubmissionDeadline! / 1000)}:F>`;
+    } else if (round.status === 'submission') {
+      description +=
+        `**Status:** Round ${round.roundNumber} - Song Submission Phase\n\n` +
+        `**Theme:** ${round.prompt}\n\n` +
+        `Submit your song with \`/submit-song\`!\n` +
+        `**Deadline:** <t:${Math.floor(round.submissionDeadline / 1000)}:F>`;
+    } else if (round.status === 'voting') {
+      description +=
+        `**Status:** Round ${round.roundNumber} - Voting Phase\n\n` +
+        `This round is currently voting. You'll be able to participate in the next round!\n\n` +
+        (round.playlist
+          ? `🎧 Feel free to listen to this round's submissions: [Spotify Playlist](${round.playlist.playlistUrl})\n\n`
+          : ''
+        ) +
+        `**Voting ends:** <t:${Math.floor(round.votingDeadline / 1000)}:F>`;
+    }
+
+    return embed
+      .setDescription(description)
+      .setFooter({ text: 'Use /league-status to check current progress anytime' });
   }
 
   /**
@@ -42,8 +95,8 @@ export class NotificationTemplates {
   /**
    * DM Notification: Round started with theme submission phase
    */
-  static roundStartedWithThemePhase(league: League, round: Round): EmbedBuilder {
-    return new EmbedBuilder()
+  static roundStartedWithThemePhase(league: League, round: Round): { dm: EmbedBuilder; channel: string } {
+    const dm = new EmbedBuilder()
       .setColor(0x3498DB)
       .setTitle(`🎵 Round ${round.roundNumber} Started in ${league.name}!`)
       .setDescription(
@@ -54,6 +107,14 @@ export class NotificationTemplates {
       )
       .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
       .setTimestamp();
+
+    const channel =
+      `🎵 **Round ${round.roundNumber} has started in ${league.name}!**\n\n` +
+      `**Theme Submission Phase** - Submit your theme ideas!\n\n` +
+      `**Theme Deadline:** <t:${Math.floor(round.themeSubmissionDeadline! / 1000)}:F>\n\n` +
+      `Use \`/submit-theme\` to submit your idea. After the deadline, one theme will be randomly selected!`;
+
+    return { dm, channel };
   }
 
   /**
@@ -75,8 +136,8 @@ export class NotificationTemplates {
   /**
    * DM Notification: Theme selected (random)
    */
-  static themeSelected(league: League, round: Round, selectedTheme: ThemeSubmission): EmbedBuilder {
-    return new EmbedBuilder()
+  static themeSelected(league: League, round: Round, selectedTheme: ThemeSubmission): { dm: EmbedBuilder; channel: string } {
+    const dm = new EmbedBuilder()
       .setColor(0x2ECC71)
       .setTitle(`🎲 Theme Selected for Round ${round.roundNumber}!`)
       .setDescription(
@@ -88,13 +149,22 @@ export class NotificationTemplates {
       )
       .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
       .setTimestamp();
+
+    const channel =
+      `🎲 **Theme selected for Round ${round.roundNumber}!**\n\n` +
+      `**"${round.prompt}"**\n\n` +
+      `Submitted by <@${selectedTheme.userId}>\n\n` +
+      `Get ready to submit your songs! Use \`/submit-song\`.\n\n` +
+      `**Deadline:** <t:${Math.floor(round.submissionDeadline / 1000)}:F>`;
+
+    return { dm, channel };
   }
 
   /**
    * DM Notification: Theme selected (fallback - admin's original)
    */
-  static themeSelectedFallback(league: League, round: Round): EmbedBuilder {
-    return new EmbedBuilder()
+  static themeSelectedFallback(league: League, round: Round): { dm: EmbedBuilder; channel: string } {
+    const dm = new EmbedBuilder()
       .setColor(0xE67E22)
       .setTitle(`📋 Theme Set for Round ${round.roundNumber}`)
       .setDescription(
@@ -105,6 +175,15 @@ export class NotificationTemplates {
       )
       .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
       .setTimestamp();
+
+    const channel =
+      `📋 **Theme set for Round ${round.roundNumber}**\n\n` +
+      `No themes were submitted, so we're using the admin's original prompt:\n\n` +
+      `**"${round.prompt}"**\n\n` +
+      `Get ready to submit your songs! Use \`/submit-song\`.\n\n` +
+      `**Deadline:** <t:${Math.floor(round.submissionDeadline / 1000)}:F>`;
+
+    return { dm, channel };
   }
 
   /**
@@ -127,8 +206,8 @@ export class NotificationTemplates {
   /**
    * DM Notification: Voting started
    */
-  static votingStarted(league: League, round: Round): EmbedBuilder {
-    return new EmbedBuilder()
+  static votingStarted(league: League, round: Round): { dm: EmbedBuilder; channel: string } {
+    const dm = new EmbedBuilder()
       .setColor(0x9B59B6)
       .setTitle(`🗳️ Voting Open for Round ${round.roundNumber}!`)
       .setDescription(
@@ -143,6 +222,18 @@ export class NotificationTemplates {
       )
       .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
       .setTimestamp();
+
+    const channel =
+      `🗳️ **Voting has started for Round ${round.roundNumber}!**\n\n` +
+      `**Prompt:** ${round.prompt}\n\n` +
+      (round.playlist
+        ? `🎧 **[Listen to all submissions with this Spotify playlist](${round.playlist.playlistUrl})**\n\n`
+        : ''
+      ) +
+      `Review the submissions and use \`/vote\` to rank your favorites!\n\n` +
+      `**Voting Deadline:** <t:${Math.floor(round.votingDeadline / 1000)}:F>`;
+
+    return { dm, channel };
   }
 
   /**

@@ -83,18 +83,32 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     // Calculate league-wide results
     const results = calculateLeagueResults(league);
 
-    // Post final round results + league fanfare to channel
+    // Post final round results + league fanfare to channel (with join-league blurb)
     const fanfareMessage = NotificationTemplates.leagueEndedWithFanfare(league, round, results);
-    await channel.send(fanfareMessage);
+    const messageContent = typeof fanfareMessage.content === 'string'
+      ? fanfareMessage.content + NotificationTemplates.getJoinLeagueBlurb()
+      : fanfareMessage.content;
+
+    await channel.send({
+      content: messageContent,
+      embeds: fanfareMessage.embeds
+    });
 
     await interaction.reply({
       content: `🎉 **Round ${round.roundNumber} has ended!**\n\n🏆 **${league.name} has concluded!** Check the channel for final results.`,
       flags: MessageFlags.Ephemeral
     });
   } else {
-    // Post round results + leaderboard to channel
+    // Post round results + leaderboard to channel (with join-league blurb)
     const roundMessage = NotificationTemplates.roundEndedWithLeaderboard(league, round, leagueStandings);
-    await channel.send(roundMessage);
+    const messageContent = typeof roundMessage.content === 'string'
+      ? roundMessage.content + NotificationTemplates.getJoinLeagueBlurb()
+      : roundMessage.content;
+
+    await channel.send({
+      content: messageContent,
+      embeds: roundMessage.embeds
+    });
 
     // Notify admins that next round can start
     const adminEmbed = NotificationTemplates.roundReadyToStart(league);

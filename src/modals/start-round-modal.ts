@@ -165,37 +165,26 @@ export async function execute(interaction: ModalSubmitInteraction) {
   // Defer reply immediately to avoid Discord timeout
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-  // Send round started notification to all participants (with theme phase)
-  const embed = NotificationTemplates.roundStartedWithThemePhase(league, round);
-  const results = await NotificationService.sendBulkDM(
+  // Send round started notification to all participants (with theme phase) - dual notification
+  const notification = NotificationTemplates.roundStartedWithThemePhase(league, round);
+  const { dmResults, channelSuccess } = await NotificationService.sendDualNotification(
     interaction.client,
     league.participants,
-    { embeds: [embed] },
-    100,
-    league.guildId,
-    'round_started'
+    { embeds: [notification.dm] },
+    notification.channel,
+    league.channelId,
+    {
+      guildId: league.guildId,
+      notificationType: 'round_started',
+      appendJoinBlurb: true
+    }
   );
 
   // Mark notification as sent
   round.notificationsSent.roundStarted = true;
   Storage.saveLeague(league);
 
-  const summary = NotificationService.getNotificationSummary(results);
-
-  // Post round start notification to league channel
-  try {
-    const channel = await interaction.client.channels.fetch(league.channelId);
-    if (channel && channel.isTextBased() && !channel.isDMBased()) {
-      await channel.send(
-        `🎵 **Round ${round.roundNumber} has started!**\n\n` +
-        `**Theme Submission Phase:** Submit your theme ideas for the next 24 hours!\n` +
-        `**Theme Deadline:** <t:${Math.floor(round.themeSubmissionDeadline! / 1000)}:F>\n\n` +
-        `Use \`/submit-theme\` to submit your theme ideas. One theme will be randomly selected!`
-      );
-    }
-  } catch (error) {
-    console.error(`[StartRound] Error posting round start to channel:`, error);
-  }
+  const summary = NotificationService.getNotificationSummary(dmResults);
 
   await interaction.editReply({
     content: `🎵 **Round ${round.roundNumber}** has started in **${league.name}**!\n\n` +
@@ -203,7 +192,7 @@ export async function execute(interaction: ModalSubmitInteraction) {
              `**Theme Deadline:** <t:${Math.floor(round.themeSubmissionDeadline! / 1000)}:F>\n\n` +
              `Your fallback theme has been submitted and will be included in the random drawing.\n` +
              `**Themes submitted:** 1/${league.participants.length}\n\n` +
-             `Notifications sent to ${summary.successful}/${summary.total} participants.\n\n` +
+             `**Notifications:** Channel ${channelSuccess ? '✅' : '❌'} | DMs: ${summary.successful}/${summary.total} delivered\n\n` +
              `Players can use \`/submit-theme\` to submit their theme ideas!`
   });
 }

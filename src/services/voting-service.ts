@@ -58,38 +58,33 @@ export class VotingService {
 
     Storage.saveLeague(league);
 
-    // Post to channel (unless explicitly skipped)
+    // Send dual notifications (channel + DMs) unless channel post is explicitly skipped
     if (!options?.skipChannelPost) {
-      try {
-        const channel = await client.channels.fetch(league.channelId);
-        if (channel && channel.isTextBased() && !channel.isDMBased()) {
-          let message = `🗳️ **Voting has started for Round ${round.roundNumber}!**\n\n` +
-            `**Prompt:** ${round.prompt}\n\n`;
-
-          if (round.playlist) {
-            message += `🎧 **[Listen to all submissions with this Spotify playlist](${round.playlist.playlistUrl})**\n\n`;
-          }
-
-          message += `Review the submissions and use \`/vote\` to rank your favorites!\n\n` +
-            `**Voting Deadline:** <t:${Math.floor(round.votingDeadline / 1000)}:F>`;
-
-          await channel.send(message);
+      const notification = NotificationTemplates.votingStarted(league, round);
+      await NotificationService.sendDualNotification(
+        client,
+        league.participants,
+        { embeds: [notification.dm] },
+        notification.channel,
+        league.channelId,
+        {
+          guildId: league.guildId,
+          notificationType: 'voting_started',
+          appendJoinBlurb: true
         }
-      } catch (error) {
-        console.error(`[${logPrefix}] Error posting voting start to channel:`, error);
-      }
+      );
+    } else {
+      // If channel post is skipped, still send DMs
+      const notification = NotificationTemplates.votingStarted(league, round);
+      await NotificationService.sendBulkDM(
+        client,
+        league.participants,
+        { embeds: [notification.dm] },
+        100,
+        league.guildId,
+        'voting_started'
+      );
     }
-
-    // Send DM notifications to all participants
-    const notificationEmbed = NotificationTemplates.votingStarted(league, round);
-    await NotificationService.sendBulkDM(
-      client,
-      league.participants,
-      { embeds: [notificationEmbed] },
-      100,
-      league.guildId,
-      'voting_started'
-    );
 
     // Mark notification as sent
     round.notificationsSent.votingStarted = true;
