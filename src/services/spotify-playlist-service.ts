@@ -53,11 +53,16 @@ export class SpotifyPlaylistService {
     }
 
     try {
-      // Create playlist
-      const playlistName = `${round.prompt}`;
-      const playlistDescription = guildName
-        ? `Music Leek - ${guildName} - ${league.name} - Round ${round.roundNumber}\nhttps://github.com/snsutton/music-leek`
-        : `Music Leek - ${league.name} - Round ${round.roundNumber}\nhttps://github.com/snsutton/music-leek`;
+      // Create playlist - sanitize name and description for Spotify API
+      // Spotify limits: name max 100 chars, description max 300 chars
+      const playlistName = `${round.prompt}`.substring(0, 100);
+      const rawDescription = guildName
+        ? `Music Leek - ${guildName} - ${league.name} - Round ${round.roundNumber} - https://github.com/snsutton/music-leek`
+        : `Music Leek - ${league.name} - Round ${round.roundNumber} - https://github.com/snsutton/music-leek`;
+      const playlistDescription = rawDescription.substring(0, 300);
+
+      console.log(`[SpotifyPlaylist] Creating playlist "${playlistName}" with ${trackUris.length} tracks`);
+      console.log(`[SpotifyPlaylist] Description: "${playlistDescription}"`);
 
       const playlistId = await this.createPlaylist(
         accessToken,
