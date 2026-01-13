@@ -52,6 +52,10 @@ export class SpotifyPlaylistService {
       console.log(`[SpotifyPlaylist] Skipped ${invalidTracks.length} invalid track(s)`);
     }
 
+    // Shuffle tracks to maintain submission anonymity
+    this.shuffleArray(trackUris);
+    console.log(`[SpotifyPlaylist] Shuffled ${trackUris.length} tracks to maintain anonymity`);
+
     try {
       // Create playlist - sanitize name and description for Spotify API
       // Spotify limits: name max 100 chars, description max 300 chars
@@ -160,6 +164,16 @@ export class SpotifyPlaylistService {
       return null;
     } catch (error) {
       return null;
+    }
+  }
+
+  /**
+   * Fisher-Yates shuffle algorithm to randomize array in-place
+   */
+  private static shuffleArray<T>(array: T[]): void {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
     }
   }
 }
