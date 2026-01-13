@@ -87,7 +87,7 @@ export interface MusicServiceError {
   retryable: boolean;
 }
 
-export type MusicPlatform = 'spotify' | 'apple-music' | 'unsupported';
+export type MusicPlatform = 'spotify' | 'unsupported';
 
 export interface ParsedMusicUrl {
   platform: MusicPlatform;

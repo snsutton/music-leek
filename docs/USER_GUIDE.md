@@ -15,7 +15,7 @@
 
 ### Playing a Round
 
-1. **Submit a song** - Use `/submit-song` and paste a Spotify or Apple Music link
+1. **Submit a song** - Use `/submit-song` and paste a Spotify link
 2. **Vote** - When voting opens, use `/vote` to pick your favorites (you get 10 points to distribute)
 3. **Check results** - See who won and view the leaderboard
 
@@ -26,7 +26,7 @@
 When a round is active, submit your song:
 
 1. Type `/submit-song`
-2. Paste a Spotify or Apple Music link
+2. Paste a Spotify link
 3. The bot fills in the song details automatically - just click submit!
 
 **Tips:**

@@ -19,10 +19,9 @@ export async function execute(interaction: ModalSubmitInteraction) {
   const parsedUrl = parseMusicUrl(songUrl);
   if (!parsedUrl || parsedUrl.platform === 'unsupported') {
     await interaction.editReply({
-      content: '❌ Invalid URL! Please provide a Spotify or Apple Music track link.\n\n' +
-               'Examples:\n' +
-               '• Spotify: `https://open.spotify.com/track/...`\n' +
-               '• Apple Music: `https://music.apple.com/us/song/...`'
+      content: '❌ Invalid URL! Please provide a Spotify track link.\n\n' +
+               'Example:\n' +
+               '• Spotify: `https://open.spotify.com/track/...`\n'
     });
     return;
   }
@@ -31,7 +30,7 @@ export async function execute(interaction: ModalSubmitInteraction) {
   const service = MusicServiceFactory.getService(parsedUrl.platform);
   if (!service) {
     await interaction.editReply({
-      content: `❌ ${parsedUrl.platform === 'spotify' ? 'Spotify' : 'Apple Music'} support is not configured on this bot.\n\nPlease contact the bot administrator to set up API credentials.`
+      content: `❌ Spotify support is not configured on this bot.\n\nPlease contact the bot administrator to set up API credentials.`
     });
     return;
   }
