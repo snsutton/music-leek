@@ -70,13 +70,36 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
   try {
     console.log(`[CreatePlaylist] Creating Spotify playlist for round ${round.roundNumber}...`);
+    console.log(`[CreatePlaylist] League has ${round.submissions.length} submissions`);
+
+    // Log submission URLs for debugging
+    round.submissions.forEach((sub, i) => {
+      console.log(`[CreatePlaylist] Submission ${i + 1}: ${sub.songUrl}`);
+    });
+
     const guild = interaction.guild || await interaction.client.guilds.fetch(guildId);
     const playlistData = await SpotifyPlaylistService.createRoundPlaylist(league, round, guild?.name);
 
     if (!playlistData) {
+      console.error(`[CreatePlaylist] createRoundPlaylist returned null for round ${round.roundNumber}`);
+
+      // Check if submissions are Spotify links
+      const nonSpotifyLinks = round.submissions.filter(sub => !sub.songUrl.includes('spotify.com'));
+      if (nonSpotifyLinks.length > 0) {
+        await interaction.editReply({
+          content: `❌ Failed to create playlist. Found ${nonSpotifyLinks.length} non-Spotify submission(s).\n\n` +
+                   `All submissions must be Spotify links. Non-Spotify links:\n` +
+                   nonSpotifyLinks.map(s => `• ${s.songTitle} by ${s.artist}`).join('\n')
+        });
+        return;
+      }
+
       await interaction.editReply({
-        content: '❌ Failed to create playlist. Check that all submissions are valid Spotify links and try again.\n\n' +
-                 'If the problem persists, you may need to reconnect your Spotify account.'
+        content: '❌ Failed to create playlist. Possible issues:\n\n' +
+                 '• Spotify access token may have expired\n' +
+                 '• Invalid Spotify links in submissions\n' +
+                 '• Spotify API error\n\n' +
+                 'Check the bot logs for more details. You may need to reconnect your Spotify account.'
       });
       return;
     }

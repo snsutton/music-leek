@@ -9,3 +9,4 @@ data/*.json
 coverage/
 .claude/settings.local.json
 .markdownlint.json
+tmpclaude*
