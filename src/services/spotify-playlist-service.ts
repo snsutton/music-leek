@@ -105,6 +105,7 @@ export class SpotifyPlaylistService {
     description: string,
     isPublic: boolean
   ): Promise<string> {
+    console.log(`[SpotifyPlaylist] Creating playlist with public=${isPublic}`);
     const response = await axios.post(
       `${SPOTIFY_API_BASE}/users/${spotifyUserId}/playlists`,
       {
@@ -120,6 +121,7 @@ export class SpotifyPlaylistService {
       }
     );
 
+    console.log(`[SpotifyPlaylist] Spotify API response: public=${response.data.public}, id=${response.data.id}`);
     return response.data.id;
   }
 
