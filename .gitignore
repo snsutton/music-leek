@@ -4,8 +4,7 @@ dist/
 !env.example
 *.log
 .DS_Store
-data/*.json
-!data/.gitkeep
+data/
 coverage/
 .claude/settings.local.json
 .markdownlint.json
