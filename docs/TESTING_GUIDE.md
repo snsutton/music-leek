@@ -29,6 +29,22 @@ To test changes safely before deployment:
 
 This keeps production running while you test changes with a separate bot instance.
 
+### Backup and Restore Data
+
+To reset data state for repeated testing (e.g., testing `/start-voting` multiple times):
+
+```bash
+# Save current state before testing
+npm run backup
+
+# Run your tests (e.g., /start-voting in Discord)
+
+# Restore to pre-test state
+npm run restore
+```
+
+This backs up and restores `leagues.json`, `tokens.json`, and `dm-contexts.json` from `data/backup/`.
+
 ## Prerequisites
 
 - Bot is running and online in Discord
