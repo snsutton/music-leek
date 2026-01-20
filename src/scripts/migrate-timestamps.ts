@@ -1,7 +1,7 @@
 /**
  * One-time migration script to convert numeric timestamps to ISO 8601 strings.
  *
- * Run with: npx ts-node scripts/migrate-timestamps.ts
+ * Run with: node dist/scripts/migrate-timestamps.js
  *
  * After verifying the migration, this script can be deleted.
  */
@@ -9,7 +9,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '../data');
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '../../data');
 const LEAGUES_FILE = path.join(DATA_DIR, 'leagues.json');
 const DM_CONTEXTS_FILE = path.join(DATA_DIR, 'dm-contexts.json');
 
