@@ -7,6 +7,10 @@ import { League } from '../../types';
 
 jest.mock('../../utils/storage');
 
+// Helper to create ISO timestamps
+const now = () => new Date().toISOString();
+const future = (ms: number) => new Date(Date.now() + ms).toISOString();
+
 describe('vote-points-modal', () => {
   beforeEach(() => {
     MockStorage.reset();
@@ -29,19 +33,19 @@ describe('vote-points-modal', () => {
       channelId: 'channel123',
       createdBy: 'user123',
       admins: ['user123'],
-      createdAt: Date.now(),
+      createdAt: now(),
       currentRound: 1,
       rounds: [{
         roundNumber: 1,
         prompt: 'Best rock song',
         status: 'voting',
-        startedAt: Date.now(),
-        submissionDeadline: Date.now(),
-        votingDeadline: Date.now() + 86400000,
+        startedAt: now(),
+        submissionDeadline: now(),
+        votingDeadline: future(86400000),
         submissions: [
-          { userId: 'user123', songUrl: 'url1', songTitle: 'Song 1', artist: 'Artist 1', submittedAt: Date.now() },
-          { userId: 'user456', songUrl: 'url2', songTitle: 'Song 2', artist: 'Artist 2', submittedAt: Date.now() },
-          { userId: 'user789', songUrl: 'url3', songTitle: 'Song 3', artist: 'Artist 3', submittedAt: Date.now() },
+          { userId: 'user123', songUrl: 'url1', songTitle: 'Song 1', artist: 'Artist 1', submittedAt: now() },
+          { userId: 'user456', songUrl: 'url2', songTitle: 'Song 2', artist: 'Artist 2', submittedAt: now() },
+          { userId: 'user789', songUrl: 'url3', songTitle: 'Song 3', artist: 'Artist 3', submittedAt: now() },
         ],
         votes: [],
         notificationsSent: {
@@ -92,18 +96,18 @@ describe('vote-points-modal', () => {
       channelId: 'channel123',
       createdBy: 'user123',
       admins: ['user123'],
-      createdAt: Date.now(),
+      createdAt: now(),
       currentRound: 1,
       rounds: [{
         roundNumber: 1,
         prompt: 'Best rock song',
         status: 'voting',
-        startedAt: Date.now(),
-        submissionDeadline: Date.now(),
-        votingDeadline: Date.now() + 86400000,
+        startedAt: now(),
+        submissionDeadline: now(),
+        votingDeadline: future(86400000),
         submissions: [
-          { userId: 'user123', songUrl: 'url1', songTitle: 'Song 1', artist: 'Artist 1', submittedAt: Date.now() },
-          { userId: 'user456', songUrl: 'url2', songTitle: 'Song 2', artist: 'Artist 2', submittedAt: Date.now() },
+          { userId: 'user123', songUrl: 'url1', songTitle: 'Song 1', artist: 'Artist 1', submittedAt: now() },
+          { userId: 'user456', songUrl: 'url2', songTitle: 'Song 2', artist: 'Artist 2', submittedAt: now() },
         ],
         votes: [],
         notificationsSent: {
@@ -149,19 +153,19 @@ describe('vote-points-modal', () => {
       channelId: 'channel123',
       createdBy: 'user123',
       admins: ['user123'],
-      createdAt: Date.now(),
+      createdAt: now(),
       currentRound: 1,
       rounds: [{
         roundNumber: 1,
         prompt: 'Best rock song',
         status: 'voting',
-        startedAt: Date.now(),
-        submissionDeadline: Date.now(),
-        votingDeadline: Date.now() + 86400000,
+        startedAt: now(),
+        submissionDeadline: now(),
+        votingDeadline: future(86400000),
         submissions: [
-          { userId: 'user123', songUrl: 'url1', songTitle: 'Song 1', artist: 'Artist 1', submittedAt: Date.now() },
-          { userId: 'user456', songUrl: 'url2', songTitle: 'Song 2', artist: 'Artist 2', submittedAt: Date.now() },
-          { userId: 'user789', songUrl: 'url3', songTitle: 'Song 3', artist: 'Artist 3', submittedAt: Date.now() },
+          { userId: 'user123', songUrl: 'url1', songTitle: 'Song 1', artist: 'Artist 1', submittedAt: now() },
+          { userId: 'user456', songUrl: 'url2', songTitle: 'Song 2', artist: 'Artist 2', submittedAt: now() },
+          { userId: 'user789', songUrl: 'url3', songTitle: 'Song 3', artist: 'Artist 3', submittedAt: now() },
         ],
         votes: [],
         notificationsSent: {
@@ -208,18 +212,18 @@ describe('vote-points-modal', () => {
       channelId: 'channel123',
       createdBy: 'user123',
       admins: ['user123'],
-      createdAt: Date.now(),
+      createdAt: now(),
       currentRound: 1,
       rounds: [{
         roundNumber: 1,
         prompt: 'Best rock song',
         status: 'voting',
-        startedAt: Date.now(),
-        submissionDeadline: Date.now(),
-        votingDeadline: Date.now() + 86400000,
+        startedAt: now(),
+        submissionDeadline: now(),
+        votingDeadline: future(86400000),
         submissions: [
-          { userId: 'user123', songUrl: 'url1', songTitle: 'Song 1', artist: 'Artist 1', submittedAt: Date.now() },
-          { userId: 'user456', songUrl: 'url2', songTitle: 'Song 2', artist: 'Artist 2', submittedAt: Date.now() },
+          { userId: 'user123', songUrl: 'url1', songTitle: 'Song 1', artist: 'Artist 1', submittedAt: now() },
+          { userId: 'user456', songUrl: 'url2', songTitle: 'Song 2', artist: 'Artist 2', submittedAt: now() },
         ],
         votes: [],
         notificationsSent: {
@@ -257,18 +261,18 @@ describe('vote-points-modal', () => {
       channelId: 'channel123',
       createdBy: 'user123',
       admins: ['user123'],
-      createdAt: Date.now(),
+      createdAt: now(),
       currentRound: 1,
       rounds: [{
         roundNumber: 1,
         prompt: 'Best rock song',
         status: 'voting',
-        startedAt: Date.now(),
-        submissionDeadline: Date.now(),
-        votingDeadline: Date.now() + 86400000,
+        startedAt: now(),
+        submissionDeadline: now(),
+        votingDeadline: future(86400000),
         submissions: [
-          { userId: 'user456', songUrl: 'url1', songTitle: 'Song 1', artist: 'Artist 1', submittedAt: Date.now() },
-          { userId: 'user789', songUrl: 'url2', songTitle: 'Song 2', artist: 'Artist 2', submittedAt: Date.now() },
+          { userId: 'user456', songUrl: 'url1', songTitle: 'Song 1', artist: 'Artist 1', submittedAt: now() },
+          { userId: 'user789', songUrl: 'url2', songTitle: 'Song 2', artist: 'Artist 2', submittedAt: now() },
         ],
         votes: [],
         notificationsSent: {
@@ -309,15 +313,15 @@ describe('vote-points-modal', () => {
       channelId: 'channel123',
       createdBy: 'user123',
       admins: ['user123'],
-      createdAt: Date.now(),
+      createdAt: now(),
       currentRound: 1,
       rounds: [{
         roundNumber: 1,
         prompt: 'Best rock song',
         status: 'voting',
-        startedAt: Date.now(),
-        submissionDeadline: Date.now(),
-        votingDeadline: Date.now() + 86400000,
+        startedAt: now(),
+        submissionDeadline: now(),
+        votingDeadline: future(86400000),
         submissions: [],
         votes: [],
         notificationsSent: {
@@ -354,19 +358,19 @@ describe('vote-points-modal', () => {
       channelId: 'channel123',
       createdBy: 'user123',
       admins: ['user123'],
-      createdAt: Date.now(),
+      createdAt: now(),
       currentRound: 1,
       rounds: [{
         roundNumber: 1,
         prompt: 'Best rock song',
         status: 'voting',
-        startedAt: Date.now(),
-        submissionDeadline: Date.now(),
-        votingDeadline: Date.now() + 86400000,
+        startedAt: now(),
+        submissionDeadline: now(),
+        votingDeadline: future(86400000),
         submissions: [
-          { userId: 'user123', songUrl: 'url1', songTitle: 'Song 1', artist: 'Artist 1', submittedAt: Date.now() },
-          { userId: 'user456', songUrl: 'url2', songTitle: 'Song 2', artist: 'Artist 2', submittedAt: Date.now() },
-          { userId: 'user789', songUrl: 'url3', songTitle: 'Song 3', artist: 'Artist 3', submittedAt: Date.now() },
+          { userId: 'user123', songUrl: 'url1', songTitle: 'Song 1', artist: 'Artist 1', submittedAt: now() },
+          { userId: 'user456', songUrl: 'url2', songTitle: 'Song 2', artist: 'Artist 2', submittedAt: now() },
+          { userId: 'user789', songUrl: 'url3', songTitle: 'Song 3', artist: 'Artist 3', submittedAt: now() },
         ],
         votes: [
           {

@@ -256,7 +256,7 @@ if (shouldStartHttpServer) {
           league.spotifyIntegration = {
             userId: result.spotifyUserId,
             connectedBy: result.discordUserId,
-            connectedAt: Date.now()
+            connectedAt: new Date().toISOString()
           };
           Storage.saveLeague(league);
           console.log(`[HTTP] Updated league ${league.name} with Spotify integration`);

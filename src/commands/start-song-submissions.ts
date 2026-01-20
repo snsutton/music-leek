@@ -1,6 +1,6 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder, MessageFlags } from 'discord.js';
 import { Storage } from '../utils/storage';
-import { getCurrentRound } from '../utils/helpers';
+import { getCurrentRound, toTimestamp } from '../utils/helpers';
 import { isAdmin } from '../utils/permissions';
 import { NotificationService } from '../services/notification-service';
 import { NotificationTemplates } from '../services/notification-templates';
@@ -75,7 +75,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
           `🎲 **Theme selected for Round ${round.roundNumber}!**\n\n` +
           `**"${selectedTheme.theme}"**\n\n` +
           `Submitted by <@${selectedTheme.userId}>\n\n` +
-          `Get ready to submit your songs! Deadline: <t:${Math.floor(round.submissionDeadline / 1000)}:F>\n\n` +
+          `Get ready to submit your songs! Deadline: <t:${Math.floor(toTimestamp(round.submissionDeadline) / 1000)}:F>\n\n` +
           `Use \`/submit-song\` to submit your song for this round!`
         );
       }
@@ -115,7 +115,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         await channel.send(
           `⚠️ **No additional themes were submitted!**\n\n` +
           `Using the original theme:\n**"${round.prompt}"**\n\n` +
-          `Get ready to submit your songs! Deadline: <t:${Math.floor(round.submissionDeadline / 1000)}:F>\n\n` +
+          `Get ready to submit your songs! Deadline: <t:${Math.floor(toTimestamp(round.submissionDeadline) / 1000)}:F>\n\n` +
           `Use \`/submit-song\` to submit your song for this round!`
         );
       }

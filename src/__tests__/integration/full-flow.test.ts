@@ -8,6 +8,7 @@ import { MockStorage } from '../utils/storage-mock';
 import { Storage } from '../../utils/storage';
 import { VoteSessionManager } from '../../utils/vote-sessions';
 import * as helpers from '../../utils/helpers';
+import { toISOString } from '../../utils/helpers';
 
 jest.mock('../../utils/storage');
 jest.mock('../../utils/helpers');
@@ -90,14 +91,14 @@ describe('Full Flow Integration Test', () => {
         songUrl: 'https://spotify.com/track/A',
         songTitle: 'Eruption',
         artist: 'Van Halen',
-        submittedAt: Date.now()
+        submittedAt: new Date().toISOString()
       });
       league.rounds[0].submissions.push({
         userId: 'userB',
         songUrl: 'https://spotify.com/track/B',
         songTitle: 'Comfortably Numb',
         artist: 'Pink Floyd',
-        submittedAt: Date.now()
+        submittedAt: new Date().toISOString()
       });
       MockStorage.saveLeague(league);
 

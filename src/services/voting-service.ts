@@ -4,6 +4,7 @@ import { Storage } from '../utils/storage';
 import { SpotifyPlaylistService } from './spotify-playlist-service';
 import { NotificationService } from './notification-service';
 import { NotificationTemplates } from './notification-templates';
+import { toISOString, toTimestamp } from '../utils/helpers';
 
 /**
  * Service for managing voting phase transitions
@@ -53,7 +54,7 @@ export class VotingService {
     // Recalculate voting deadline based on when voting actually starts (not from round start)
     if (round.votingDurationMs) {
       const now = Date.now();
-      round.votingDeadline = now + round.votingDurationMs;
+      round.votingDeadline = toISOString(now + round.votingDurationMs);
     }
 
     Storage.saveLeague(league);
@@ -71,7 +72,7 @@ export class VotingService {
           }
 
           message += `Review the submissions and use \`/vote\` to rank your favorites!\n\n` +
-            `**Voting Deadline:** <t:${Math.floor(round.votingDeadline / 1000)}:F>`;
+            `**Voting Deadline:** <t:${Math.floor(toTimestamp(round.votingDeadline) / 1000)}:F>`;
 
           await channel.send(message);
         }

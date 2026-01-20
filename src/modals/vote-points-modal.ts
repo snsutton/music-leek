@@ -1,7 +1,7 @@
 import { ModalSubmitInteraction, MessageFlags } from 'discord.js';
 import { Storage } from '../utils/storage';
 import { Vote } from '../types';
-import { getCurrentRound, getMissingVoters } from '../utils/helpers';
+import { getCurrentRound, getMissingVoters, toTimestamp } from '../utils/helpers';
 import { VoteSessionManager } from '../utils/vote-sessions';
 import { NotificationService } from '../services/notification-service';
 import { NotificationTemplates } from '../services/notification-templates';
@@ -69,7 +69,7 @@ export async function execute(interaction: ModalSubmitInteraction) {
     return;
   }
 
-  if (Date.now() > round.votingDeadline) {
+  if (Date.now() > toTimestamp(round.votingDeadline)) {
     await interaction.reply({
       content: 'Voting deadline has passed!',
       flags: MessageFlags.Ephemeral

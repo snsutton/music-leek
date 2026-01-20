@@ -4,6 +4,7 @@ import { League } from '../types';
 import { NotificationService } from '../services/notification-service';
 import { NotificationTemplates } from '../services/notification-templates';
 import { SpotifyOAuthService } from '../services/spotify-oauth-service';
+import { toISOString } from '../utils/helpers';
 
 export const data = new SlashCommandBuilder()
   .setName('create-league')
@@ -47,7 +48,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     channelId: interaction.channelId,
     createdBy: interaction.user.id,
     admins: [interaction.user.id],
-    createdAt: Date.now(),
+    createdAt: toISOString(),
     currentRound: 0,
     rounds: [],
     participants: [interaction.user.id],

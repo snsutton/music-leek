@@ -1,7 +1,7 @@
 export interface ThemeSubmission {
   userId: string;
   theme: string;
-  submittedAt: number;
+  submittedAt: string; // ISO 8601 timestamp
 }
 
 export interface League {
@@ -10,17 +10,17 @@ export interface League {
   channelId: string;
   createdBy: string;
   admins: string[]; // user IDs of league admins (includes createdBy)
-  createdAt: number;
+  createdAt: string; // ISO 8601 timestamp
   currentRound: number;
   rounds: Round[];
   participants: string[]; // user IDs
   totalRounds: number; // Total number of rounds planned for this league
   isCompleted: boolean; // Whether league has finished all rounds
-  completedAt?: number; // Timestamp when league was completed
+  completedAt?: string; // ISO 8601 timestamp when league was completed
   spotifyIntegration?: {
     userId: string; // Spotify user ID (e.g., "abc123xyz")
     connectedBy: string; // Discord user ID who connected
-    connectedAt: number; // Unix timestamp
+    connectedAt: string; // ISO 8601 timestamp
   };
 }
 
@@ -29,10 +29,10 @@ export interface Round {
   prompt: string;
   adminPrompt?: string; // Admin's original prompt (used as fallback if no themes submitted)
   status: 'theme-submission' | 'submission' | 'voting' | 'completed';
-  startedAt: number;
-  themeSubmissionDeadline?: number; // 24h from round start
-  submissionDeadline: number;
-  votingDeadline: number;
+  startedAt: string; // ISO 8601 timestamp
+  themeSubmissionDeadline?: string; // ISO 8601 timestamp, 24h from round start
+  submissionDeadline: string; // ISO 8601 timestamp
+  votingDeadline: string; // ISO 8601 timestamp
   votingDurationMs?: number; // Duration of voting phase in milliseconds (for recalculating deadline when voting starts early)
   themeSubmissions?: ThemeSubmission[]; // Theme ideas submitted by players
   submissions: Submission[];
@@ -49,7 +49,7 @@ export interface Round {
   playlist?: {
     playlistId: string; // Spotify playlist ID
     playlistUrl: string; // Full URL to playlist
-    createdAt: number; // Unix timestamp
+    createdAt: string; // ISO 8601 timestamp
     trackCount: number; // Number of tracks added
   };
 }
@@ -59,7 +59,7 @@ export interface Submission {
   songUrl: string;
   songTitle: string;
   artist: string;
-  submittedAt: number;
+  submittedAt: string; // ISO 8601 timestamp
 }
 
 export interface Vote {
@@ -135,7 +135,7 @@ export interface LeagueEndResults {
 export interface SpotifyTokenData {
   accessToken: string; // OAuth access token for Spotify API
   refreshToken: string; // Used to get new access token when expired
-  expiresAt: number; // Unix timestamp (tokens expire after 1 hour)
+  expiresAt: string; // ISO 8601 timestamp (tokens expire after 1 hour)
   scope: string[]; // Permissions granted by user
   tokenType: 'Bearer';
 }
@@ -149,7 +149,7 @@ export interface TokenStorage {
 export interface DmContext {
   userId: string;
   guildId: string;
-  lastNotificationAt: number;
+  lastNotificationAt: string; // ISO 8601 timestamp
   notificationType: string;
 }
 

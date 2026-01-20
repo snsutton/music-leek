@@ -3,6 +3,7 @@ import * as path from 'path';
 import { ChatInputCommandInteraction } from 'discord.js';
 import { DmContext, DmContextStorage } from '../types';
 import { Storage } from './storage';
+import { toISOString, toTimestamp } from './helpers';
 
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '../../data');
 const DATA_FILE = path.join(DATA_DIR, 'dm-contexts.json');
@@ -46,7 +47,7 @@ export class DmContextManager {
     data.contexts[userId] = {
       userId,
       guildId,
-      lastNotificationAt: Date.now(),
+      lastNotificationAt: toISOString(),
       notificationType
     };
     this.save(data);
@@ -64,7 +65,7 @@ export class DmContextManager {
     }
 
     // Check if context has expired
-    const age = Date.now() - context.lastNotificationAt;
+    const age = Date.now() - toTimestamp(context.lastNotificationAt);
     if (age > CONTEXT_TTL) {
       // Context expired, clean it up
       delete data.contexts[userId];
@@ -85,7 +86,7 @@ export class DmContextManager {
 
     for (const userId in data.contexts) {
       const context = data.contexts[userId];
-      const age = now - context.lastNotificationAt;
+      const age = now - toTimestamp(context.lastNotificationAt);
 
       if (age > CONTEXT_TTL) {
         delete data.contexts[userId];

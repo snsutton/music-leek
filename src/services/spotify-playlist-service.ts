@@ -2,13 +2,14 @@ import axios from 'axios';
 import { League, Round } from '../types';
 import { SpotifyOAuthService } from './spotify-oauth-service';
 import { parseMusicUrl } from '../utils/url-validator';
+import { toISOString } from '../utils/helpers';
 
 const SPOTIFY_API_BASE = 'https://api.spotify.com/v1';
 
 interface PlaylistData {
   playlistId: string;
   playlistUrl: string;
-  createdAt: number;
+  createdAt: string; // ISO 8601 timestamp
   trackCount: number;
 }
 
@@ -86,7 +87,7 @@ export class SpotifyPlaylistService {
       return {
         playlistId,
         playlistUrl,
-        createdAt: Date.now(),
+        createdAt: toISOString(),
         trackCount: trackUris.length
       };
     } catch (error: any) {

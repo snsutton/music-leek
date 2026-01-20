@@ -1,4 +1,4 @@
-import { calculateScores } from '../../utils/helpers';
+import { calculateScores, toISOString } from '../../utils/helpers';
 import { Round } from '../../types';
 
 describe('calculateScores', () => {
@@ -7,13 +7,13 @@ describe('calculateScores', () => {
       roundNumber: 1,
       prompt: 'Best rock song',
       status: 'completed',
-      startedAt: Date.now(),
-      submissionDeadline: Date.now(),
-      votingDeadline: Date.now(),
+      startedAt: toISOString(),
+      submissionDeadline: toISOString(),
+      votingDeadline: toISOString(),
       submissions: [
-        { userId: 'user1', songUrl: 'url1', songTitle: 'Song 1', artist: 'Artist 1', submittedAt: Date.now() },
-        { userId: 'user2', songUrl: 'url2', songTitle: 'Song 2', artist: 'Artist 2', submittedAt: Date.now() },
-        { userId: 'user3', songUrl: 'url3', songTitle: 'Song 3', artist: 'Artist 3', submittedAt: Date.now() },
+        { userId: 'user1', songUrl: 'url1', songTitle: 'Song 1', artist: 'Artist 1', submittedAt: toISOString() },
+        { userId: 'user2', songUrl: 'url2', songTitle: 'Song 2', artist: 'Artist 2', submittedAt: toISOString() },
+        { userId: 'user3', songUrl: 'url3', songTitle: 'Song 3', artist: 'Artist 3', submittedAt: toISOString() },
       ],
       votes: [
         {
@@ -57,13 +57,13 @@ describe('calculateScores', () => {
       roundNumber: 1,
       prompt: 'Best rock song',
       status: 'completed',
-      startedAt: Date.now(),
-      submissionDeadline: Date.now(),
-      votingDeadline: Date.now(),
+      startedAt: toISOString(),
+      submissionDeadline: toISOString(),
+      votingDeadline: toISOString(),
       submissions: [
-        { userId: 'user1', songUrl: 'url1', songTitle: 'Song 1', artist: 'Artist 1', submittedAt: Date.now() },
-        { userId: 'user2', songUrl: 'url2', songTitle: 'Song 2', artist: 'Artist 2', submittedAt: Date.now() },
-        { userId: 'user3', songUrl: 'url3', songTitle: 'Song 3', artist: 'Artist 3', submittedAt: Date.now() },
+        { userId: 'user1', songUrl: 'url1', songTitle: 'Song 1', artist: 'Artist 1', submittedAt: toISOString() },
+        { userId: 'user2', songUrl: 'url2', songTitle: 'Song 2', artist: 'Artist 2', submittedAt: toISOString() },
+        { userId: 'user3', songUrl: 'url3', songTitle: 'Song 3', artist: 'Artist 3', submittedAt: toISOString() },
       ],
       votes: [
         {
@@ -114,11 +114,11 @@ describe('calculateScores', () => {
       roundNumber: 1,
       prompt: 'Best rock song',
       status: 'completed',
-      startedAt: Date.now(),
-      submissionDeadline: Date.now(),
-      votingDeadline: Date.now(),
+      startedAt: toISOString(),
+      submissionDeadline: toISOString(),
+      votingDeadline: toISOString(),
       submissions: [
-        { userId: 'user1', songUrl: 'url1', songTitle: 'Song 1', artist: 'Artist 1', submittedAt: Date.now() },
+        { userId: 'user1', songUrl: 'url1', songTitle: 'Song 1', artist: 'Artist 1', submittedAt: toISOString() },
       ],
       votes: [],
       notificationsSent: {
@@ -140,14 +140,14 @@ describe('calculateScores', () => {
       roundNumber: 1,
       prompt: 'Best rock song',
       status: 'completed',
-      startedAt: Date.now(),
-      submissionDeadline: Date.now(),
-      votingDeadline: Date.now(),
+      startedAt: toISOString(),
+      submissionDeadline: toISOString(),
+      votingDeadline: toISOString(),
       submissions: [
-        { userId: 'user1', songUrl: 'url1', songTitle: 'Song 1', artist: 'Artist 1', submittedAt: Date.now() },
-        { userId: 'user2', songUrl: 'url2', songTitle: 'Song 2', artist: 'Artist 2', submittedAt: Date.now() },
-        { userId: 'user3', songUrl: 'url3', songTitle: 'Song 3', artist: 'Artist 3', submittedAt: Date.now() },
-        { userId: 'user4', songUrl: 'url4', songTitle: 'Song 4', artist: 'Artist 4', submittedAt: Date.now() },
+        { userId: 'user1', songUrl: 'url1', songTitle: 'Song 1', artist: 'Artist 1', submittedAt: toISOString() },
+        { userId: 'user2', songUrl: 'url2', songTitle: 'Song 2', artist: 'Artist 2', submittedAt: toISOString() },
+        { userId: 'user3', songUrl: 'url3', songTitle: 'Song 3', artist: 'Artist 3', submittedAt: toISOString() },
+        { userId: 'user4', songUrl: 'url4', songTitle: 'Song 4', artist: 'Artist 4', submittedAt: toISOString() },
       ],
       votes: [
         {
@@ -183,12 +183,12 @@ describe('calculateScores', () => {
       roundNumber: 1,
       prompt: 'Best rock song',
       status: 'completed',
-      startedAt: Date.now(),
-      submissionDeadline: Date.now(),
-      votingDeadline: Date.now(),
+      startedAt: toISOString(),
+      submissionDeadline: toISOString(),
+      votingDeadline: toISOString(),
       submissions: [
-        { userId: 'user1', songUrl: 'url1', songTitle: 'Song 1', artist: 'Artist 1', submittedAt: Date.now() },
-        { userId: 'user2', songUrl: 'url2', songTitle: 'Song 2', artist: 'Artist 2', submittedAt: Date.now() },
+        { userId: 'user1', songUrl: 'url1', songTitle: 'Song 1', artist: 'Artist 1', submittedAt: toISOString() },
+        { userId: 'user2', songUrl: 'url2', songTitle: 'Song 2', artist: 'Artist 2', submittedAt: toISOString() },
       ],
       votes: [
         {

@@ -1,6 +1,6 @@
 import { EmbedBuilder } from 'discord.js';
 import { League, Round, LeagueEndResults, ThemeSubmission } from '../types';
-import { calculateScores } from '../utils/helpers';
+import { calculateScores, toTimestamp } from '../utils/helpers';
 
 /**
  * Templates for all notification messages
@@ -32,7 +32,7 @@ export class NotificationTemplates {
       .setTitle(`🎵 Round ${round.roundNumber} Started in ${league.name}!`)
       .setDescription(
         `**Prompt:** ${round.prompt}\n\n` +
-        `**Submission Deadline:** <t:${Math.floor(round.submissionDeadline / 1000)}:F>\n\n` +
+        `**Submission Deadline:** <t:${Math.floor(toTimestamp(round.submissionDeadline) / 1000)}:F>\n\n` +
         `Submit your song using \`/submit-song\`!`
       )
       .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
@@ -49,7 +49,7 @@ export class NotificationTemplates {
       .setDescription(
         `**Theme Submission Phase**\n\n` +
         `For the next 24 hours, submit your theme ideas using \`/submit-theme\`!\n\n` +
-        `**Theme Deadline:** <t:${Math.floor(round.themeSubmissionDeadline! / 1000)}:F>\n\n` +
+        `**Theme Deadline:** <t:${Math.floor(toTimestamp(round.themeSubmissionDeadline!) / 1000)}:F>\n\n` +
         `After the deadline, one theme will be randomly selected and you'll submit songs based on that theme.`
       )
       .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
@@ -65,7 +65,7 @@ export class NotificationTemplates {
       .setTitle(`⏰ Reminder: Theme Submissions Due Soon!`)
       .setDescription(
         `You have approximately 24 hours left to submit a theme idea for **${league.name}**!\n\n` +
-        `**Deadline:** <t:${Math.floor(round.themeSubmissionDeadline! / 1000)}:F>\n\n` +
+        `**Deadline:** <t:${Math.floor(toTimestamp(round.themeSubmissionDeadline!) / 1000)}:F>\n\n` +
         `Don't miss out! Use \`/submit-theme\` to submit your idea.`
       )
       .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
@@ -84,7 +84,7 @@ export class NotificationTemplates {
         `**"${round.prompt}"**\n\n` +
         `Submitted by <@${selectedTheme.userId}>\n\n` +
         `Now it's time to submit your song! Use \`/submit-song\`.\n\n` +
-        `**Song Submission Deadline:** <t:${Math.floor(round.submissionDeadline / 1000)}:F>`
+        `**Song Submission Deadline:** <t:${Math.floor(toTimestamp(round.submissionDeadline) / 1000)}:F>`
       )
       .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
       .setTimestamp();
@@ -101,7 +101,7 @@ export class NotificationTemplates {
         `No themes were submitted during the theme phase.\n\n` +
         `Using admin's original prompt:\n**"${round.prompt}"**\n\n` +
         `Now it's time to submit your song! Use \`/submit-song\`.\n\n` +
-        `**Song Submission Deadline:** <t:${Math.floor(round.submissionDeadline / 1000)}:F>`
+        `**Song Submission Deadline:** <t:${Math.floor(toTimestamp(round.submissionDeadline) / 1000)}:F>`
       )
       .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
       .setTimestamp();
@@ -117,7 +117,7 @@ export class NotificationTemplates {
       .setDescription(
         `You have approximately 24 hours left to submit your song for **${league.name}**!\n\n` +
         `**Prompt:** "${round.prompt}"\n` +
-        `**Deadline:** <t:${Math.floor(round.submissionDeadline / 1000)}:F>\n\n` +
+        `**Deadline:** <t:${Math.floor(toTimestamp(round.submissionDeadline) / 1000)}:F>\n\n` +
         `Don't miss out! Use \`/submit-song\`.`
       )
       .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
@@ -134,7 +134,7 @@ export class NotificationTemplates {
       .setDescription(
         `Submissions are in! It's time to vote in **${league.name}**.\n\n` +
         `**Prompt:** ${round.prompt}\n` +
-        `**Voting Deadline:** <t:${Math.floor(round.votingDeadline / 1000)}:F>\n\n` +
+        `**Voting Deadline:** <t:${Math.floor(toTimestamp(round.votingDeadline) / 1000)}:F>\n\n` +
         (round.playlist
           ? `🎧 **[Listen to all submissions with this Spotify playlist](${round.playlist.playlistUrl})**\n\n`
           : ''
@@ -155,7 +155,7 @@ export class NotificationTemplates {
       .setDescription(
         `You have approximately 24 hours left to vote in **${league.name}**!\n\n` +
         `**Prompt:** "${round.prompt}"\n` +
-        `**Deadline:** <t:${Math.floor(round.votingDeadline / 1000)}:F>\n\n` +
+        `**Deadline:** <t:${Math.floor(toTimestamp(round.votingDeadline) / 1000)}:F>\n\n` +
         (round.playlist
           ? `🎧 **[Listen to all submissions with this Spotify playlist](${round.playlist.playlistUrl})**\n\n`
           : ''
@@ -176,7 +176,7 @@ export class NotificationTemplates {
       .setDescription(
         `Only **${missingSubmittersCount}** ${missingSubmittersCount === 1 ? 'person is' : 'people are'} left to submit in **${league.name}**!\n\n` +
         `**Prompt:** "${round.prompt}"\n` +
-        `**Deadline:** <t:${Math.floor(round.submissionDeadline / 1000)}:F>\n\n` +
+        `**Deadline:** <t:${Math.floor(toTimestamp(round.submissionDeadline) / 1000)}:F>\n\n` +
         `Don't forget to submit your song using \`/submit-song\`!`
       )
       .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
@@ -210,7 +210,7 @@ export class NotificationTemplates {
       .setDescription(
         `Only **${missingVotersCount}** ${missingVotersCount === 1 ? 'person is' : 'people are'} left to vote in **${league.name}**!\n\n` +
         `**Prompt:** "${round.prompt}"\n` +
-        `**Deadline:** <t:${Math.floor(round.votingDeadline / 1000)}:F>\n\n` +
+        `**Deadline:** <t:${Math.floor(toTimestamp(round.votingDeadline) / 1000)}:F>\n\n` +
         (round.playlist
           ? `🎧 **[Listen to all submissions with this Spotify playlist](${round.playlist.playlistUrl})**\n\n`
           : ''

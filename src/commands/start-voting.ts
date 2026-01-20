@@ -1,6 +1,6 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder, EmbedBuilder, MessageFlags } from 'discord.js';
 import { Storage } from '../utils/storage';
-import { getCurrentRound } from '../utils/helpers';
+import { getCurrentRound, toTimestamp } from '../utils/helpers';
 import { isAdmin } from '../utils/permissions';
 import { VotingService } from '../services/voting-service';
 import { resolveGuildContext } from '../utils/dm-context';
@@ -82,7 +82,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       ) +
       `**Submissions:**\n`
     )
-    .setFooter({ text: `Use /vote to cast your votes! Deadline: ${new Date(updatedRound.votingDeadline).toLocaleString()}` });
+    .setFooter({ text: `Use /vote to cast your votes! Deadline: ${new Date(toTimestamp(updatedRound.votingDeadline)).toLocaleString()}` });
 
   let submissionList = '';
   updatedRound.submissions.forEach((sub, index) => {
