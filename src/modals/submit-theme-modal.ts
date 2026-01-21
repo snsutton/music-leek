@@ -1,7 +1,7 @@
 import { ModalSubmitInteraction, MessageFlags } from 'discord.js';
 import { Storage } from '../utils/storage';
 import { ThemeSubmission } from '../types';
-import { getCurrentRound } from '../utils/helpers';
+import { getCurrentRound, toTimestamp, toISOString } from '../utils/helpers';
 
 export const customId = 'submit-theme-modal';
 
@@ -43,7 +43,7 @@ export async function execute(interaction: ModalSubmitInteraction) {
     return;
   }
 
-  if (!round.themeSubmissionDeadline || Date.now() > round.themeSubmissionDeadline) {
+  if (!round.themeSubmissionDeadline || Date.now() > toTimestamp(round.themeSubmissionDeadline)) {
     await interaction.editReply({ content: 'Theme submission deadline has passed!' });
     return;
   }
@@ -89,7 +89,7 @@ export async function execute(interaction: ModalSubmitInteraction) {
   const submission: ThemeSubmission = {
     userId: interaction.user.id,
     theme: theme.trim(),
-    submittedAt: Date.now()
+    submittedAt: toISOString()
   };
 
   round.themeSubmissions.push(submission);

@@ -8,9 +8,11 @@ import { MockStorage } from '../utils/storage-mock';
 import { Storage } from '../../utils/storage';
 import { VoteSessionManager } from '../../utils/vote-sessions';
 import * as helpers from '../../utils/helpers';
+import { SpotifyOAuthService } from '../../services/spotify-oauth-service';
 
 jest.mock('../../utils/storage');
 jest.mock('../../utils/helpers');
+jest.mock('../../services/spotify-oauth-service');
 
 describe('Full Flow Integration Test', () => {
   beforeEach(() => {
@@ -23,6 +25,13 @@ describe('Full Flow Integration Test', () => {
       if (league.rounds.length === 0) return null;
       return league.rounds[league.currentRound - 1] || null;
     });
+    (helpers.toISOString as jest.Mock) = jest.fn((ts?: number) => new Date(ts ?? Date.now()).toISOString());
+    (helpers.toTimestamp as jest.Mock) = jest.fn((isoString: string) => new Date(isoString).getTime());
+    (helpers.getMissingVoters as jest.Mock) = jest.fn(() => []);
+
+    // Mock Spotify OAuth service
+    (SpotifyOAuthService.generateAuthUrl as jest.Mock) = jest.fn(() => 'https://example.com/auth');
+    (SpotifyOAuthService.getValidToken as jest.Mock) = jest.fn(() => Promise.resolve({ accessToken: 'mock-token' }));
   });
 
   afterEach(() => {
@@ -62,6 +71,16 @@ describe('Full Flow Integration Test', () => {
     league = MockStorage.getLeagueByGuild('guild123');
     expect(league?.participants).toEqual(['userA', 'userB']);
 
+    // Simulate Spotify integration being connected
+    if (league) {
+      league.spotifyIntegration = {
+        userId: 'spotify-user-123',
+        connectedBy: 'userA',
+        connectedAt: new Date().toISOString(),
+      };
+      MockStorage.saveLeague(league);
+    }
+
     // Step 3: User A starts a round
     const startRoundInteraction = createMockModalSubmit({
       userId: 'userA',
@@ -77,11 +96,19 @@ describe('Full Flow Integration Test', () => {
 
     replies = getMockReplies(startRoundInteraction);
     expect(replies[0].content).toContain('Round 1');
-    expect(replies[0].content).toContain('Best guitar solo');
+    expect(replies[0].content).toContain('Theme Submission Phase');
 
     league = MockStorage.getLeagueByGuild('guild123');
     expect(league?.rounds).toHaveLength(1);
-    expect(league?.rounds[0].status).toBe('submission');
+    // The round starts in 'theme-submission' status now, then transitions to 'submission'
+    expect(league?.rounds[0].status).toBe('theme-submission');
+
+    // Manually transition to submission phase with the prompt
+    if (league) {
+      league.rounds[0].status = 'submission';
+      league.rounds[0].prompt = 'Best guitar solo';
+      MockStorage.saveLeague(league);
+    }
 
     // Step 4 & 5: Manually add submissions (skipping music service mocking complexity)
     if (league) {
@@ -90,14 +117,14 @@ describe('Full Flow Integration Test', () => {
         songUrl: 'https://spotify.com/track/A',
         songTitle: 'Eruption',
         artist: 'Van Halen',
-        submittedAt: Date.now()
+        submittedAt: new Date().toISOString()
       });
       league.rounds[0].submissions.push({
         userId: 'userB',
         songUrl: 'https://spotify.com/track/B',
         songTitle: 'Comfortably Numb',
         artist: 'Pink Floyd',
-        submittedAt: Date.now()
+        submittedAt: new Date().toISOString()
       });
       MockStorage.saveLeague(league);
 

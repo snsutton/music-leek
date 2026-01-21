@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
 import { SpotifyTokenData, TokenStorage } from '../types';
+import { toTimestamp } from '../utils/helpers';
 
 const TOKEN_FILE = path.join(__dirname, '../../data/tokens.json');
 const ALGORITHM = 'aes-256-cbc';
@@ -134,6 +135,6 @@ export class TokenStorageService {
    */
   static isTokenExpired(token: SpotifyTokenData): boolean {
     // Add 60 second buffer to refresh before actual expiration
-    return Date.now() >= (token.expiresAt - 60000);
+    return Date.now() >= (toTimestamp(token.expiresAt) - 60000);
   }
 }

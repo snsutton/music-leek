@@ -1,6 +1,6 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, MessageFlags } from 'discord.js';
 import { Storage } from '../utils/storage';
-import { getCurrentRound } from '../utils/helpers';
+import { getCurrentRound, toTimestamp } from '../utils/helpers';
 import { resolveGuildContext } from '../utils/dm-context';
 
 export const data = new SlashCommandBuilder()
@@ -61,7 +61,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   }
 
   // Validate deadline hasn't passed
-  if (Date.now() > round.submissionDeadline) {
+  if (Date.now() > toTimestamp(round.submissionDeadline)) {
     await interaction.reply({
       content: 'Submission deadline has passed!',
       flags: MessageFlags.Ephemeral

@@ -4,6 +4,7 @@ import { League } from '../types';
 import { NotificationService } from '../services/notification-service';
 import { NotificationTemplates } from '../services/notification-templates';
 import { SpotifyOAuthService } from '../services/spotify-oauth-service';
+import { toISOString } from '../utils/helpers';
 
 export const data = new SlashCommandBuilder()
   .setName('create-league')
@@ -11,8 +12,9 @@ export const data = new SlashCommandBuilder()
   .setDMPermission(false)
   .addStringOption(option =>
     option.setName('name')
-      .setDescription('Name of the league')
+      .setDescription('Name of the league (max 50 characters)')
       .setRequired(true)
+      .setMaxLength(50)
   )
   .addIntegerOption(option =>
     option.setName('total-rounds')
@@ -47,7 +49,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     channelId: interaction.channelId,
     createdBy: interaction.user.id,
     admins: [interaction.user.id],
-    createdAt: Date.now(),
+    createdAt: toISOString(),
     currentRound: 0,
     rounds: [],
     participants: [interaction.user.id],

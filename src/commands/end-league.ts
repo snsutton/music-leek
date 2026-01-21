@@ -1,6 +1,6 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder, MessageFlags } from 'discord.js';
 import { Storage } from '../utils/storage';
-import { getCurrentRound, calculateLeagueResults, calculateScores } from '../utils/helpers';
+import { getCurrentRound, calculateLeagueResults, calculateScores, toISOString } from '../utils/helpers';
 import { isAdmin } from '../utils/permissions';
 import { NotificationTemplates } from '../services/notification-templates';
 import { resolveGuildContext } from '../utils/dm-context';
@@ -65,7 +65,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
   // Mark league as completed
   league.isCompleted = true;
-  league.completedAt = Date.now();
+  league.completedAt = toISOString();
   Storage.saveLeague(league);
 
   // Calculate league-wide results

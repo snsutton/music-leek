@@ -37,7 +37,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
   const confirmInput = new TextInputBuilder()
     .setCustomId('league-name-confirmation')
-    .setLabel(`Type "${league.name}" to confirm deletion`)
+    .setLabel('Type the league name to confirm')
     .setStyle(TextInputStyle.Short)
     .setPlaceholder(league.name)
     .setRequired(true);

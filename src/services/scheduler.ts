@@ -1,6 +1,6 @@
 import { Client } from 'discord.js';
 import { Storage } from '../utils/storage';
-import { getCurrentRound, calculateScores, calculateLeagueResults, calculateLeagueStandings } from '../utils/helpers';
+import { getCurrentRound, calculateScores, calculateLeagueResults, calculateLeagueStandings, toTimestamp, toISOString } from '../utils/helpers';
 import { League, Round } from '../types';
 import { NotificationService } from './notification-service';
 import { NotificationTemplates } from './notification-templates';
@@ -81,19 +81,19 @@ export class Scheduler {
       if (!round) continue;
 
       // Auto-select theme when deadline passes
-      if (round.status === 'theme-submission' && round.themeSubmissionDeadline && now > round.themeSubmissionDeadline) {
+      if (round.status === 'theme-submission' && round.themeSubmissionDeadline && now > toTimestamp(round.themeSubmissionDeadline)) {
         await this.autoSelectTheme(client, league, round);
         remindersCount++;
       }
 
       // Auto-start voting if submission deadline has passed
-      if (round.status === 'submission' && now > round.submissionDeadline) {
+      if (round.status === 'submission' && now > toTimestamp(round.submissionDeadline)) {
         await this.autoStartVoting(client, league, round);
         remindersCount++;
       }
 
       // Auto-close voting if deadline has passed
-      if (round.status === 'voting' && now > round.votingDeadline) {
+      if (round.status === 'voting' && now > toTimestamp(round.votingDeadline)) {
         await this.autoEndRound(client, league, round);
         remindersCount++;
       }
@@ -156,7 +156,7 @@ export class Scheduler {
       if (isLastRound) {
         // Mark league as completed
         league.isCompleted = true;
-        league.completedAt = Date.now();
+        league.completedAt = toISOString();
         Storage.saveLeague(league);
 
         // Calculate league-wide results

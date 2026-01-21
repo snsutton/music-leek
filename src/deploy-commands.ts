@@ -1,11 +1,9 @@
+// Load environment variables FIRST, before any other imports
+import './env';
+
 import { REST, Routes } from 'discord.js';
-import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
-
-// Load .env.local if it exists, otherwise fall back to .env
-dotenv.config({ path: '.env.local' });
-dotenv.config();
 
 const commands: any[] = [];
 const commandsPath = path.join(__dirname, 'commands');

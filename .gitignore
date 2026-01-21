@@ -1,12 +1,13 @@
 node_modules/
 dist/
+coverage/
+data/
+
 .env*
 !env.example
 *.log
 .DS_Store
-data/*.json
-!data/.gitkeep
-coverage/
+
 .claude/settings.local.json
 .markdownlint.json
 tmpclaude*

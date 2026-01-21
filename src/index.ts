@@ -1,14 +1,12 @@
+// Load environment variables FIRST, before any other imports
+import './env';
+
 import { Client, Collection, GatewayIntentBits, Events, Partials } from 'discord.js';
-import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
 import express from 'express';
 import { MusicServiceFactory } from './services/music-service-factory';
 import { Scheduler } from './services/scheduler';
-
-// Load .env.local if it exists, otherwise fall back to .env
-dotenv.config({ path: '.env.local' });
-dotenv.config();
 
 // HTTP server reference for graceful shutdown
 let httpServer: any = null;
@@ -258,7 +256,7 @@ if (shouldStartHttpServer) {
           league.spotifyIntegration = {
             userId: result.spotifyUserId,
             connectedBy: result.discordUserId,
-            connectedAt: Date.now()
+            connectedAt: new Date().toISOString()
           };
           Storage.saveLeague(league);
           console.log(`[HTTP] Updated league ${league.name} with Spotify integration`);

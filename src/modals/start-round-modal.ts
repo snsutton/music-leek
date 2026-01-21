@@ -1,7 +1,7 @@
 import { ModalSubmitInteraction, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { Storage } from '../utils/storage';
 import { Round } from '../types';
-import { getCurrentRound } from '../utils/helpers';
+import { getCurrentRound, toISOString, toTimestamp } from '../utils/helpers';
 import { isAdmin } from '../utils/permissions';
 import { DEFAULT_SUBMISSION_DAYS, DEFAULT_VOTING_DAYS } from '../constants';
 import { NotificationService } from '../services/notification-service';
@@ -133,16 +133,16 @@ export async function execute(interaction: ModalSubmitInteraction) {
     prompt: '', // Empty initially - will be set when theme is selected
     adminPrompt: prompt, // Store admin's prompt as fallback
     status: 'theme-submission', // Start in theme submission phase
-    startedAt: now,
-    themeSubmissionDeadline: themeDeadline,
-    submissionDeadline: themeDeadline + (submissionHours * 60 * 60 * 1000),
-    votingDeadline: themeDeadline + ((submissionHours + votingHours) * 60 * 60 * 1000), // Placeholder - will be recalculated when voting starts
+    startedAt: toISOString(now),
+    themeSubmissionDeadline: toISOString(themeDeadline),
+    submissionDeadline: toISOString(themeDeadline + (submissionHours * 60 * 60 * 1000)),
+    votingDeadline: toISOString(themeDeadline + ((submissionHours + votingHours) * 60 * 60 * 1000)), // Placeholder - will be recalculated when voting starts
     votingDurationMs: votingHours * 60 * 60 * 1000, // Store voting duration for recalculation
     themeSubmissions: [
       {
         userId: interaction.user.id,
         theme: prompt,
-        submittedAt: now
+        submittedAt: toISOString(now)
       }
     ], // Include admin's theme in the drawing
     submissions: [],
@@ -189,7 +189,7 @@ export async function execute(interaction: ModalSubmitInteraction) {
   await interaction.editReply({
     content: `🎵 **Round ${round.roundNumber}** has started in **${league.name}**!\n\n` +
              `**Theme Submission Phase:** Players have 24 hours to submit theme ideas!\n` +
-             `**Theme Deadline:** <t:${Math.floor(round.themeSubmissionDeadline! / 1000)}:F>\n\n` +
+             `**Theme Deadline:** <t:${Math.floor(toTimestamp(round.themeSubmissionDeadline!) / 1000)}:F>\n\n` +
              `Your fallback theme has been submitted and will be included in the random drawing.\n` +
              `**Themes submitted:** 1/${league.participants.length}\n\n` +
              `**Notifications:** Channel ${channelSuccess ? '✅' : '❌'} | DMs: ${summary.successful}/${summary.total} delivered\n\n` +

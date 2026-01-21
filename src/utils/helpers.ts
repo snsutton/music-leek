@@ -4,6 +4,20 @@ export function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substring(2);
 }
 
+/**
+ * Convert an ISO 8601 timestamp string to Unix milliseconds.
+ */
+export function toTimestamp(isoString: string): number {
+  return new Date(isoString).getTime();
+}
+
+/**
+ * Convert Unix milliseconds (or current time) to an ISO 8601 string.
+ */
+export function toISOString(timestamp?: number): string {
+  return new Date(timestamp ?? Date.now()).toISOString();
+}
+
 export function getCurrentRound(league: League): Round | null {
   if (league.rounds.length === 0) return null;
   return league.rounds[league.currentRound - 1] || null;
@@ -21,7 +35,7 @@ export function formatLeagueStatus(league: League): string {
 
   const deadline = round.status === 'theme-submission' ? (round.themeSubmissionDeadline || round.submissionDeadline) :
                    round.status === 'submission' ? round.submissionDeadline : round.votingDeadline;
-  const timeLeft = deadline - Date.now();
+  const timeLeft = toTimestamp(deadline) - Date.now();
   const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
   const daysLeft = Math.floor(hoursLeft / 24);
 

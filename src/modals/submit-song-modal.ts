@@ -1,7 +1,7 @@
 import { ModalSubmitInteraction, MessageFlags } from 'discord.js';
 import { Storage } from '../utils/storage';
 import { Submission } from '../types';
-import { getCurrentRound, getMissingSubmitters, normalizeSongIdentifier } from '../utils/helpers';
+import { getCurrentRound, getMissingSubmitters, normalizeSongIdentifier, toTimestamp, toISOString } from '../utils/helpers';
 import { parseMusicUrl } from '../utils/url-validator';
 import { MusicServiceFactory } from '../services/music-service-factory';
 import { NotificationTemplates } from '../services/notification-templates';
@@ -79,7 +79,7 @@ export async function execute(interaction: ModalSubmitInteraction) {
     return;
   }
 
-  if (Date.now() > round.submissionDeadline) {
+  if (Date.now() > toTimestamp(round.submissionDeadline)) {
     await interaction.editReply({ content: 'Submission deadline has passed!' });
     return;
   }
@@ -123,7 +123,7 @@ export async function execute(interaction: ModalSubmitInteraction) {
     songUrl: parsedUrl.originalUrl,
     songTitle: result.title,
     artist: result.artist,
-    submittedAt: Date.now()
+    submittedAt: toISOString()
   };
 
   round.submissions.push(submission);

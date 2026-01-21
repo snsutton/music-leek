@@ -2,6 +2,7 @@ import * as crypto from 'crypto';
 import axios from 'axios';
 import { SpotifyTokenData } from '../types';
 import { TokenStorageService } from './token-storage';
+import { toISOString } from '../utils/helpers';
 
 const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || '';
 const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET || '';
@@ -116,7 +117,7 @@ export class SpotifyOAuthService {
     const spotifyUser = await this.getSpotifyUser(tokenData.access_token);
 
     // Calculate expiration time
-    const expiresAt = Date.now() + (tokenData.expires_in * 1000);
+    const expiresAt = toISOString(Date.now() + (tokenData.expires_in * 1000));
 
     // Store tokens
     const tokenStorage: SpotifyTokenData = {
@@ -198,7 +199,7 @@ export class SpotifyOAuthService {
       const updatedToken: SpotifyTokenData = {
         ...tokenData,
         accessToken: response.data.access_token,
-        expiresAt: Date.now() + (response.data.expires_in * 1000)
+        expiresAt: toISOString(Date.now() + (response.data.expires_in * 1000))
       };
 
       await TokenStorageService.saveToken(discordUserId, updatedToken);
