@@ -162,15 +162,29 @@ export class Scheduler {
         // Calculate league-wide results
         const results = calculateLeagueResults(league);
 
-        // Post final round results + league fanfare to channel
+        // Post final round results + league fanfare to channel (with join-league blurb)
         const fanfareMessage = NotificationTemplates.leagueEndedWithFanfare(league, round, results);
-        await channel.send(fanfareMessage);
+        const messageContent = typeof fanfareMessage.content === 'string'
+          ? fanfareMessage.content + NotificationTemplates.getJoinLeagueBlurb()
+          : fanfareMessage.content;
+
+        await channel.send({
+          content: messageContent,
+          embeds: fanfareMessage.embeds
+        });
 
         console.log(`[Scheduler] League ${league.name} completed!`);
       } else {
-        // Post round results + leaderboard to channel
+        // Post round results + leaderboard to channel (with join-league blurb)
         const roundMessage = NotificationTemplates.roundEndedWithLeaderboard(league, round, leagueStandings);
-        await channel.send(roundMessage);
+        const messageContent = typeof roundMessage.content === 'string'
+          ? roundMessage.content + NotificationTemplates.getJoinLeagueBlurb()
+          : roundMessage.content;
+
+        await channel.send({
+          content: messageContent,
+          embeds: roundMessage.embeds
+        });
 
         // Notify admins that next round can start
         const adminEmbed = NotificationTemplates.roundReadyToStart(league);
@@ -206,30 +220,19 @@ export class Scheduler {
       const selectedTheme = round.themeSubmissions[randomIndex];
       round.prompt = selectedTheme.theme;
 
-      // Post to channel
-      try {
-        const channel = await client.channels.fetch(league.channelId);
-        if (channel && channel.isTextBased() && !channel.isDMBased()) {
-          await channel.send(
-            `🎲 **Theme selected for Round ${round.roundNumber}!**\n\n` +
-            `**"${selectedTheme.theme}"**\n\n` +
-            `Submitted by <@${selectedTheme.userId}>\n\n` +
-            `Get ready to submit your songs! Deadline: <t:${Math.floor(toTimestamp(round.submissionDeadline) / 1000)}:F>`
-          );
-        }
-      } catch (error) {
-        console.error(`[Scheduler] Error posting theme selection to channel:`, error);
-      }
-
-      // Send DM notifications
-      const embed = NotificationTemplates.themeSelected(league, round, selectedTheme);
-      await NotificationService.sendBulkDM(
+      // Send dual notifications (channel + DMs)
+      const notification = NotificationTemplates.themeSelected(league, round, selectedTheme);
+      await NotificationService.sendDualNotification(
         client,
         league.participants,
-        { embeds: [embed] },
-        100,
-        league.guildId,
-        'theme_selected'
+        { embeds: [notification.dm] },
+        notification.channel,
+        league.channelId,
+        {
+          guildId: league.guildId,
+          notificationType: 'theme_selected',
+          appendJoinBlurb: true
+        }
       );
 
       console.log(`[Scheduler] Theme selected: "${selectedTheme.theme}" by ${selectedTheme.userId}`);
@@ -237,29 +240,19 @@ export class Scheduler {
       // No themes submitted - use admin's original prompt as fallback
       round.prompt = round.adminPrompt || 'No theme provided';
 
-      // Post to channel
-      try {
-        const channel = await client.channels.fetch(league.channelId);
-        if (channel && channel.isTextBased() && !channel.isDMBased()) {
-          await channel.send(
-            `⚠️ **No themes were submitted!**\n\n` +
-            `Using admin's original prompt:\n**"${round.prompt}"**\n\n` +
-            `Get ready to submit your songs! Deadline: <t:${Math.floor(toTimestamp(round.submissionDeadline) / 1000)}:F>`
-          );
-        }
-      } catch (error) {
-        console.error(`[Scheduler] Error posting theme fallback to channel:`, error);
-      }
-
-      // Send DM notifications
-      const embed = NotificationTemplates.themeSelectedFallback(league, round);
-      await NotificationService.sendBulkDM(
+      // Send dual notifications (channel + DMs)
+      const notification = NotificationTemplates.themeSelectedFallback(league, round);
+      await NotificationService.sendDualNotification(
         client,
         league.participants,
-        { embeds: [embed] },
-        100,
-        league.guildId,
-        'theme_selected'
+        { embeds: [notification.dm] },
+        notification.channel,
+        league.channelId,
+        {
+          guildId: league.guildId,
+          notificationType: 'theme_selected',
+          appendJoinBlurb: true
+        }
       );
 
       console.log(`[Scheduler] No themes submitted - using admin prompt: "${round.prompt}"`);

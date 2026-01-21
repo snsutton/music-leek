@@ -94,6 +94,61 @@ export class NotificationService {
   }
 
   /**
+   * Send notification to both channel and DMs
+   * Channel send happens first, then DMs (with rate limiting)
+   * Channel failures don't block DM delivery
+   */
+  static async sendDualNotification(
+    client: Client,
+    userIds: string[],
+    dmContent: { embeds: EmbedBuilder[] },
+    channelContent: string,
+    channelId: string,
+    options?: {
+      guildId?: string;
+      notificationType?: string;
+      appendJoinBlurb?: boolean;
+    }
+  ): Promise<{
+    dmResults: NotificationResult[];
+    channelSuccess: boolean;
+  }> {
+    // Send to channel first (less time-sensitive)
+    let channelSuccess = false;
+    try {
+      const channel = await client.channels.fetch(channelId);
+      if (channel && channel.isTextBased() && !channel.isDMBased()) {
+        let message = channelContent;
+
+        // Append join-league blurb if requested
+        if (options?.appendJoinBlurb) {
+          // Import at runtime to avoid circular dependency
+          const { NotificationTemplates } = await import('./notification-templates');
+          message += NotificationTemplates.getJoinLeagueBlurb();
+        }
+
+        await channel.send(message);
+        channelSuccess = true;
+      }
+    } catch (error) {
+      console.error('[NotificationService] Failed to send channel message:', error);
+      // Don't throw - continue with DMs
+    }
+
+    // Send DMs (with rate limiting)
+    const dmResults = await this.sendBulkDM(
+      client,
+      userIds,
+      dmContent,
+      100,
+      options?.guildId,
+      options?.notificationType
+    );
+
+    return { dmResults, channelSuccess };
+  }
+
+  /**
    * Get summary of notification results
    */
   static getNotificationSummary(results: NotificationResult[]): {

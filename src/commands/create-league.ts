@@ -12,8 +12,9 @@ export const data = new SlashCommandBuilder()
   .setDMPermission(false)
   .addStringOption(option =>
     option.setName('name')
-      .setDescription('Name of the league')
+      .setDescription('Name of the league (max 50 characters)')
       .setRequired(true)
+      .setMaxLength(50)
   )
   .addIntegerOption(option =>
     option.setName('total-rounds')

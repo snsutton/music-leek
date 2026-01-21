@@ -1,6 +1,6 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder, MessageFlags } from 'discord.js';
 import { Storage } from '../utils/storage';
-import { getCurrentRound, toTimestamp } from '../utils/helpers';
+import { getCurrentRound } from '../utils/helpers';
 import { isAdmin } from '../utils/permissions';
 import { NotificationService } from '../services/notification-service';
 import { NotificationTemplates } from '../services/notification-templates';
@@ -67,31 +67,19 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     const selectedTheme = round.themeSubmissions[randomIndex];
     round.prompt = selectedTheme.theme;
 
-    // Post to channel
-    try {
-      const channel = await interaction.client.channels.fetch(league.channelId);
-      if (channel && channel.isTextBased() && !channel.isDMBased()) {
-        await channel.send(
-          `🎲 **Theme selected for Round ${round.roundNumber}!**\n\n` +
-          `**"${selectedTheme.theme}"**\n\n` +
-          `Submitted by <@${selectedTheme.userId}>\n\n` +
-          `Get ready to submit your songs! Deadline: <t:${Math.floor(toTimestamp(round.submissionDeadline) / 1000)}:F>\n\n` +
-          `Use \`/submit-song\` to submit your song for this round!`
-        );
-      }
-    } catch (error) {
-      console.error('[StartSongSubmissions] Error posting theme selection to channel:', error);
-    }
-
-    // Send DM notifications
-    const embed = NotificationTemplates.themeSelected(league, round, selectedTheme);
-    await NotificationService.sendBulkDM(
+    // Send dual notifications (channel + DMs)
+    const notification = NotificationTemplates.themeSelected(league, round, selectedTheme);
+    await NotificationService.sendDualNotification(
       interaction.client,
       league.participants,
-      { embeds: [embed] },
-      100,
-      league.guildId,
-      'theme_selected'
+      { embeds: [notification.dm] },
+      notification.channel,
+      league.channelId,
+      {
+        guildId: league.guildId,
+        notificationType: 'theme_selected',
+        appendJoinBlurb: true
+      }
     );
 
     // Transition to submission phase
@@ -108,30 +96,19 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     // No themes submitted - use admin's original prompt as fallback
     round.prompt = round.adminPrompt || 'No theme provided';
 
-    // Post to channel
-    try {
-      const channel = await interaction.client.channels.fetch(league.channelId);
-      if (channel && channel.isTextBased() && !channel.isDMBased()) {
-        await channel.send(
-          `⚠️ **No additional themes were submitted!**\n\n` +
-          `Using the original theme:\n**"${round.prompt}"**\n\n` +
-          `Get ready to submit your songs! Deadline: <t:${Math.floor(toTimestamp(round.submissionDeadline) / 1000)}:F>\n\n` +
-          `Use \`/submit-song\` to submit your song for this round!`
-        );
-      }
-    } catch (error) {
-      console.error('[StartSongSubmissions] Error posting theme fallback to channel:', error);
-    }
-
-    // Send DM notifications
-    const embed = NotificationTemplates.themeSelectedFallback(league, round);
-    await NotificationService.sendBulkDM(
+    // Send dual notifications (channel + DMs)
+    const notification = NotificationTemplates.themeSelectedFallback(league, round);
+    await NotificationService.sendDualNotification(
       interaction.client,
       league.participants,
-      { embeds: [embed] },
-      100,
-      league.guildId,
-      'theme_selected'
+      { embeds: [notification.dm] },
+      notification.channel,
+      league.channelId,
+      {
+        guildId: league.guildId,
+        notificationType: 'theme_selected',
+        appendJoinBlurb: true
+      }
     );
 
     // Transition to submission phase

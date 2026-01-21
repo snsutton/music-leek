@@ -1,7 +1,7 @@
 import { ModalSubmitInteraction, MessageFlags } from 'discord.js';
 import { Storage } from '../utils/storage';
 import { ThemeSubmission } from '../types';
-import { getCurrentRound, toISOString, toTimestamp } from '../utils/helpers';
+import { getCurrentRound, toTimestamp, toISOString } from '../utils/helpers';
 
 export const customId = 'submit-theme-modal';
 

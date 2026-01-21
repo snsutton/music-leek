@@ -3,7 +3,7 @@ import * as path from 'path';
 import { ChatInputCommandInteraction } from 'discord.js';
 import { DmContext, DmContextStorage } from '../types';
 import { Storage } from './storage';
-import { toISOString, toTimestamp } from './helpers';
+import { toTimestamp, toISOString } from './helpers';
 
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '../../data');
 const DATA_FILE = path.join(DATA_DIR, 'dm-contexts.json');
