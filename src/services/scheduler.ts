@@ -6,6 +6,7 @@ import { NotificationService } from './notification-service';
 import { NotificationTemplates } from './notification-templates';
 import { DmContextManager } from '../utils/dm-context';
 import { VotingService } from './voting-service';
+import { selectThemeAndUpdateTickets } from './theme-selection-service';
 
 /**
  * Background scheduler that checks for upcoming deadlines every hour
@@ -214,11 +215,10 @@ export class Scheduler {
   ): Promise<void> {
     console.log(`[Scheduler] Auto-selecting theme for ${league.name} Round ${round.roundNumber}`);
 
-    if (round.themeSubmissions && round.themeSubmissions.length > 0) {
-      // Random selection from submitted themes
-      const randomIndex = Math.floor(Math.random() * round.themeSubmissions.length);
-      const selectedTheme = round.themeSubmissions[randomIndex];
-      round.prompt = selectedTheme.theme;
+    // Use weighted random selection
+    const selectedTheme = selectThemeAndUpdateTickets(league, round);
+
+    if (selectedTheme) {
 
       // Send dual notifications (channel + DMs)
       const notification = NotificationTemplates.themeSelected(league, round, selectedTheme);

@@ -4,6 +4,7 @@ import { getCurrentRound } from '../utils/helpers';
 import { isAdmin } from '../utils/permissions';
 import { NotificationService } from '../services/notification-service';
 import { NotificationTemplates } from '../services/notification-templates';
+import { selectThemeAndUpdateTickets } from '../services/theme-selection-service';
 
 export const data = new SlashCommandBuilder()
   .setName('start-song-submissions')
@@ -60,12 +61,10 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   // Defer reply since we'll be doing async operations
   await interaction.deferReply();
 
-  // Select theme
-  if (round.themeSubmissions && round.themeSubmissions.length > 0) {
-    // Random selection from submitted themes
-    const randomIndex = Math.floor(Math.random() * round.themeSubmissions.length);
-    const selectedTheme = round.themeSubmissions[randomIndex];
-    round.prompt = selectedTheme.theme;
+  // Select theme using weighted random selection
+  const selectedTheme = selectThemeAndUpdateTickets(league, round);
+
+  if (selectedTheme) {
 
     // Send dual notifications (channel + DMs)
     const notification = NotificationTemplates.themeSelected(league, round, selectedTheme);

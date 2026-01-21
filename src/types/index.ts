@@ -22,6 +22,7 @@ export interface League {
     connectedBy: string; // Discord user ID who connected
     connectedAt: string; // ISO 8601 timestamp
   };
+  themeSelectionTickets?: Record<string, number>; // userId -> ticket count for weighted theme selection
 }
 
 export interface Round {
