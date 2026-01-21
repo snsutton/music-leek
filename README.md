@@ -12,10 +12,14 @@ A Discord bot for music sharing and voting - a game where participants submit so
 
 - 🎵 Create and manage music leagues
 - 🎯 Start themed rounds with custom prompts
+- 💡 Theme submission phase - players suggest prompts, admin picks the best
 - 📝 Submit songs using interactive modal forms
-- 🎼 Automatic song metadata from Spotify Music URLs
-- 🗳️ Vote on submissions with visual submission lists
+- 🎼 Automatic song metadata from Spotify URLs
+- 🗳️ Points-based voting (10-point budget across up to 5 songs)
 - 📊 Automatic scoring and leaderboards
+- 🎧 Create Spotify playlists from round submissions
+- 🔔 DM notifications for deadlines and round updates
+- ⏰ Automatic deadline reminders
 
 ## Setup
 
@@ -45,7 +49,7 @@ A Discord bot for music sharing and voting - a game where participants submit so
 
 #### 2. Set Up Spotify API (Required)
 
-The bot automatically fetches song metadata from Spotify URLs. You'll need a free Spotify API account:
+The bot fetches song metadata and can create playlists from Spotify. You'll need a free Spotify API account:
 
 1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
 2. Log in with your Spotify account (or create one)
@@ -53,9 +57,14 @@ The bot automatically fetches song metadata from Spotify URLs. You'll need a fre
 4. Fill in:
    - **App name**: Music Leek Bot (or any name)
    - **App description**: Discord bot for music sharing
-   - **Redirect URIs**: Leave blank or use `http://localhost` (not needed for this bot)
+   - **Redirect URIs**: Add your OAuth callback URL (see below)
    - **APIs to use**: Check only **Web API**
 5. Click **Settings** → Copy your **Client ID** and **Client Secret**
+
+**Redirect URI setup:**
+
+- For local development: `http://localhost:3000/callback`
+- For production (Railway): `https://your-app.up.railway.app/callback`
 
 #### 3. Configure Environment
 
@@ -68,6 +77,7 @@ DISCORD_CLIENT_ID=your_application_id_here
 # Spotify API (required for automatic song metadata)
 SPOTIFY_CLIENT_ID=your_spotify_client_id
 SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
+SPOTIFY_REDIRECT_URI=http://localhost:3000/callback
 ```
 
 #### 4. Install and Run
@@ -80,6 +90,7 @@ npm start            # Start the bot
 ```
 
 You should see:
+
 - "Music services initialized: spotify" (or "none" if credentials are missing)
 - "Ready! Logged in as..." - the bot is now online in your Discord server
 
@@ -87,18 +98,19 @@ You should see:
 
 In your Discord server, try:
 
-```
+```text
 /create-league name:Test League
 ```
 
 Then test song submission with a Spotify link:
 
-```
+```text
 /submit-song
 ```
 
 A modal should appear asking for a song URL. Paste a Spotify link like:
-```
+
+```text
 https://open.spotify.com/track/3n3Ppam7vgaVa1iaRUc9Lp
 ```
 
@@ -109,22 +121,29 @@ The bot should automatically fetch the song title and artist. If it does, everyt
 **Key commands:**
 
 - `/create-league <name>` - Create a league (server only)
-- `/submit-song` - Submit a song (opens modal, works in DMs!)
-- `/vote` - Vote for songs (opens modal with submission list, works in DMs!)
-- `/my-leagues` - See your leagues (works in DMs!)
-- `/start-round` - Start a new round (opens modal, works in DMs!)
+- `/submit-theme` - Submit a theme/prompt idea during theme phase
+- `/submit-song` - Submit a song (opens modal, works in DMs)
+- `/vote` - Vote for songs (opens modal with submission list, works in DMs)
+- `/create-playlist` - Create a Spotify playlist from round submissions
+- `/start-round` - Start a new round (admin only, opens modal)
 
 **Complete command list:** See [docs/USER_GUIDE.md](docs/USER_GUIDE.md#command-reference)
 
 ## How to Play
 
-1. Create a league → 2. Join league → 3. Start round → 4. Submit songs → 5. Vote → 6. See results!
+1. Create a league → 2. Join league → 3. Start round → 4. Submit themes → 5. Submit songs → 6. Vote → 7. See results!
 
 **Detailed walkthrough:** See [docs/USER_GUIDE.md](docs/USER_GUIDE.md)
 
 ## Data Storage
 
-League data is stored in `data/leagues.json`. This is a simple JSON file storage system. For production use, consider migrating to a proper database.
+Data is stored in JSON files in the `data/` directory:
+
+- `leagues.json` - League data (rounds, submissions, votes)
+- `tokens.json` - Spotify OAuth tokens
+- `dm-contexts.json` - DM context tracking for guild resolution
+
+For production use, consider migrating to a proper database.
 
 ## Development
 
@@ -143,6 +162,15 @@ League data is stored in `data/leagues.json`. This is a simple JSON file storage
 3. Use `ModalSubmitInteraction` type for the interaction parameter
 4. Modal handlers are auto-loaded on bot startup
 5. Restart the bot
+
+### Backup and Restore
+
+For local testing, you can backup and restore data:
+
+```bash
+npm run backup   # Creates timestamped backup in data/backup/
+npm run restore  # Restores from most recent backup
+```
 
 ## Testing
 
