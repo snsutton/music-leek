@@ -1,3 +1,32 @@
+/**
+ * Create a mock Discord client with users, channels, and guilds fetch methods
+ */
+function createMockClient() {
+  return {
+    users: {
+      fetch: jest.fn(async (id: string) => ({
+        id,
+        username: `MockUser_${id}`,
+        send: jest.fn(async () => ({})),
+      })),
+    },
+    channels: {
+      fetch: jest.fn(async (id: string) => ({
+        id,
+        isTextBased: () => true,
+        isDMBased: () => false,
+        send: jest.fn(async () => ({})),
+      })),
+    },
+    guilds: {
+      fetch: jest.fn(async (id: string) => ({
+        id,
+        name: `MockGuild_${id}`,
+      })),
+    },
+  };
+}
+
 export interface MockInteractionOptions {
   userId?: string;
   guildId?: string;
@@ -20,6 +49,7 @@ export function createMockInteraction(opts: MockInteractionOptions = {}): any {
     },
     guildId,
     channelId,
+    client: createMockClient(),
     options: {
       get: (name: string) => {
         const value = options.get(name);
@@ -67,6 +97,7 @@ export function createMockModalSubmit(opts: MockModalSubmitOptions = {}): any {
     },
     guildId,
     customId: 'mock-modal',
+    client: createMockClient(),
     fields: {
       getTextInputValue: (customId: string) => {
         return fields.get(customId) || '';
@@ -115,6 +146,7 @@ export function createMockSelectMenu(opts: MockSelectMenuOptions = {}): any {
     guildId,
     customId,
     values,
+    client: createMockClient(),
     isStringSelectMenu: () => true,
     reply: jest.fn(async (replyOptions: any) => {
       replies.push(replyOptions);

@@ -7,6 +7,7 @@ import { NotificationTemplates } from './notification-templates';
 import { DmContextManager } from '../utils/dm-context';
 import { VotingService } from './voting-service';
 import { selectThemeAndUpdateTickets } from './theme-selection-service';
+import { resolveUsernames } from '../utils/username-resolver';
 
 /**
  * Background scheduler that checks for upcoming deadlines every hour
@@ -154,6 +155,15 @@ export class Scheduler {
         return;
       }
 
+      // Collect all user IDs for username resolution
+      const userIds: string[] = [
+        ...Array.from(leagueStandings.keys()),
+        ...round.submissions.map(s => s.userId)
+      ];
+
+      // Resolve usernames in batch
+      const usernameCache = await resolveUsernames(client, userIds);
+
       if (isLastRound) {
         // Mark league as completed
         league.isCompleted = true;
@@ -164,7 +174,7 @@ export class Scheduler {
         const results = calculateLeagueResults(league);
 
         // Post final round results + league fanfare to channel (with join-league blurb)
-        const fanfareMessage = NotificationTemplates.leagueEndedWithFanfare(league, round, results);
+        const fanfareMessage = NotificationTemplates.leagueEndedWithFanfare(league, round, results, usernameCache);
         const messageContent = typeof fanfareMessage.content === 'string'
           ? fanfareMessage.content + NotificationTemplates.getJoinLeagueBlurb()
           : fanfareMessage.content;
@@ -177,7 +187,7 @@ export class Scheduler {
         console.log(`[Scheduler] League ${league.name} completed!`);
       } else {
         // Post round results + leaderboard to channel (with join-league blurb)
-        const roundMessage = NotificationTemplates.roundEndedWithLeaderboard(league, round, leagueStandings);
+        const roundMessage = NotificationTemplates.roundEndedWithLeaderboard(league, round, leagueStandings, usernameCache);
         const messageContent = typeof roundMessage.content === 'string'
           ? roundMessage.content + NotificationTemplates.getJoinLeagueBlurb()
           : roundMessage.content;
@@ -219,9 +229,11 @@ export class Scheduler {
     const selectedTheme = selectThemeAndUpdateTickets(league, round);
 
     if (selectedTheme) {
+      // Resolve username for the theme submitter
+      const usernameCache = await resolveUsernames(client, [selectedTheme.userId]);
 
       // Send dual notifications (channel + DMs)
-      const notification = NotificationTemplates.themeSelected(league, round, selectedTheme);
+      const notification = NotificationTemplates.themeSelected(league, round, selectedTheme, usernameCache);
       await NotificationService.sendDualNotification(
         client,
         league.participants,

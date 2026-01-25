@@ -5,6 +5,7 @@ import { isAdmin } from '../utils/permissions';
 import { NotificationService } from '../services/notification-service';
 import { NotificationTemplates } from '../services/notification-templates';
 import { resolveGuildContext } from '../utils/dm-context';
+import { resolveUsernames } from '../utils/username-resolver';
 
 export const data = new SlashCommandBuilder()
   .setName('end-round')
@@ -74,6 +75,15 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     return;
   }
 
+  // Collect all user IDs for username resolution
+  const userIds: string[] = [
+    ...Array.from(leagueStandings.keys()),
+    ...round.submissions.map(s => s.userId)
+  ];
+
+  // Resolve usernames in batch
+  const usernameCache = await resolveUsernames(interaction.client, userIds);
+
   if (isLastRound) {
     // Mark league as completed
     league.isCompleted = true;
@@ -84,7 +94,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     const results = calculateLeagueResults(league);
 
     // Post final round results + league fanfare to channel (with join-league blurb)
-    const fanfareMessage = NotificationTemplates.leagueEndedWithFanfare(league, round, results);
+    const fanfareMessage = NotificationTemplates.leagueEndedWithFanfare(league, round, results, usernameCache);
     const messageContent = typeof fanfareMessage.content === 'string'
       ? fanfareMessage.content + NotificationTemplates.getJoinLeagueBlurb()
       : fanfareMessage.content;
@@ -100,7 +110,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     });
   } else {
     // Post round results + leaderboard to channel (with join-league blurb)
-    const roundMessage = NotificationTemplates.roundEndedWithLeaderboard(league, round, leagueStandings);
+    const roundMessage = NotificationTemplates.roundEndedWithLeaderboard(league, round, leagueStandings, usernameCache);
     const messageContent = typeof roundMessage.content === 'string'
       ? roundMessage.content + NotificationTemplates.getJoinLeagueBlurb()
       : roundMessage.content;

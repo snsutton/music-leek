@@ -9,13 +9,23 @@ import { Storage } from '../../utils/storage';
 import { VoteSessionManager } from '../../utils/vote-sessions';
 import * as helpers from '../../utils/helpers';
 import { SpotifyOAuthService } from '../../services/spotify-oauth-service';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
 
 jest.mock('../../utils/storage');
 jest.mock('../../utils/helpers');
 jest.mock('../../services/spotify-oauth-service');
+jest.mock('../../services/spotify-playlist-service');
 
 describe('Full Flow Integration Test', () => {
+  let testDataDir: string;
+
   beforeEach(() => {
+    // Set up temp directory for DM context files
+    testDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'music-leek-test-'));
+    process.env.DATA_DIR = testDataDir;
+
     MockStorage.reset();
     (Storage.getLeagueByGuild as jest.Mock) = jest.fn((guildId: string) => MockStorage.getLeagueByGuild(guildId));
     (Storage.saveLeague as jest.Mock) = jest.fn((league) => MockStorage.saveLeague(league));
@@ -36,6 +46,10 @@ describe('Full Flow Integration Test', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+    // Clean up temp directory
+    if (testDataDir && fs.existsSync(testDataDir)) {
+      fs.rmSync(testDataDir, { recursive: true });
+    }
   });
 
   it('should complete full flow: create → join → start round → submit → vote', async () => {
@@ -114,14 +128,14 @@ describe('Full Flow Integration Test', () => {
     if (league) {
       league.rounds[0].submissions.push({
         userId: 'userA',
-        songUrl: 'https://spotify.com/track/A',
+        songUrl: 'https://open.spotify.com/track/1234567890abcdef',
         songTitle: 'Eruption',
         artist: 'Van Halen',
         submittedAt: new Date().toISOString()
       });
       league.rounds[0].submissions.push({
         userId: 'userB',
-        songUrl: 'https://spotify.com/track/B',
+        songUrl: 'https://open.spotify.com/track/abcdef1234567890',
         songTitle: 'Comfortably Numb',
         artist: 'Pink Floyd',
         submittedAt: new Date().toISOString()

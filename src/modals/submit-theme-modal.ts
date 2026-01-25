@@ -103,9 +103,13 @@ export async function execute(interaction: ModalSubmitInteraction) {
     try {
       const channel = await interaction.client.channels.fetch(league.channelId);
       if (channel && channel.isTextBased() && !channel.isDMBased()) {
+        // Fetch username for the remaining submitter
+        const waitingUser = await interaction.client.users.fetch(missingSubmitterIds[0]);
+        const waitingUsername = waitingUser?.username || 'Unknown User';
+
         await channel.send(
           `⏰ **Waiting on 1 player to submit their theme!**\n\n` +
-          `<@${missingSubmitterIds[0]}>, we're waiting for you!\n\n` +
+          `${waitingUsername}, we're waiting for you!\n\n` +
           `Use \`/submit-theme\` to submit your theme idea.`
         );
       }

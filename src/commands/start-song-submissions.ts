@@ -5,6 +5,7 @@ import { isAdmin } from '../utils/permissions';
 import { NotificationService } from '../services/notification-service';
 import { NotificationTemplates } from '../services/notification-templates';
 import { selectThemeAndUpdateTickets } from '../services/theme-selection-service';
+import { resolveUsernames, formatUser } from '../utils/username-resolver';
 
 export const data = new SlashCommandBuilder()
   .setName('start-song-submissions')
@@ -65,9 +66,11 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   const selectedTheme = selectThemeAndUpdateTickets(league, round);
 
   if (selectedTheme) {
+    // Resolve username for the theme submitter
+    const usernameCache = await resolveUsernames(interaction.client, [selectedTheme.userId]);
 
     // Send dual notifications (channel + DMs)
-    const notification = NotificationTemplates.themeSelected(league, round, selectedTheme);
+    const notification = NotificationTemplates.themeSelected(league, round, selectedTheme, usernameCache);
     await NotificationService.sendDualNotification(
       interaction.client,
       league.participants,
@@ -88,7 +91,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     await interaction.editReply({
       content: `✅ Theme selected: **"${selectedTheme.theme}"**\n\n` +
-               `Submitted by <@${selectedTheme.userId}>\n\n` +
+               `Submitted by ${formatUser(selectedTheme.userId, usernameCache)}\n\n` +
                `Round has transitioned to song submission phase. Participants have been notified.`
     });
   } else {

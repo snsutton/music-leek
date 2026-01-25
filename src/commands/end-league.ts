@@ -4,6 +4,7 @@ import { getCurrentRound, calculateLeagueResults, calculateScores, toISOString }
 import { isAdmin } from '../utils/permissions';
 import { NotificationTemplates } from '../services/notification-templates';
 import { resolveGuildContext } from '../utils/dm-context';
+import { resolveUsernames } from '../utils/username-resolver';
 
 export const data = new SlashCommandBuilder()
   .setName('end-league')
@@ -82,16 +83,35 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     return;
   }
 
+  // Collect all user IDs for username resolution
+  const userIds: string[] = [
+    ...results.winners.map(w => w.userId),
+    ...results.roundResults.flatMap(rr => rr.winners.map(w => w.userId))
+  ];
+
+  // Resolve usernames in batch
+  const usernameCache = await resolveUsernames(interaction.client, userIds);
+
   // If the last round exists, use it for the fanfare message
   const lastRound = league.rounds[league.rounds.length - 1];
 
   if (lastRound && lastRound.status === 'completed') {
+    // Add last round submitters to username cache
+    for (const submission of lastRound.submissions) {
+      if (!usernameCache.has(submission.userId)) {
+        const additionalCache = await resolveUsernames(interaction.client, [submission.userId]);
+        for (const [id, name] of additionalCache) {
+          usernameCache.set(id, name);
+        }
+      }
+    }
+
     // Post league ended fanfare with final round results
-    const fanfareMessage = NotificationTemplates.leagueEndedWithFanfare(league, lastRound, results);
+    const fanfareMessage = NotificationTemplates.leagueEndedWithFanfare(league, lastRound, results, usernameCache);
     await channel.send(fanfareMessage);
   } else {
     // Post league ended fanfare without round results
-    const fanfareMessage = NotificationTemplates.leagueEndedEarlyWithFanfare(league, results);
+    const fanfareMessage = NotificationTemplates.leagueEndedEarlyWithFanfare(league, results, usernameCache);
     await channel.send(fanfareMessage);
   }
 

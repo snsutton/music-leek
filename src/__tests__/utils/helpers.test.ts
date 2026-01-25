@@ -132,7 +132,9 @@ describe('calculateScores', () => {
 
     const scores = calculateScores(round);
 
-    expect(scores.size).toBe(0);
+    // All submitters appear in scores, even with 0 points
+    expect(scores.size).toBe(1);
+    expect(scores.get('user1')).toBe(0);
   });
 
   it('should award points to non-voters who received votes', () => {
@@ -168,14 +170,18 @@ describe('calculateScores', () => {
 
     const scores = calculateScores(round);
 
-    // user1 voted but received no points
-    expect(scores.get('user1')).toBeUndefined();
+    // user1 voted but received no points - still appears with 0
+    expect(scores.get('user1')).toBe(0);
 
     // user2 received 10 points (calculateScores gives raw scores regardless of voter status)
     expect(scores.get('user2')).toBe(10);
 
-    // Only user2 has a score
-    expect(scores.size).toBe(1);
+    // user3 and user4 submitted but received no votes - appear with 0
+    expect(scores.get('user3')).toBe(0);
+    expect(scores.get('user4')).toBe(0);
+
+    // All submitters appear in scores
+    expect(scores.size).toBe(4);
   });
 
   it('should accumulate multiple votes for the same voter', () => {

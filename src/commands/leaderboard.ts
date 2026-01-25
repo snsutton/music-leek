@@ -29,7 +29,9 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     return;
   }
 
-  const leaderboardText = formatLeaderboard(league);
+  await interaction.deferReply();
+
+  const leaderboardText = await formatLeaderboard(league, interaction.client);
 
   const embed = new EmbedBuilder()
     .setColor(0x1DB954)
@@ -37,7 +39,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     .setDescription(leaderboardText)
     .setFooter({ text: `Completed rounds: ${league.rounds.filter(r => r.status === 'completed').length} | Use /league-status for current round` });
 
-  await interaction.reply({
+  await interaction.editReply({
     embeds: [embed]
   });
 }

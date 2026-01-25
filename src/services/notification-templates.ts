@@ -1,6 +1,7 @@
 import { EmbedBuilder } from 'discord.js';
 import { League, Round, LeagueEndResults, ThemeSubmission } from '../types';
 import { calculateScores, toTimestamp } from '../utils/helpers';
+import { formatUser } from '../utils/username-resolver';
 
 /**
  * Templates for all notification messages
@@ -136,14 +137,20 @@ export class NotificationTemplates {
   /**
    * DM Notification: Theme selected (random)
    */
-  static themeSelected(league: League, round: Round, selectedTheme: ThemeSubmission): { dm: EmbedBuilder; channel: string } {
+  static themeSelected(
+    league: League,
+    round: Round,
+    selectedTheme: ThemeSubmission,
+    usernameCache: Map<string, string>
+  ): { dm: EmbedBuilder; channel: string } {
+    const themeSubmitter = formatUser(selectedTheme.userId, usernameCache);
     const dm = new EmbedBuilder()
       .setColor(0x2ECC71)
       .setTitle(`🎲 Theme Selected for Round ${round.roundNumber}!`)
       .setDescription(
         `The theme has been randomly selected from all submissions!\n\n` +
         `**"${round.prompt}"**\n\n` +
-        `Submitted by <@${selectedTheme.userId}>\n\n` +
+        `Submitted by ${themeSubmitter}\n\n` +
         `Now it's time to submit your song! Use \`/submit-song\`.\n\n` +
         `**Song Submission Deadline:** <t:${Math.floor(toTimestamp(round.submissionDeadline) / 1000)}:F>`
       )
@@ -153,7 +160,7 @@ export class NotificationTemplates {
     const channel =
       `🎲 **Theme selected for Round ${round.roundNumber}!**\n\n` +
       `**"${round.prompt}"**\n\n` +
-      `Submitted by <@${selectedTheme.userId}>\n\n` +
+      `Submitted by ${themeSubmitter}\n\n` +
       `Get ready to submit your songs! Use \`/submit-song\`.\n\n` +
       `**Deadline:** <t:${Math.floor(toTimestamp(round.submissionDeadline) / 1000)}:F>`;
 
@@ -333,7 +340,8 @@ export class NotificationTemplates {
   static roundEndedWithLeaderboard(
     league: League,
     round: Round,
-    leagueStandings: Map<string, number>
+    leagueStandings: Map<string, number>,
+    usernameCache: Map<string, string>
   ): { content: string; embeds: EmbedBuilder[] } {
     const scores = calculateScores(round);
     const sortedScores = Array.from(scores.entries()).sort((a, b) => b[1] - a[1]);
@@ -355,7 +363,7 @@ export class NotificationTemplates {
 
       if (submission) {
         resultsText += `\n${medal} **${submission.songTitle}** by ${submission.artist}\n`;
-        resultsText += `   Submitted by <@${userId}> - **${score} points**${didNotVote ? ' ⚠️ (DQ - did not vote)' : ''}\n`;
+        resultsText += `   Submitted by ${formatUser(userId, usernameCache)} - **${score} points**${didNotVote ? ' ⚠️ (DQ - did not vote)' : ''}\n`;
         resultsText += `   ${submission.songUrl}\n`;
       }
     });
@@ -367,7 +375,7 @@ export class NotificationTemplates {
     const leaderboardEmbed = new EmbedBuilder()
       .setColor(0x3498DB)
       .setTitle('📊 Current Leaderboard')
-      .setDescription(this.formatLeaderboard(leagueStandings))
+      .setDescription(this.formatLeaderboard(leagueStandings, usernameCache))
       .setFooter({ text: `After Round ${round.roundNumber} of ${league.totalRounds}` });
 
     return {
@@ -382,7 +390,8 @@ export class NotificationTemplates {
   static leagueEndedWithFanfare(
     league: League,
     round: Round,
-    results: LeagueEndResults
+    results: LeagueEndResults,
+    usernameCache: Map<string, string>
   ): { content: string; embeds: EmbedBuilder[] } {
     const scores = calculateScores(round);
     const sortedScores = Array.from(scores.entries()).sort((a, b) => b[1] - a[1]);
@@ -404,7 +413,7 @@ export class NotificationTemplates {
 
       if (submission) {
         resultsText += `\n${medal} **${submission.songTitle}** by ${submission.artist}\n`;
-        resultsText += `   Submitted by <@${userId}> - **${score} points**${didNotVote ? ' ⚠️ (DQ - did not vote)' : ''}\n`;
+        resultsText += `   Submitted by ${formatUser(userId, usernameCache)} - **${score} points**${didNotVote ? ' ⚠️ (DQ - did not vote)' : ''}\n`;
         resultsText += `   ${submission.songUrl}\n`;
       }
     });
@@ -426,13 +435,13 @@ export class NotificationTemplates {
 
     if (top3.length > 0) {
       spoilerText += `||🏆 **LEAGUE CHAMPION** 🏆||\n`;
-      spoilerText += `||🥇 <@${top3[0].userId}> - **${top3[0].totalScore} total points**||\n\n`;
+      spoilerText += `||🥇 ${formatUser(top3[0].userId, usernameCache)} - **${top3[0].totalScore} total points**||\n\n`;
 
       if (top3.length > 1) {
-        spoilerText += `||🥈 Runner-up: <@${top3[1].userId}> - **${top3[1].totalScore} points**||\n`;
+        spoilerText += `||🥈 Runner-up: ${formatUser(top3[1].userId, usernameCache)} - **${top3[1].totalScore} points**||\n`;
       }
       if (top3.length > 2) {
-        spoilerText += `||🥉 Third Place: <@${top3[2].userId}> - **${top3[2].totalScore} points**||\n\n`;
+        spoilerText += `||🥉 Third Place: ${formatUser(top3[2].userId, usernameCache)} - **${top3[2].totalScore} points**||\n\n`;
       }
 
       // Add round-by-round results
@@ -443,7 +452,7 @@ export class NotificationTemplates {
 
         for (const winner of roundResult.winners.slice(0, 3)) {
           const medal = winner.rank === 1 ? '🥇' : winner.rank === 2 ? '🥈' : '🥉';
-          spoilerText += `||  ${medal} ${winner.songTitle} - <@${winner.userId}> (${winner.points} pts)||\n`;
+          spoilerText += `||  ${medal} ${winner.songTitle} - ${formatUser(winner.userId, usernameCache)} (${winner.points} pts)||\n`;
         }
         spoilerText += '\n';
       }
@@ -467,7 +476,8 @@ export class NotificationTemplates {
    */
   static leagueEndedEarlyWithFanfare(
     league: League,
-    results: LeagueEndResults
+    results: LeagueEndResults,
+    usernameCache: Map<string, string>
   ): { content: string; embeds: EmbedBuilder[] } {
     // League end fanfare with spoilers
     const fanfareEmbed = new EmbedBuilder()
@@ -484,13 +494,13 @@ export class NotificationTemplates {
 
     if (top3.length > 0) {
       spoilerText += `||🏆 **LEAGUE CHAMPION** 🏆||\n`;
-      spoilerText += `||🥇 <@${top3[0].userId}> - **${top3[0].totalScore} total points**||\n\n`;
+      spoilerText += `||🥇 ${formatUser(top3[0].userId, usernameCache)} - **${top3[0].totalScore} total points**||\n\n`;
 
       if (top3.length > 1) {
-        spoilerText += `||🥈 Runner-up: <@${top3[1].userId}> - **${top3[1].totalScore} points**||\n`;
+        spoilerText += `||🥈 Runner-up: ${formatUser(top3[1].userId, usernameCache)} - **${top3[1].totalScore} points**||\n`;
       }
       if (top3.length > 2) {
-        spoilerText += `||🥉 Third Place: <@${top3[2].userId}> - **${top3[2].totalScore} points**||\n\n`;
+        spoilerText += `||🥉 Third Place: ${formatUser(top3[2].userId, usernameCache)} - **${top3[2].totalScore} points**||\n\n`;
       }
 
       // Add round-by-round results
@@ -501,7 +511,7 @@ export class NotificationTemplates {
 
         for (const winner of roundResult.winners.slice(0, 3)) {
           const medal = winner.rank === 1 ? '🥇' : winner.rank === 2 ? '🥈' : '🥉';
-          spoilerText += `||  ${medal} ${winner.songTitle} - <@${winner.userId}> (${winner.points} pts)||\n`;
+          spoilerText += `||  ${medal} ${winner.songTitle} - ${formatUser(winner.userId, usernameCache)} (${winner.points} pts)||\n`;
         }
         spoilerText += '\n';
       }
@@ -523,7 +533,10 @@ export class NotificationTemplates {
   /**
    * Helper: Format leaderboard standings
    */
-  private static formatLeaderboard(standings: Map<string, number>): string {
+  private static formatLeaderboard(
+    standings: Map<string, number>,
+    usernameCache: Map<string, string>
+  ): string {
     const sorted = Array.from(standings.entries()).sort((a, b) => b[1] - a[1]);
 
     if (sorted.length === 0) {
@@ -533,7 +546,7 @@ export class NotificationTemplates {
     let text = '';
     sorted.forEach(([userId, score], index) => {
       const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
-      text += `${medal} <@${userId}> - **${score} points**\n`;
+      text += `${medal} ${formatUser(userId, usernameCache)} - **${score} points**\n`;
     });
 
     return text;

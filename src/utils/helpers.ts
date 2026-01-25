@@ -1,4 +1,6 @@
+import { Client } from 'discord.js';
 import { League, Round, Submission, LeagueEndResults } from '../types';
+import { resolveUsernames, formatUser } from './username-resolver';
 
 export function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substring(2);
@@ -84,8 +86,10 @@ export function extractSongInfo(url: string): { songTitle: string; artist: strin
 export function calculateScores(round: Round): Map<string, number> {
   const scores = new Map<string, number>();
 
-  // Get set of user IDs who voted in this round
-  const voterIds = new Set(round.votes.map(vote => vote.voterId));
+  // Initialize all submitters with 0 points so they appear in standings even with no votes
+  for (const submission of round.submissions) {
+    scores.set(submission.userId, 0);
+  }
 
   for (const vote of round.votes) {
     for (const v of vote.votes) {
@@ -120,7 +124,7 @@ export function calculateQualifiedScores(round: Round): Map<string, number> {
   return scores;
 }
 
-export function formatLeaderboard(league: League): string {
+export async function formatLeaderboard(league: League, client: Client): Promise<string> {
   const allScores = new Map<string, number>();
 
   // Calculate overall scores
@@ -137,6 +141,21 @@ export function formatLeaderboard(league: League): string {
   const sorted = Array.from(allScores.entries())
     .sort((a, b) => b[1] - a[1]);
 
+  // Collect all user IDs for username resolution
+  const userIds: string[] = Array.from(allScores.keys());
+  const completedRounds = league.rounds.filter(r => r.status === 'completed');
+  for (const round of completedRounds) {
+    const roundScores = calculateScores(round);
+    for (const [userId] of roundScores) {
+      if (!userIds.includes(userId)) {
+        userIds.push(userId);
+      }
+    }
+  }
+
+  // Resolve all usernames in batch
+  const usernameCache = await resolveUsernames(client, userIds);
+
   // Overall standings
   let leaderboard = `**Overall Standings**\n\n`;
 
@@ -145,13 +164,11 @@ export function formatLeaderboard(league: League): string {
   } else {
     sorted.forEach(([userId, score], index) => {
       const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
-      leaderboard += `${medal} <@${userId}>: ${score} points\n`;
+      leaderboard += `${medal} ${formatUser(userId, usernameCache)}: ${score} points\n`;
     });
   }
 
   // Round-by-round results with playlists
-  const completedRounds = league.rounds.filter(r => r.status === 'completed');
-
   if (completedRounds.length > 0) {
     leaderboard += '\n━━━━━━━━━━━━━━━━━━\n\n**Round-by-Round Results**\n\n';
 
@@ -166,7 +183,7 @@ export function formatLeaderboard(league: League): string {
 
       if (winner) {
         const winnerSub = round.submissions.find(s => s.userId === winner[0]);
-        leaderboard += `🏆 Winner: <@${winner[0]}> (${winner[1]} pts)\n`;
+        leaderboard += `🏆 Winner: ${formatUser(winner[0], usernameCache)} (${winner[1]} pts)\n`;
         if (winnerSub) {
           leaderboard += `   *${winnerSub.songTitle}* by ${winnerSub.artist}\n`;
         }
