@@ -60,6 +60,13 @@ export function createMockInteraction(opts: MockInteractionOptions = {}): any {
       replies.push(replyOptions);
       return null as any;
     }),
+    deferReply: jest.fn(async () => {
+      return null as any;
+    }),
+    editReply: jest.fn(async (replyOptions: any) => {
+      replies.push(replyOptions);
+      return null as any;
+    }),
     showModal: jest.fn(async (modal: any) => {
       modals.push(modal);
       return null as any;
@@ -108,6 +115,9 @@ export function createMockModalSubmit(opts: MockModalSubmitOptions = {}): any {
       return null as any;
     }),
     deferReply: jest.fn(async (options: any) => {
+      return null as any;
+    }),
+    deferUpdate: jest.fn(async () => {
       return null as any;
     }),
     editReply: jest.fn(async (replyOptions: any) => {
@@ -159,4 +169,43 @@ export function createMockSelectMenu(opts: MockSelectMenuOptions = {}): any {
     getReplies: () => replies,
     getModals: () => modals,
   };
+}
+
+export interface MockButtonOptions {
+  userId?: string;
+  guildId?: string;
+  customId?: string;
+}
+
+export function createMockButton(opts: MockButtonOptions = {}): any {
+  const userId = opts.userId ?? 'user123';
+  const guildId = opts.guildId ?? 'guild123';
+  const customId = opts.customId ?? 'test-button';
+
+  const replies: any[] = [];
+  const updates: any[] = [];
+
+  return {
+    user: {
+      id: userId,
+    },
+    guildId,
+    customId,
+    client: createMockClient(),
+    isButton: () => true,
+    reply: jest.fn(async (replyOptions: any) => {
+      replies.push(replyOptions);
+      return null as any;
+    }),
+    update: jest.fn(async (updateOptions: any) => {
+      updates.push(updateOptions);
+      return null as any;
+    }),
+    getReplies: () => replies,
+    getUpdates: () => updates,
+  };
+}
+
+export function getMockUpdates(interaction: any): any[] {
+  return interaction.getUpdates?.() || [];
 }

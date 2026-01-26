@@ -39,7 +39,13 @@ export class VotingService {
         const guild = await client.guilds.fetch(league.guildId);
         const playlistData = await SpotifyPlaylistService.createRoundPlaylist(league, round, guild?.name);
         if (playlistData) {
-          round.playlist = playlistData;
+          round.playlist = {
+            playlistId: playlistData.playlistId,
+            playlistUrl: playlistData.playlistUrl,
+            createdAt: playlistData.createdAt,
+            trackCount: playlistData.trackCount
+          };
+          round.shuffledOrder = playlistData.shuffledOrder;
           console.log(`[${logPrefix}] Playlist created: ${playlistData.playlistUrl}`);
         }
       } catch (error) {

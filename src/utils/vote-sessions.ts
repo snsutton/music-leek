@@ -1,7 +1,11 @@
-interface VoteSession {
+export interface VoteSession {
   userId: string;
   guildId: string;
-  selectedSongIndices: number[];
+  messageId: string;              // Hub message to update
+  channelId: string;              // Channel containing hub message
+  votableSongIndices: number[];   // Indices of votable songs (excludes own)
+  displayOrder: number[];         // Indices in display order (playlist order)
+  pointAllocations: Map<number, number>;  // submissionIndex -> points
   createdAt: number;
   expiresAt: number;
 }
@@ -10,14 +14,25 @@ export class VoteSessionManager {
   private static sessions = new Map<string, VoteSession>();
   private static readonly SESSION_TIMEOUT = 15 * 60 * 1000; // 15 minutes
 
-  static createSession(userId: string, guildId: string, selectedSongs: number[]): void {
+  static createSession(
+    userId: string,
+    guildId: string,
+    messageId: string,
+    channelId: string,
+    votableSongIndices: number[],
+    displayOrder: number[]
+  ): void {
     const key = `${userId}-${guildId}`;
     const now = Date.now();
 
     this.sessions.set(key, {
       userId,
       guildId,
-      selectedSongIndices: selectedSongs,
+      messageId,
+      channelId,
+      votableSongIndices,
+      displayOrder,
+      pointAllocations: new Map(),
       createdAt: now,
       expiresAt: now + this.SESSION_TIMEOUT
     });
@@ -40,6 +55,19 @@ export class VoteSessionManager {
     }
 
     return session;
+  }
+
+  static updatePoints(userId: string, guildId: string, submissionIndex: number, points: number): boolean {
+    const session = this.getSession(userId, guildId);
+    if (!session) return false;
+
+    if (points === 0) {
+      session.pointAllocations.delete(submissionIndex);
+    } else {
+      session.pointAllocations.set(submissionIndex, points);
+    }
+
+    return true;
   }
 
   static deleteSession(userId: string, guildId: string): boolean {

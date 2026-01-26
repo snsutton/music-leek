@@ -1,21 +1,20 @@
 import { ModalSubmitInteraction, MessageFlags } from 'discord.js';
 import { Storage } from '../utils/storage';
-import { Vote } from '../types';
-import { getCurrentRound, getMissingVoters, toTimestamp } from '../utils/helpers';
+import { getCurrentRound } from '../utils/helpers';
 import { VoteSessionManager } from '../utils/vote-sessions';
-import { NotificationService } from '../services/notification-service';
-import { NotificationTemplates } from '../services/notification-templates';
+import { buildVotingHubEmbed, buildVotingHubComponents } from '../utils/vote-embed-builder';
 
 export const customId = 'vote-points-modal';
 
-const POINTS_BUDGET = 10;
-
 export async function execute(interaction: ModalSubmitInteraction) {
-  const guildId = interaction.customId.split(':')[1];
+  // Parse customId: vote-points-modal:{guildId}:{submissionIndex}
+  const parts = interaction.customId.split(':');
+  const guildId = parts[1];
+  const submissionIndex = parseInt(parts[2]);
 
-  if (!guildId) {
+  if (!guildId || isNaN(submissionIndex)) {
     await interaction.reply({
-      content: 'Invalid vote! Please try again.',
+      content: 'Invalid interaction! Please try again.',
       flags: MessageFlags.Ephemeral
     });
     return;
@@ -25,7 +24,7 @@ export async function execute(interaction: ModalSubmitInteraction) {
   const session = VoteSessionManager.getSession(interaction.user.id, guildId);
   if (!session) {
     await interaction.reply({
-      content: 'Vote session expired! Please start over with `/vote`.',
+      content: 'Your voting session has expired. Please run `/vote` again.',
       flags: MessageFlags.Ephemeral
     });
     return;
@@ -37,180 +36,71 @@ export async function execute(interaction: ModalSubmitInteraction) {
       content: 'League not found!',
       flags: MessageFlags.Ephemeral
     });
-    VoteSessionManager.deleteSession(interaction.user.id, guildId);
-    return;
-  }
-
-  if (!league.participants.includes(interaction.user.id)) {
-    await interaction.reply({
-      content: 'You are not in this league!',
-      flags: MessageFlags.Ephemeral
-    });
-    VoteSessionManager.deleteSession(interaction.user.id, guildId);
     return;
   }
 
   const round = getCurrentRound(league);
-  if (!round) {
+  if (!round || round.status !== 'voting') {
     await interaction.reply({
-      content: 'No active round!',
+      content: 'Voting is not currently open!',
       flags: MessageFlags.Ephemeral
     });
-    VoteSessionManager.deleteSession(interaction.user.id, guildId);
     return;
   }
 
-  if (round.status !== 'voting') {
+  // Parse points from modal
+  const pointsStr = interaction.fields.getTextInputValue('points');
+  const points = parseInt(pointsStr);
+
+  // Validate points
+  if (isNaN(points) || points < 0 || points > 10) {
     await interaction.reply({
-      content: 'Voting phase has ended!',
+      content: 'Please enter a number between 0 and 10.',
       flags: MessageFlags.Ephemeral
     });
-    VoteSessionManager.deleteSession(interaction.user.id, guildId);
     return;
   }
 
-  if (Date.now() > toTimestamp(round.votingDeadline)) {
+  // Update session with new points
+  VoteSessionManager.updatePoints(interaction.user.id, guildId, submissionIndex, points);
+
+  // Get updated session
+  const updatedSession = VoteSessionManager.getSession(interaction.user.id, guildId);
+  if (!updatedSession) {
     await interaction.reply({
-      content: 'Voting deadline has passed!',
+      content: 'Session error. Please run `/vote` again.',
       flags: MessageFlags.Ephemeral
     });
-    VoteSessionManager.deleteSession(interaction.user.id, guildId);
     return;
   }
 
-  // Parse points
-  const parsedVotes: { submissionIndex: number; points: number }[] = [];
-  let totalPoints = 0;
+  // Build updated embed and components
+  const newEmbed = buildVotingHubEmbed(round, updatedSession);
+  const components = buildVotingHubComponents(
+    guildId,
+    round,
+    updatedSession.displayOrder,
+    updatedSession.votableSongIndices,
+    updatedSession.pointAllocations
+  );
 
+  // Update the hub message - use deferUpdate + editReply for modal from select menu
   try {
-    for (const index of session.selectedSongIndices) {
-      const fieldValue = interaction.fields.getTextInputValue(`points-${index}`);
-      const points = parseInt(fieldValue);
-
-      if (isNaN(points) || points < 0) {
-        throw new Error(`Invalid points for submission ${index + 1}`);
-      }
-
-      if (points > 0) {
-        // Check self-voting
-        if (round.submissions[index].userId === interaction.user.id) {
-          await interaction.reply({
-            content: 'You cannot vote for your own song!',
-            flags: MessageFlags.Ephemeral
-          });
-          VoteSessionManager.deleteSession(interaction.user.id, guildId);
-          return;
-        }
-
-        parsedVotes.push({ submissionIndex: index, points });
-        totalPoints += points;
-      }
-    }
-
-    // Validate total
-    if (totalPoints > POINTS_BUDGET) {
-      await interaction.reply({
-        content: `❌ You allocated **${totalPoints} points**, but only have **${POINTS_BUDGET}** available!\n\n` +
-                 `Please reduce your allocation.`,
-        flags: MessageFlags.Ephemeral
-      });
-      return;
-    }
-
-    if (totalPoints === 0) {
-      await interaction.reply({
-        content: 'You must allocate at least 1 point!',
-        flags: MessageFlags.Ephemeral
-      });
-      return;
-    }
-
-  } catch (error: any) {
-    await interaction.reply({
-      content: `Invalid points! ${error.message}`,
-      flags: MessageFlags.Ephemeral
+    await interaction.deferUpdate();
+    await interaction.editReply({
+      embeds: [newEmbed],
+      components
     });
-    VoteSessionManager.deleteSession(interaction.user.id, guildId);
-    return;
-  }
-
-  // Remove existing vote
-  const existingVoteIndex = round.votes.findIndex(v => v.voterId === interaction.user.id);
-  if (existingVoteIndex !== -1) {
-    round.votes.splice(existingVoteIndex, 1);
-  }
-
-  // Save vote
-  const vote: Vote = {
-    voterId: interaction.user.id,
-    votes: parsedVotes
-  };
-
-  round.votes.push(vote);
-  Storage.saveLeague(league);
-
-  VoteSessionManager.deleteSession(interaction.user.id, guildId);
-
-  const totalVotes = round.votes.length;
-  const totalParticipants = league.participants.length;
-
-  await interaction.reply({
-    content: `✅ Your votes have been recorded!\n\n` +
-             `Points used: ${totalPoints}/${POINTS_BUDGET}\n` +
-             `Total votes in round: ${totalVotes}/${totalParticipants}`,
-    flags: MessageFlags.Ephemeral
-  });
-
-  // Get missing voters
-  const missingVoterIds = getMissingVoters(league, round);
-
-  // Channel message: When 1 voter remains (holding up the stage)
-  if (missingVoterIds.length === 1) {
+  } catch (error) {
+    console.error('Failed to update voting hub:', error);
+    // Fallback: send ephemeral reply
     try {
-      const channel = await interaction.client.channels.fetch(league.channelId);
-      if (channel && channel.isTextBased() && !channel.isDMBased()) {
-        // Fetch username for the remaining voter
-        const waitingUser = await interaction.client.users.fetch(missingVoterIds[0]);
-        const waitingUsername = waitingUser?.username || 'Unknown User';
-
-        await channel.send(
-          `⏰ **Waiting on 1 player to vote!**\n\n` +
-          `${waitingUsername}, we're waiting for you!\n\n` +
-          `Use \`/vote\` to cast your votes.`
-        );
-      }
-    } catch (error) {
-      console.error('Failed to send final voter notification:', error);
+      await interaction.reply({
+        content: 'Points saved! The display may not have updated - run `/vote` again to see current totals.',
+        flags: MessageFlags.Ephemeral
+      });
+    } catch {
+      // Already replied, ignore
     }
-  }
-
-  // Send reminders when 3 or fewer voters remain
-  if (missingVoterIds.length > 0 && missingVoterIds.length <= 3) {
-    const reminderEmbed = NotificationTemplates.votingRunningOut(league, round, missingVoterIds.length);
-    await NotificationService.sendBulkDM(
-      interaction.client,
-      missingVoterIds,
-      { embeds: [reminderEmbed] },
-      100,
-      league.guildId,
-      'voting_reminder'
-    );
-  }
-
-  // Check if all participants have voted
-  if (totalVotes === totalParticipants && !round.notificationsSent.allVotesReceived) {
-    const adminEmbed = NotificationTemplates.allVotesReceived(league, round);
-
-    await NotificationService.sendBulkDM(
-      interaction.client,
-      league.admins,
-      { embeds: [adminEmbed] },
-      100,
-      league.guildId,
-      'round_ready_to_start'
-    );
-
-    round.notificationsSent.allVotesReceived = true;
-    Storage.saveLeague(league);
   }
 }

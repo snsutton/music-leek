@@ -11,6 +11,7 @@ interface PlaylistData {
   playlistUrl: string;
   createdAt: string; // ISO 8601 timestamp
   trackCount: number;
+  shuffledOrder: number[]; // Indices into submissions[] in playlist order
 }
 
 export class SpotifyPlaylistService {
@@ -30,21 +31,25 @@ export class SpotifyPlaylistService {
       return null;
     }
 
-    // Extract Spotify track IDs from submissions
-    const trackUris: string[] = [];
+    // Extract Spotify track IDs from submissions, tracking original indices
+    const indexedTracks: { uri: string; originalIndex: number }[] = [];
     const invalidTracks: string[] = [];
 
-    for (const submission of round.submissions) {
+    for (let i = 0; i < round.submissions.length; i++) {
+      const submission = round.submissions[i];
       const trackId = this.extractSpotifyTrackId(submission.songUrl);
       if (trackId) {
-        trackUris.push(`spotify:track:${trackId}`);
+        indexedTracks.push({
+          uri: `spotify:track:${trackId}`,
+          originalIndex: i
+        });
       } else {
         invalidTracks.push(submission.songUrl);
         console.warn(`[SpotifyPlaylist] Invalid Spotify URL: ${submission.songUrl}`);
       }
     }
 
-    if (trackUris.length === 0) {
+    if (indexedTracks.length === 0) {
       console.log('[SpotifyPlaylist] No valid Spotify tracks found in submissions');
       return null;
     }
@@ -54,8 +59,12 @@ export class SpotifyPlaylistService {
     }
 
     // Shuffle tracks to maintain submission anonymity
-    this.shuffleArray(trackUris);
-    console.log(`[SpotifyPlaylist] Shuffled ${trackUris.length} tracks to maintain anonymity`);
+    this.shuffleArray(indexedTracks);
+    console.log(`[SpotifyPlaylist] Shuffled ${indexedTracks.length} tracks to maintain anonymity`);
+
+    // Extract shuffled URIs and order
+    const trackUris = indexedTracks.map(t => t.uri);
+    const shuffledOrder = indexedTracks.map(t => t.originalIndex);
 
     try {
       // Create playlist - sanitize name and description for Spotify API
@@ -88,7 +97,8 @@ export class SpotifyPlaylistService {
         playlistId,
         playlistUrl,
         createdAt: toISOString(),
-        trackCount: trackUris.length
+        trackCount: trackUris.length,
+        shuffledOrder
       };
     } catch (error: any) {
       console.error('[SpotifyPlaylist] Failed to create playlist:', error.response?.data || error.message);

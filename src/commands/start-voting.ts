@@ -53,6 +53,9 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     return;
   }
 
+  // Defer reply since startVoting can take a while (playlist creation, notifications)
+  await interaction.deferReply();
+
   // Start voting using shared service (skip channel post since we'll show detailed embed)
   try {
     await VotingService.startVoting(interaction.client, league, round, {
@@ -60,9 +63,9 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       skipChannelPost: true
     });
   } catch (error) {
-    await interaction.reply({
-      content: '❌ Failed to start voting. Please try again.',
-      flags: MessageFlags.Ephemeral
+    console.error('[StartVoting] Error starting voting:', error);
+    await interaction.editReply({
+      content: '❌ Failed to start voting. Please try again.'
     });
     return;
   }
@@ -91,7 +94,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
   embed.setDescription(embed.data.description + submissionList);
 
-  await interaction.reply({
+  await interaction.editReply({
     content: `🗳️ **Voting has started for Round ${updatedRound.roundNumber}!**\n\n` +
              `Review the submissions and use \`/vote\` to rank your favorites!\n\n` +
              `Notifications sent to ${updatedLeague.participants.length} participants.`,
