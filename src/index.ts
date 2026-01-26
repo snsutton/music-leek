@@ -115,15 +115,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
       await command.execute(interaction);
     } catch (error) {
       console.error(error);
-      const replyOptions = {
-        content: 'There was an error while executing this command!',
-        ephemeral: true
-      };
-
-      if (interaction.replied || interaction.deferred) {
-        await interaction.followUp(replyOptions);
-      } else {
-        await interaction.reply(replyOptions);
+      try {
+        if (interaction.replied || interaction.deferred) {
+          await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
+        } else {
+          await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+        }
+      } catch {
+        // Interaction may have expired, ignore
       }
     }
   }
@@ -143,15 +142,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
       await handler.execute(interaction);
     } catch (error) {
       console.error(error);
-      const replyOptions = {
-        content: 'There was an error while processing your submission!',
-        ephemeral: true
-      };
-
-      if (interaction.replied || interaction.deferred) {
-        await interaction.followUp(replyOptions);
-      } else {
-        await interaction.reply(replyOptions);
+      try {
+        if (interaction.replied || interaction.deferred) {
+          await interaction.followUp({ content: 'There was an error while processing your submission!', ephemeral: true });
+        } else {
+          await interaction.reply({ content: 'There was an error while processing your submission!', ephemeral: true });
+        }
+      } catch {
+        // Interaction may have expired, ignore
       }
     }
   }
@@ -171,15 +169,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
       await handler.execute(interaction);
     } catch (error) {
       console.error(error);
-      const replyOptions = {
-        content: 'There was an error while processing your interaction!',
-        ephemeral: true
-      };
-
-      if (interaction.replied || interaction.deferred) {
-        await interaction.followUp(replyOptions);
-      } else {
-        await interaction.reply(replyOptions);
+      try {
+        if (interaction.replied || interaction.deferred) {
+          await interaction.followUp({ content: 'There was an error while processing your interaction!', ephemeral: true });
+        } else {
+          await interaction.reply({ content: 'There was an error while processing your interaction!', ephemeral: true });
+        }
+      } catch {
+        // Interaction may have expired, ignore
       }
     }
   }

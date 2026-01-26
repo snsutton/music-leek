@@ -53,6 +53,7 @@ export interface Round {
     createdAt: string; // ISO 8601 timestamp
     trackCount: number; // Number of tracks added
   };
+  shuffledOrder?: number[]; // Indices into submissions[] in playlist order (for voting display)
 }
 
 export interface Submission {

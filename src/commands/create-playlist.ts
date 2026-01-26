@@ -105,7 +105,13 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     }
 
     // Update round with playlist data
-    round.playlist = playlistData;
+    round.playlist = {
+      playlistId: playlistData.playlistId,
+      playlistUrl: playlistData.playlistUrl,
+      createdAt: playlistData.createdAt,
+      trackCount: playlistData.trackCount
+    };
+    round.shuffledOrder = playlistData.shuffledOrder;
     Storage.saveLeague(league);
 
     const embed = new EmbedBuilder()

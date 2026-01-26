@@ -23,13 +23,13 @@
 music-leek/
 ├── src/
 │   ├── commands/          # Slash command handlers (20 commands)
-│   ├── components/        # Discord components (vote select menu)
+│   ├── components/        # Discord components (vote-song-select, vote-submit-button)
 │   ├── modals/            # Modal form handlers (5 modals)
 │   ├── services/          # External API services (Spotify, notifications, scheduler)
-│   ├── utils/             # Core utilities (storage, permissions, helpers, dm-context)
+│   ├── utils/             # Core utilities (storage, permissions, helpers, vote-sessions, vote-embed-builder)
 │   ├── types/             # TypeScript type definitions
 │   ├── __tests__/         # Jest test suite (commands, modals, components, integration)
-│   ├── constants.ts       # App-wide constants
+│   ├── constants.ts       # App-wide constants (POINTS_BUDGET)
 │   ├── env.ts             # Environment configuration (loaded first)
 │   ├── index.ts           # Bot entry point with dynamic handler loading
 │   └── deploy-commands.ts # Command deployment script
@@ -66,7 +66,8 @@ music-leek/
 
 - `src/utils/helpers.ts` - ID generation, timestamps, status formatting, scoring
 - `src/utils/permissions.ts` - Admin authorization checks
-- `src/utils/vote-sessions.ts` - Temporary session storage for voting workflow
+- `src/utils/vote-sessions.ts` - Session state for voting hub (tracks point allocations, display order)
+- `src/utils/vote-embed-builder.ts` - Builds voting hub embed and components
 
 ## Required Questions Before Action
 
@@ -128,7 +129,7 @@ music-leek/
 - [ ] Include all required properties in test data
 - [ ] Run `npm run build` to verify TypeScript compilation
 - [ ] Run `npm test` to verify tests pass
-- [ ] Fix any build or test errors before submitting
+- [ ] Fix any build errors, test errors, or console errors before submitting
 
 ## This Project
 
@@ -208,10 +209,16 @@ Architectural and design decisions that should be preserved. Do not change these
 
 **Implications:** Vote command checks for user's submission before allowing vote access.
 
-### DR-009: Points-Based Voting System (0-10 Budget)
+### DR-009: Points-Based Voting with Hub UI
 
-**Decision:** Voters distribute points across up to 5 songs with a total budget of 10 points.
+**Decision:** Voters distribute a 10-point budget across any number of songs using a persistent voting hub UI with dropdown selection.
 
-**Rationale:** Forces voters to make meaningful choices rather than giving everyone high scores. Creates differentiation in results.
+**Rationale:** Forces voters to make meaningful choices. The hub pattern allows voting for any number of songs (up to 25, Discord's select menu limit) while providing live budget tracking and the ability to adjust allocations before submitting.
 
-**Implications:** VotingService validates total points <= 10. Vote modal enforces selection limits.
+**Implications:**
+
+- `POINTS_BUDGET` constant in `src/constants.ts` defines the budget (10)
+- VoteSessionManager tracks point allocations in-memory during voting
+- Songs display in Spotify playlist order (`round.shuffledOrder`) for anonymity
+- Users can edit any song's points before clicking Submit
+- Vote is only saved when user clicks the Submit button

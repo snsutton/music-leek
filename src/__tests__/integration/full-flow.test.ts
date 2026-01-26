@@ -2,8 +2,8 @@ import { execute as createLeague } from '../../commands/create-league';
 import { execute as joinLeague } from '../../commands/join-league';
 import { execute as startRoundModal } from '../../modals/start-round-modal';
 import { execute as startVoting } from '../../commands/start-voting';
-import { execute as votePointsModal } from '../../modals/vote-points-modal';
-import { createMockInteraction, createMockModalSubmit, getMockReplies } from '../utils/discord-mocks';
+import { execute as voteSubmitButton } from '../../components/vote-submit-button';
+import { createMockInteraction, createMockModalSubmit, createMockButton, getMockReplies, getMockUpdates } from '../utils/discord-mocks';
 import { MockStorage } from '../utils/storage-mock';
 import { Storage } from '../../utils/storage';
 import { VoteSessionManager } from '../../utils/vote-sessions';
@@ -157,39 +157,44 @@ describe('Full Flow Integration Test', () => {
     league = MockStorage.getLeagueByGuild('guild123');
     expect(league?.rounds[0].status).toBe('voting');
 
-    // Step 7: User A votes - select song
-    VoteSessionManager.createSession('userA', 'guild123', [1]); // Vote for userB's song (index 1)
+    // Step 7: User A votes using the new hub flow
+    // Create session with new signature: (userId, guildId, messageId, channelId, votableSongIndices, displayOrder)
+    VoteSessionManager.createSession('userA', 'guild123', 'msg1', 'channel123', [1], [0, 1]); // Can vote for index 1 (userB's song)
 
-    const voteAInteraction = createMockModalSubmit({
+    // Set point allocations (simulating what vote-points-modal does)
+    VoteSessionManager.updatePoints('userA', 'guild123', 1, 5); // 5 points to song index 1
+
+    // Submit via button
+    const voteAButton = createMockButton({
       userId: 'userA',
-      fields: new Map([
-        ['points-1', '5'],
-      ]),
+      guildId: 'guild123',
+      customId: 'vote-submit:guild123',
     });
-    voteAInteraction.customId = 'vote-points-modal:guild123';
 
-    await votePointsModal(voteAInteraction);
+    await voteSubmitButton(voteAButton);
 
-    replies = getMockReplies(voteAInteraction);
-    expect(replies[0].content).toContain('✅');
-    expect(replies[0].content).toContain('Total votes in round: 1/2');
+    let updates = getMockUpdates(voteAButton);
+    expect(updates[0].content).toContain('✅');
+    expect(updates[0].content).toContain('Total votes in round: 1/2');
 
-    // Step 8: User B votes - select song
-    VoteSessionManager.createSession('userB', 'guild123', [0]); // Vote for userA's song (index 0)
+    // Step 8: User B votes using the new hub flow
+    VoteSessionManager.createSession('userB', 'guild123', 'msg2', 'channel123', [0], [0, 1]); // Can vote for index 0 (userA's song)
 
-    const voteBInteraction = createMockModalSubmit({
+    // Set point allocations
+    VoteSessionManager.updatePoints('userB', 'guild123', 0, 5); // 5 points to song index 0
+
+    // Submit via button
+    const voteBButton = createMockButton({
       userId: 'userB',
-      fields: new Map([
-        ['points-0', '5'],
-      ]),
+      guildId: 'guild123',
+      customId: 'vote-submit:guild123',
     });
-    voteBInteraction.customId = 'vote-points-modal:guild123';
 
-    await votePointsModal(voteBInteraction);
+    await voteSubmitButton(voteBButton);
 
-    replies = getMockReplies(voteBInteraction);
-    expect(replies[0].content).toContain('✅');
-    expect(replies[0].content).toContain('Total votes in round: 2/2');
+    updates = getMockUpdates(voteBButton);
+    expect(updates[0].content).toContain('✅');
+    expect(updates[0].content).toContain('Total votes in round: 2/2');
 
     // Final verification
     league = MockStorage.getLeagueByGuild('guild123');
