@@ -14,6 +14,8 @@ export async function execute(interaction: ModalSubmitInteraction) {
   // Extract guildId and validate league/round
   const guildId = interaction.customId.split(':')[1];
 
+  console.log(`[Theme] user:${interaction.user.id} submitting theme for guild:${guildId}`);
+
   if (!guildId) {
     await interaction.editReply({ content: 'Invalid submission! Please try again.' });
     return;
@@ -94,6 +96,8 @@ export async function execute(interaction: ModalSubmitInteraction) {
 
   round.themeSubmissions.push(submission);
   Storage.saveLeague(league);
+
+  console.log(`[Theme] Saved theme "${theme.trim()}" for user:${interaction.user.id} in round:${round.roundNumber}`);
 
   // Only send channel message when 1 player remains (holding up the stage)
   const submitterIds = new Set(round.themeSubmissions.map(t => t.userId));

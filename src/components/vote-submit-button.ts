@@ -12,6 +12,8 @@ export const customId = 'vote-submit';
 export async function execute(interaction: ButtonInteraction) {
   const guildId = interaction.customId.split(':')[1];
 
+  console.log(`[Vote] user:${interaction.user.id} submitting votes for guild:${guildId}`);
+
   if (!guildId) {
     await interaction.reply({
       content: 'Invalid interaction!',
@@ -117,6 +119,8 @@ export async function execute(interaction: ButtonInteraction) {
 
   round.votes.push(vote);
   Storage.saveLeague(league);
+
+  console.log(`[Vote] Saved ${parsedVotes.length} song votes (${totalPoints} points) for user:${interaction.user.id} in round:${round.roundNumber}`);
 
   VoteSessionManager.deleteSession(interaction.user.id, guildId);
 

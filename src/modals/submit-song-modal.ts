@@ -15,6 +15,8 @@ export async function execute(interaction: ModalSubmitInteraction) {
   // Defer reply since API calls might take time
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
+  console.log(`[Song] user:${interaction.user.id} submitting song`);
+
   // Step 1: Validate URL and extract track info
   const parsedUrl = parseMusicUrl(songUrl);
   if (!parsedUrl || parsedUrl.platform === 'unsupported') {
@@ -128,6 +130,8 @@ export async function execute(interaction: ModalSubmitInteraction) {
 
   round.submissions.push(submission);
   Storage.saveLeague(league);
+
+  console.log(`[Song] Saved "${result.title}" by ${result.artist} for user:${interaction.user.id} in round:${round.roundNumber}`);
 
   // Calculate missing submitters
   const missingSubmitterIds = getMissingSubmitters(league, round);

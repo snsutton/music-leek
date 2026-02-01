@@ -144,10 +144,12 @@ describe('VotingService - Playlist Confirmation Flow', () => {
     });
 
     it('should notify admins and NOT proceed when playlist creation fails', async () => {
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
       (SpotifyPlaylistService.createRoundPlaylist as jest.Mock).mockRejectedValue(new Error('API error'));
       (NotificationService.sendBulkDM as jest.Mock).mockResolvedValue([]);
 
       const result = await VotingService.initiateVotingTransition(mockClient, testLeague, testRound);
+      consoleErrorSpy.mockRestore();
 
       expect(result.status).toBe('failed');
       expect(result.error).toBe('API error');
@@ -167,6 +169,7 @@ describe('VotingService - Playlist Confirmation Flow', () => {
     });
 
     it('should still set pending confirmation when creator DM fails', async () => {
+      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
       (SpotifyPlaylistService.createRoundPlaylist as jest.Mock).mockResolvedValue({
         playlistId: 'playlist123',
         playlistUrl: 'https://open.spotify.com/playlist/playlist123',
@@ -178,6 +181,7 @@ describe('VotingService - Playlist Confirmation Flow', () => {
       (NotificationService.sendBulkDM as jest.Mock).mockResolvedValue([]);
 
       const result = await VotingService.initiateVotingTransition(mockClient, testLeague, testRound);
+      consoleWarnSpy.mockRestore();
 
       // Should still wait for confirmation (the button exists, they just didn't get the DM)
       expect(result.status).toBe('pending_confirmation');

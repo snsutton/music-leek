@@ -111,10 +111,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return;
     }
 
+    const guildId = interaction.guildId || 'DM';
+    console.log(`[Command] /${interaction.commandName} by user:${interaction.user.id} in guild:${guildId}`);
+
     try {
       await command.execute(interaction);
+      console.log(`[Command] /${interaction.commandName} completed for user:${interaction.user.id}`);
     } catch (error) {
-      console.error(error);
+      console.error(`[Command] /${interaction.commandName} failed for user:${interaction.user.id}:`, error);
       try {
         if (interaction.replied || interaction.deferred) {
           await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
@@ -138,10 +142,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return;
     }
 
+    console.log(`[Modal] ${baseCustomId} by user:${interaction.user.id}`);
+
     try {
       await handler.execute(interaction);
+      console.log(`[Modal] ${baseCustomId} completed for user:${interaction.user.id}`);
     } catch (error) {
-      console.error(error);
+      console.error(`[Modal] ${baseCustomId} failed for user:${interaction.user.id}:`, error);
       try {
         if (interaction.replied || interaction.deferred) {
           await interaction.followUp({ content: 'There was an error while processing your submission!', ephemeral: true });
@@ -165,10 +172,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return;
     }
 
+    console.log(`[Component] ${baseCustomId} by user:${interaction.user.id}`);
+
     try {
       await handler.execute(interaction);
+      console.log(`[Component] ${baseCustomId} completed for user:${interaction.user.id}`);
     } catch (error) {
-      console.error(error);
+      console.error(`[Component] ${baseCustomId} failed for user:${interaction.user.id}:`, error);
       try {
         if (interaction.replied || interaction.deferred) {
           await interaction.followUp({ content: 'There was an error while processing your interaction!', ephemeral: true });
