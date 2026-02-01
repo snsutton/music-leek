@@ -1,65 +1,126 @@
-# Test Fixtures for Weighted Theme Selection
+# Test Fixtures
 
-These fixture files let you manually test the weighted theme selection system.
+Test fixtures let you manually test bot features by preloading league state.
 
-## How to Use
+## Quick Start
 
-1. Copy a fixture file to `data/leagues.json`
-2. Run the bot
-3. Use `/start-song-submissions` to trigger theme selection
-4. Check `data/leagues.json` to see the updated `themeSelectionTickets`
+1. Create a new JSON file in this folder (e.g., `my-test.json`)
+2. Copy the template below and replace placeholder values with your real Discord IDs
+3. Copy to `data/leagues.json`
+4. Run the bot and test
 
-## Fixtures
+## Finding Your Discord IDs
 
-### Fixture 1: Round 1 - First Theme Selection
+Enable Developer Mode in Discord (Settings → Advanced → Developer Mode), then:
 
-**File:** `fixture-1-round1-theme-submission.json`
+- **Guild ID**: Right-click your server → "Copy Server ID"
+- **User ID**: Right-click yourself → "Copy User ID"
+- **Channel ID**: Right-click a text channel → "Copy Channel ID"
 
-A fresh league in Round 1 with 3 theme submissions from Alice, Bob, and Carol.
-No `themeSelectionTickets` exists yet.
+## Fixture Template
 
-**Expected after selection:**
-
-- `themeSelectionTickets` is created
-- All 3 users get +1 ticket
-- Selected user's tickets reset to 0
-
-### Fixture 2: Round 2 - Weighted Selection Test
-
-**File:** `fixture-2-round2-weighted-selection.json`
-
-Round 2 with pre-populated tickets simulating that Alice was selected in Round 1:
-
-- Alice: 0 tickets (was selected)
-- Bob: 1 ticket
-- Carol: 1 ticket
-
-All 3 have submitted themes again.
-
-**Expected odds:**
-
-- Alice: 1/(1+2+2) = 20%
-- Bob: 2/(1+2+2) = 40%
-- Carol: 2/(1+2+2) = 40%
-
-**To verify:** Restore this fixture multiple times and run selection. Bob and Carol should be selected more frequently than Alice.
-
-### Fixture 3: Edge Case - Single Submission
-
-**File:** `fixture-3-edge-case-single-submission.json`
-
-Only one theme submitted. Should still work correctly.
-
-**Expected:** Alice's theme is always selected, her tickets reset to 0.
-
-## Inspecting Results
-
-After running `/start-song-submissions`, check `data/leagues.json`:
+Copy this template and replace the placeholder values:
 
 ```json
-"themeSelectionTickets": {
-  "alice_111111111111111111": 0,  // Was selected, reset to 0
-  "bob_222222222222222222": 2,    // Submitted but not selected, +1
-  "carol_333333333333333333": 2   // Submitted but not selected, +1
+{
+  "leagues": {
+    "YOUR_GUILD_ID": {
+      "name": "Example Test League",
+      "guildId": "YOUR_GUILD_ID",
+      "channelId": "YOUR_CHANNEL_ID",
+      "createdBy": "YOUR_USER_ID",
+      "admins": ["YOUR_USER_ID"],
+      "createdAt": "2025-01-20T12:00:00.000Z",
+      "currentRound": 1,
+      "rounds": [
+        {
+          "roundNumber": 1,
+          "prompt": "Your test prompt here",
+          "status": "submission",
+          "startedAt": "2025-01-20T12:00:00.000Z",
+          "submissionDeadline": "2030-01-26T12:00:00.000Z",
+          "votingDeadline": "2030-01-27T12:00:00.000Z",
+          "submissions": [
+            {
+              "userId": "YOUR_USER_ID",
+              "songUrl": "https://open.spotify.com/track/TRACK_ID_1",
+              "songTitle": "Song Title 1",
+              "artist": "Artist 1",
+              "submittedAt": "2025-01-21T10:00:00.000Z"
+            },
+            {
+              "userId": "100000000000000002",
+              "songUrl": "https://open.spotify.com/track/TRACK_ID_2",
+              "songTitle": "Song Title 2",
+              "artist": "Artist 2",
+              "submittedAt": "2025-01-21T10:05:00.000Z"
+            }
+          ],
+          "votes": [],
+          "notificationsSent": {
+            "roundStarted": true,
+            "submissionReminder": false,
+            "votingStarted": false,
+            "votingReminder": false,
+            "allVotesReceived": false
+          }
+        }
+      ],
+      "participants": [
+        "YOUR_USER_ID",
+        "100000000000000002"
+      ],
+      "totalRounds": 5,
+      "isCompleted": false
+    }
+  }
 }
 ```
+
+## Placeholders to Replace
+
+| Placeholder         | Description                                        |
+| ------------------- | -------------------------------------------------- |
+| `YOUR_GUILD_ID`     | Your Discord server ID                             |
+| `YOUR_USER_ID`      | Your Discord user ID                               |
+| `YOUR_CHANNEL_ID`   | The channel for league announcements               |
+| `100000000000000002`| Fake user IDs for simulated players (keep as-is)   |
+
+## Common Test Scenarios
+
+### Testing Theme Selection
+
+Set `status: "theme-submission"` and add `themeSubmissions`:
+
+```json
+"themeSubmissions": [
+  { "userId": "...", "theme": "Songs about rain", "submittedAt": "2025-01-20T13:00:00.000Z" },
+  { "userId": "...", "theme": "80s bangers", "submittedAt": "2025-01-20T14:00:00.000Z" }
+]
+```
+
+### Testing Voting Phase
+
+Set `status: "submission"` with submissions, then run `/start-voting`.
+
+### Testing Spotify Playlist Confirmation
+
+Add `spotifyIntegration` to the league:
+
+```json
+"spotifyIntegration": {
+  "userId": "spotify_user_id",
+  "connectedBy": "YOUR_USER_ID",
+  "connectedAt": "2025-01-20T12:00:00.000Z"
+}
+```
+
+Make sure you also have valid tokens in `data/spotify-tokens.json`.
+
+## Tips
+
+- Set deadlines far in the future (e.g., 2030) to prevent automatic transitions
+- Set deadlines in the past to trigger deadline-based behavior
+- Use obviously fake user IDs like `100000000000000002` for simulated players
+- The `notificationsSent` object tracks which DMs have been sent
+- JSON files in this folder are gitignored - create as many as you need

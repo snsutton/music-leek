@@ -184,6 +184,7 @@ export function createMockButton(opts: MockButtonOptions = {}): any {
 
   const replies: any[] = [];
   const updates: any[] = [];
+  const editReplies: any[] = [];
 
   return {
     user: {
@@ -201,11 +202,23 @@ export function createMockButton(opts: MockButtonOptions = {}): any {
       updates.push(updateOptions);
       return null as any;
     }),
+    deferUpdate: jest.fn(async () => {
+      return null as any;
+    }),
+    editReply: jest.fn(async (replyOptions: any) => {
+      editReplies.push(replyOptions);
+      return null as any;
+    }),
     getReplies: () => replies,
     getUpdates: () => updates,
+    getEditReplies: () => editReplies,
   };
 }
 
 export function getMockUpdates(interaction: any): any[] {
   return interaction.getUpdates?.() || [];
+}
+
+export function getMockEditReplies(interaction: any): any[] {
+  return interaction.getEditReplies?.() || [];
 }

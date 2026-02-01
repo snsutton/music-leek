@@ -1,0 +1,53 @@
+{
+  "leagues": {
+    "YOUR_GUILD_ID": {
+      "name": "Example Test League",
+      "guildId": "YOUR_GUILD_ID",
+      "channelId": "YOUR_CHANNEL_ID",
+      "createdBy": "YOUR_USER_ID",
+      "admins": ["YOUR_USER_ID"],
+      "createdAt": "2025-01-20T12:00:00.000Z",
+      "currentRound": 1,
+      "rounds": [
+        {
+          "roundNumber": 1,
+          "prompt": "Your test prompt here",
+          "status": "submission",
+          "startedAt": "2025-01-20T12:00:00.000Z",
+          "submissionDeadline": "2030-01-26T12:00:00.000Z",
+          "votingDeadline": "2030-01-27T12:00:00.000Z",
+          "submissions": [
+            {
+              "userId": "YOUR_USER_ID",
+              "songUrl": "https://open.spotify.com/track/TRACK_ID_1",
+              "songTitle": "Song Title 1",
+              "artist": "Artist 1",
+              "submittedAt": "2025-01-21T10:00:00.000Z"
+            },
+            {
+              "userId": "FAKE_USER_ID_002",
+              "songUrl": "https://open.spotify.com/track/TRACK_ID_2",
+              "songTitle": "Song Title 2",
+              "artist": "Artist 2",
+              "submittedAt": "2025-01-21T10:05:00.000Z"
+            }
+          ],
+          "votes": [],
+          "notificationsSent": {
+            "roundStarted": true,
+            "submissionReminder": false,
+            "votingStarted": false,
+            "votingReminder": false,
+            "allVotesReceived": false
+          }
+        }
+      ],
+      "participants": [
+        "YOUR_USER_ID",
+        "FAKE_USER_ID_002"
+      ],
+      "totalRounds": 5,
+      "isCompleted": false
+    }
+  }
+}

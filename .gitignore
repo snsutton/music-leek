@@ -2,11 +2,16 @@ node_modules/
 dist/
 coverage/
 data/
+# Test fixtures (user creates their own, see test-fixtures/README.md)
+test-fixtures/*.json
 
 .env*
-!env.example
 *.log
 .DS_Store
+
+!test-fixtures/README.md
+!test-fixtures/example-fixture.json
+!env.example
 
 .claude/settings.local.json
 .markdownlint.json

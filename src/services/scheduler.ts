@@ -120,7 +120,15 @@ export class Scheduler {
     }
 
     try {
-      await VotingService.startVoting(client, league, round, { logPrefix: 'Scheduler' });
+      const result = await VotingService.initiateVotingTransition(client, league, round, { logPrefix: 'Scheduler' });
+
+      if (result.status === 'pending_confirmation') {
+        console.log(`[Scheduler] Playlist created, waiting for creator to confirm it's public`);
+      } else if (result.status === 'failed') {
+        console.log(`[Scheduler] Playlist creation failed - admins have been notified`);
+      } else {
+        console.log(`[Scheduler] Voting started immediately (no Spotify integration)`);
+      }
     } catch (error) {
       console.error(`[Scheduler] Failed to start voting for round ${round.roundNumber}:`, error);
     }

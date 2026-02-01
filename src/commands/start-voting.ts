@@ -1,6 +1,6 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder, EmbedBuilder, MessageFlags } from 'discord.js';
+import { ChatInputCommandInteraction, SlashCommandBuilder, MessageFlags } from 'discord.js';
 import { Storage } from '../utils/storage';
-import { getCurrentRound, toTimestamp } from '../utils/helpers';
+import { getCurrentRound } from '../utils/helpers';
 import { isAdmin } from '../utils/permissions';
 import { VotingService } from '../services/voting-service';
 import { resolveGuildContext } from '../utils/dm-context';
@@ -53,51 +53,40 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     return;
   }
 
-  // Defer reply since startVoting can take a while (playlist creation, notifications)
-  await interaction.deferReply();
+  // Defer reply as ephemeral - public notifications are sent separately by VotingService
+  await interaction.deferReply({ ephemeral: true });
 
-  // Start voting using shared service (skip channel post since we'll show detailed embed)
   try {
-    await VotingService.startVoting(interaction.client, league, round, {
-      logPrefix: 'StartVoting',
-      skipChannelPost: true
+    const result = await VotingService.initiateVotingTransition(interaction.client, league, round, {
+      logPrefix: 'StartVoting'
     });
+
+    // Reload league to get updated participant count
+    const updatedLeague = Storage.getLeagueByGuild(guildId)!;
+
+    if (result.status === 'pending_confirmation') {
+      // Playlist created, waiting for creator confirmation
+      await interaction.editReply({
+        content: `✅ Playlist created! Check your DMs to confirm it's public and start voting.`
+      });
+    } else if (result.status === 'failed') {
+      // Playlist creation failed
+      await interaction.editReply({
+        content: `❌ **Spotify Playlist Creation Failed**\n\n` +
+                 `Could not create the Spotify playlist for Round ${round.roundNumber}.\n\n` +
+                 (result.error ? `**Error:** ${result.error}\n\n` : '') +
+                 `All league admins have been notified. Please check your Spotify connection with \`/reconnect-spotify\` and try again.`
+      });
+    } else {
+      // Completed immediately (no Spotify integration) - public notification already sent by VotingService
+      await interaction.editReply({
+        content: `✅ Voting started! Notifications sent to ${updatedLeague.participants.length} participants.`
+      });
+    }
   } catch (error) {
     console.error('[StartVoting] Error starting voting:', error);
     await interaction.editReply({
       content: '❌ Failed to start voting. Please try again.'
     });
-    return;
   }
-
-  // Reload league to get updated round data
-  const updatedLeague = Storage.getLeagueByGuild(guildId)!;
-  const updatedRound = getCurrentRound(updatedLeague)!;
-
-  const embed = new EmbedBuilder()
-    .setColor(0x1DB954)
-    .setTitle(`🎵 Round ${updatedRound.roundNumber} - Voting Phase`)
-    .setDescription(
-      `**Prompt:** ${updatedRound.prompt}\n\n` +
-      (updatedRound.playlist
-        ? `🎧 **[Listen to all submissions with this Spotify playlist](${updatedRound.playlist.playlistUrl})**\n\n`
-        : ''
-      ) +
-      `**Submissions:**\n`
-    )
-    .setFooter({ text: `Use /vote to cast your votes! Deadline: ${new Date(toTimestamp(updatedRound.votingDeadline)).toLocaleString()}` });
-
-  let submissionList = '';
-  updatedRound.submissions.forEach((sub, index) => {
-    submissionList += `\n**${index + 1}.** ${sub.songTitle} - ${sub.artist}\n${sub.songUrl}\n`;
-  });
-
-  embed.setDescription(embed.data.description + submissionList);
-
-  await interaction.editReply({
-    content: `🗳️ **Voting has started for Round ${updatedRound.roundNumber}!**\n\n` +
-             `Review the submissions and use \`/vote\` to rank your favorites!\n\n` +
-             `Notifications sent to ${updatedLeague.participants.length} participants.`,
-    embeds: [embed]
-  });
 }

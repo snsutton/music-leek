@@ -4,7 +4,8 @@
   "description": "Music Leek - A Discord bot for music sharing and voting",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "clean": "rimraf dist",
+    "build": "npm run clean && tsc",
     "start": "npm run deploy-commands && node dist/index.js",
     "deploy-commands": "node dist/deploy-commands.js",
     "dev": "ts-node src/index.ts",
@@ -30,6 +31,7 @@
     "@types/jest": "^30.0.0",
     "@types/node": "^25.0.2",
     "jest": "^30.2.0",
+    "rimraf": "^6.1.2",
     "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"

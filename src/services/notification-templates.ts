@@ -1,4 +1,4 @@
-import { EmbedBuilder } from 'discord.js';
+import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { League, Round, LeagueEndResults, ThemeSubmission } from '../types';
 import { calculateScores, toTimestamp } from '../utils/helpers';
 import { formatUser } from '../utils/username-resolver';
@@ -528,6 +528,89 @@ export class NotificationTemplates {
       content: `━━━━━━━━━━━━━━━━━━━━\n\n🎵 **${league.name}** has concluded! 🎵`,
       embeds: [fanfareEmbed]
     };
+  }
+
+  /**
+   * DM Notification: Playlist confirmation needed (to league creator)
+   * Returns embed with a confirm button for the creator to click after making playlist public
+   */
+  static playlistConfirmationNeeded(
+    league: League,
+    round: Round
+  ): { embed: EmbedBuilder; components: ActionRowBuilder<ButtonBuilder>[] } {
+    const embed = new EmbedBuilder()
+      .setColor(0xF39C12) // Orange - action required
+      .setTitle(`📋 Action Required: Make Playlist Public`)
+      .setDescription(
+        `The Spotify playlist for **${league.name}** Round ${round.roundNumber} has been created!\n\n` +
+        `**Before voting notifications can be sent**, you need to make the playlist public in Spotify.\n\n` +
+        `🎧 **[Open Playlist in Spotify](${round.playlist?.playlistUrl})**\n\n` +
+        `**How to make it public:**\n` +
+        `1. Open the playlist link above in Spotify\n` +
+        `2. Click the three dots (...) menu\n` +
+        `3. Select "Make public" or toggle the visibility setting\n\n` +
+        `Once done, click the button below to send voting notifications to all players.`
+      )
+      .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
+      .setTimestamp();
+
+    const confirmButton = new ButtonBuilder()
+      .setCustomId(`playlist-confirm:${league.guildId}`)
+      .setLabel("Click to confirm you have made the playlist public")
+      .setStyle(ButtonStyle.Success);
+
+    const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(confirmButton);
+
+    return { embed, components: [buttonRow] };
+  }
+
+  /**
+   * DM Notification: Playlist confirmation pending (to other admins)
+   * Informs admins that voting is waiting for creator to confirm playlist is public
+   */
+  static playlistConfirmationPending(
+    league: League,
+    round: Round,
+    creatorId: string,
+    usernameCache: Map<string, string>
+  ): EmbedBuilder {
+    const creatorName = formatUser(creatorId, usernameCache);
+    return new EmbedBuilder()
+      .setColor(0x3498DB) // Blue - informational
+      .setTitle(`⏳ Voting Pending: Waiting for Playlist Confirmation`)
+      .setDescription(
+        `Voting for **${league.name}** Round ${round.roundNumber} is ready to begin!\n\n` +
+        `**Waiting for:** ${creatorName} to confirm the Spotify playlist is public.\n\n` +
+        `🎧 **[View Playlist](${round.playlist?.playlistUrl})**\n\n` +
+        `Once the playlist is confirmed as public, voting notifications will be sent to all players.`
+      )
+      .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
+      .setTimestamp();
+  }
+
+  /**
+   * DM Notification: Playlist creation failed (to all admins)
+   * Notifies admins that Spotify playlist could not be created
+   */
+  static playlistCreationFailed(
+    league: League,
+    round: Round,
+    errorMessage?: string
+  ): EmbedBuilder {
+    return new EmbedBuilder()
+      .setColor(0xE74C3C) // Red - error
+      .setTitle(`❌ Spotify Playlist Creation Failed`)
+      .setDescription(
+        `Failed to create the Spotify playlist for **${league.name}** Round ${round.roundNumber}.\n\n` +
+        (errorMessage ? `**Error:** ${errorMessage}\n\n` : '') +
+        `**What to do:**\n` +
+        `1. Check that the Spotify integration is still connected (\`/reconnect-spotify\`)\n` +
+        `2. Try creating the playlist manually in Spotify\n` +
+        `3. Use \`/start-voting\` again once the issue is resolved\n\n` +
+        `Voting has **not** started. Players have not been notified.`
+      )
+      .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
+      .setTimestamp();
   }
 
   /**

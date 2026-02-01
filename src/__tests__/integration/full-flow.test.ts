@@ -9,6 +9,7 @@ import { Storage } from '../../utils/storage';
 import { VoteSessionManager } from '../../utils/vote-sessions';
 import * as helpers from '../../utils/helpers';
 import { SpotifyOAuthService } from '../../services/spotify-oauth-service';
+import { VotingService } from '../../services/voting-service';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -17,6 +18,7 @@ jest.mock('../../utils/storage');
 jest.mock('../../utils/helpers');
 jest.mock('../../services/spotify-oauth-service');
 jest.mock('../../services/spotify-playlist-service');
+jest.mock('../../services/notification-service');
 
 describe('Full Flow Integration Test', () => {
   let testDataDir: string;
@@ -42,6 +44,23 @@ describe('Full Flow Integration Test', () => {
     // Mock Spotify OAuth service
     (SpotifyOAuthService.generateAuthUrl as jest.Mock) = jest.fn(() => 'https://example.com/auth');
     (SpotifyOAuthService.getValidToken as jest.Mock) = jest.fn(() => Promise.resolve({ accessToken: 'mock-token' }));
+
+    // Mock Spotify playlist service
+    const { SpotifyPlaylistService } = require('../../services/spotify-playlist-service');
+    (SpotifyPlaylistService.createRoundPlaylist as jest.Mock) = jest.fn(() => Promise.resolve({
+      playlistId: 'test-playlist-123',
+      playlistUrl: 'https://open.spotify.com/playlist/test-playlist-123',
+      createdAt: new Date().toISOString(),
+      trackCount: 2,
+      shuffledOrder: [1, 0],
+    }));
+
+    // Mock notification service
+    const { NotificationService } = require('../../services/notification-service');
+    (NotificationService.sendDM as jest.Mock) = jest.fn(() => Promise.resolve({ success: true }));
+    (NotificationService.sendBulkDM as jest.Mock) = jest.fn(() => Promise.resolve([]));
+    (NotificationService.sendDualNotification as jest.Mock) = jest.fn(() => Promise.resolve({ dmResults: [], channelSuccess: true }));
+    (NotificationService.getNotificationSummary as jest.Mock) = jest.fn(() => ({ successful: 1, failed: 0, total: 1 }));
   });
 
   afterEach(() => {
@@ -154,8 +173,20 @@ describe('Full Flow Integration Test', () => {
 
     await startVoting(startVotingInteraction);
 
+    // With Spotify integration, voting is now pending confirmation
+    // Simulate the creator confirming the playlist is public
+    league = MockStorage.getLeagueByGuild('guild123');
+    if (league?.rounds[0].playlistConfirmation) {
+      await VotingService.completeVotingTransition(
+        startVotingInteraction.client,
+        league,
+        league.rounds[0]
+      );
+    }
+
     league = MockStorage.getLeagueByGuild('guild123');
     expect(league?.rounds[0].status).toBe('voting');
+    expect(league?.rounds[0].playlistConfirmation).toBeUndefined(); // Confirmation cleared
 
     // Step 7: User A votes using the new hub flow
     // Create session with new signature: (userId, guildId, messageId, channelId, votableSongIndices, displayOrder)

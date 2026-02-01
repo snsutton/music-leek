@@ -1,6 +1,8 @@
-import { Client, EmbedBuilder } from 'discord.js';
+import { Client, EmbedBuilder, ActionRowBuilder, ButtonBuilder } from 'discord.js';
 import { NotificationResult } from '../types';
 import { DmContextManager } from '../utils/dm-context';
+
+type DMContent = string | { embeds: EmbedBuilder[]; components?: ActionRowBuilder<ButtonBuilder>[] };
 
 /**
  * Service for sending DM notifications to users
@@ -15,7 +17,7 @@ export class NotificationService {
   static async sendDM(
     client: Client,
     userId: string,
-    content: string | { embeds: EmbedBuilder[] },
+    content: DMContent,
     guildId?: string,
     notificationType?: string
   ): Promise<NotificationResult> {
@@ -63,7 +65,7 @@ export class NotificationService {
   static async sendBulkDM(
     client: Client,
     userIds: string[],
-    content: string | { embeds: EmbedBuilder[] },
+    content: DMContent,
     delayMs: number = 100,
     guildId?: string,
     notificationType?: string

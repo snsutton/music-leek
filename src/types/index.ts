@@ -54,6 +54,10 @@ export interface Round {
     trackCount: number; // Number of tracks added
   };
   shuffledOrder?: number[]; // Indices into submissions[] in playlist order (for voting display)
+  playlistConfirmation?: {
+    requestedAt: string; // ISO 8601 timestamp when confirmation was requested
+    requestedFrom: string; // Discord user ID of league creator
+  };
 }
 
 export interface Submission {
@@ -106,7 +110,10 @@ export type NotificationType =
   | 'voting_started'
   | 'voting_reminder'
   | 'league_ended'
-  | 'round_ready_to_start';
+  | 'round_ready_to_start'
+  | 'playlist_confirmation_requested'
+  | 'playlist_confirmation_pending'
+  | 'playlist_creation_failed';
 
 export interface NotificationResult {
   userId: string;
