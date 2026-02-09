@@ -105,27 +105,45 @@ export async function execute(interaction: ButtonInteraction) {
     .filter(([, points]) => points > 0)
     .map(([submissionIndex, points]) => ({ submissionIndex, points }));
 
-  // Remove existing vote
-  const existingVoteIndex = round.votes.findIndex(v => v.voterId === interaction.user.id);
-  if (existingVoteIndex !== -1) {
-    round.votes.splice(existingVoteIndex, 1);
-  }
-
-  // Save vote
   const vote: Vote = {
     voterId: interaction.user.id,
     votes: parsedVotes
   };
 
-  round.votes.push(vote);
-  Storage.saveLeague(league);
+  // Atomically update the league to add this vote
+  const updatedLeague = await Storage.atomicUpdate(guildId, (freshLeague) => {
+    const freshRound = getCurrentRound(freshLeague);
+    if (!freshRound || freshRound.status !== 'voting') {
+      return null;
+    }
+
+    // Remove existing vote from this user (if re-voting)
+    const existingIdx = freshRound.votes.findIndex(v => v.voterId === interaction.user.id);
+    if (existingIdx !== -1) {
+      freshRound.votes.splice(existingIdx, 1);
+    }
+
+    freshRound.votes.push(vote);
+    return freshLeague;
+  });
+
+  if (!updatedLeague) {
+    await interaction.update({
+      content: 'The round state has changed. Please try again.',
+      embeds: [],
+      components: []
+    });
+    VoteSessionManager.deleteSession(interaction.user.id, guildId);
+    return;
+  }
 
   console.log(`[Vote] Saved ${parsedVotes.length} song votes (${totalPoints} points) for user:${interaction.user.id} in round:${round.roundNumber}`);
 
   VoteSessionManager.deleteSession(interaction.user.id, guildId);
 
-  const totalVotes = round.votes.length;
-  const totalParticipants = league.participants.length;
+  const updatedRound = getCurrentRound(updatedLeague)!;
+  const totalVotes = updatedRound.votes.length;
+  const totalParticipants = updatedLeague.participants.length;
 
   // Update the message to show success
   await interaction.update({
@@ -137,12 +155,12 @@ export async function execute(interaction: ButtonInteraction) {
   });
 
   // Get missing voters
-  const missingVoterIds = getMissingVoters(league, round);
+  const missingVoterIds = getMissingVoters(updatedLeague, updatedRound);
 
   // Channel message: When 1 voter remains (holding up the stage)
   if (missingVoterIds.length === 1) {
     try {
-      const channel = await interaction.client.channels.fetch(league.channelId);
+      const channel = await interaction.client.channels.fetch(updatedLeague.channelId);
       if (channel && channel.isTextBased() && !channel.isDMBased()) {
         // Fetch username for the remaining voter
         const waitingUser = await interaction.client.users.fetch(missingVoterIds[0]);
@@ -161,31 +179,36 @@ export async function execute(interaction: ButtonInteraction) {
 
   // Send reminders when 3 or fewer voters remain
   if (missingVoterIds.length > 0 && missingVoterIds.length <= 3) {
-    const reminderEmbed = NotificationTemplates.votingRunningOut(league, round, missingVoterIds.length);
+    const reminderEmbed = NotificationTemplates.votingRunningOut(updatedLeague, updatedRound, missingVoterIds.length);
     await NotificationService.sendBulkDM(
       interaction.client,
       missingVoterIds,
       { embeds: [reminderEmbed] },
       100,
-      league.guildId,
+      updatedLeague.guildId,
       'voting_reminder'
     );
   }
 
   // Check if all participants have voted
-  if (totalVotes === totalParticipants && !round.notificationsSent.allVotesReceived) {
-    const adminEmbed = NotificationTemplates.allVotesReceived(league, round);
+  if (totalVotes === totalParticipants && !updatedRound.notificationsSent.allVotesReceived) {
+    const adminEmbed = NotificationTemplates.allVotesReceived(updatedLeague, updatedRound);
 
     await NotificationService.sendBulkDM(
       interaction.client,
-      league.admins,
+      updatedLeague.admins,
       { embeds: [adminEmbed] },
       100,
-      league.guildId,
+      updatedLeague.guildId,
       'round_ready_to_start'
     );
 
-    round.notificationsSent.allVotesReceived = true;
-    Storage.saveLeague(league);
+    await Storage.atomicUpdate(guildId, (freshLeague) => {
+      const freshRound = getCurrentRound(freshLeague);
+      if (freshRound) {
+        freshRound.notificationsSent.allVotesReceived = true;
+      }
+      return freshLeague;
+    });
   }
 }

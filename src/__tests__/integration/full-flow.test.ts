@@ -31,6 +31,7 @@ describe('Full Flow Integration Test', () => {
     MockStorage.reset();
     (Storage.getLeagueByGuild as jest.Mock) = jest.fn((guildId: string) => MockStorage.getLeagueByGuild(guildId));
     (Storage.saveLeague as jest.Mock) = jest.fn((league) => MockStorage.saveLeague(league));
+    (Storage.atomicUpdate as jest.Mock) = jest.fn((guildId: string, updater: (league: any) => any) => MockStorage.atomicUpdate(guildId, updater));
     (Storage.load as jest.Mock) = jest.fn(() => MockStorage.load());
     (helpers.generateId as jest.Mock) = jest.fn(() => 'league123');
     (helpers.getCurrentRound as jest.Mock) = jest.fn((league) => {

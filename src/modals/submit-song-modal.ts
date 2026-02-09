@@ -110,14 +110,8 @@ export async function execute(interaction: ModalSubmitInteraction) {
     return;
   }
 
-  // Step 7: Find and remove existing submission if it exists (allows resubmission)
-  const existingSubmissionIndex = round.submissions.findIndex(s => s.userId === interaction.user.id);
-  const isResubmission = existingSubmissionIndex !== -1;
-
-  if (isResubmission) {
-    // Remove the old submission so the new one can replace it
-    round.submissions.splice(existingSubmissionIndex, 1);
-  }
+  // Step 7: Check if this is a resubmission (for display purposes)
+  const isResubmission = round.submissions.some(s => s.userId === interaction.user.id);
 
   // Step 8: Create submission with auto-filled metadata
   const submission: Submission = {
@@ -128,18 +122,41 @@ export async function execute(interaction: ModalSubmitInteraction) {
     submittedAt: toISOString()
   };
 
-  round.submissions.push(submission);
-  Storage.saveLeague(league);
+  // Atomically update the league to add this submission
+  const updatedLeague = await Storage.atomicUpdate(guildId, (freshLeague) => {
+    const freshRound = getCurrentRound(freshLeague);
+    if (!freshRound || freshRound.status !== 'submission') {
+      return null;
+    }
+
+    // Remove existing submission by this user (allows resubmission)
+    const existingIdx = freshRound.submissions.findIndex(s => s.userId === interaction.user.id);
+    if (existingIdx !== -1) {
+      freshRound.submissions.splice(existingIdx, 1);
+    }
+
+    freshRound.submissions.push(submission);
+    return freshLeague;
+  });
+
+  if (!updatedLeague) {
+    await interaction.editReply({
+      content: 'The round state has changed. Please try again with `/submit-song`.'
+    });
+    return;
+  }
 
   console.log(`[Song] Saved "${result.title}" by ${result.artist} for user:${interaction.user.id} in round:${round.roundNumber}`);
 
+  const updatedRound = getCurrentRound(updatedLeague)!;
+
   // Calculate missing submitters
-  const missingSubmitterIds = getMissingSubmitters(league, round);
+  const missingSubmitterIds = getMissingSubmitters(updatedLeague, updatedRound);
 
   // Channel message: When 1 player remains (holding up the stage)
   if (missingSubmitterIds.length === 1) {
     try {
-      const channel = await interaction.client.channels.fetch(league.channelId);
+      const channel = await interaction.client.channels.fetch(updatedLeague.channelId);
       if (channel && channel.isTextBased() && !channel.isDMBased()) {
         // Fetch username for the remaining submitter
         const waitingUser = await interaction.client.users.fetch(missingSubmitterIds[0]);
@@ -158,24 +175,24 @@ export async function execute(interaction: ModalSubmitInteraction) {
 
   // DM reminder: When ≤3 players remain
   if (missingSubmitterIds.length > 0 && missingSubmitterIds.length <= 3) {
-    const reminderEmbed = NotificationTemplates.submissionRunningOut(league, round, missingSubmitterIds.length);
+    const reminderEmbed = NotificationTemplates.submissionRunningOut(updatedLeague, updatedRound, missingSubmitterIds.length);
     await NotificationService.sendBulkDM(
       interaction.client,
       missingSubmitterIds,
       { embeds: [reminderEmbed] },
       100,
-      league.guildId,
+      updatedLeague.guildId,
       'submission_reminder'
     );
   }
 
   // Step 9: Send confirmation with metadata
   await interaction.editReply({
-    content: `✅ Your submission has been ${isResubmission ? 'updated' : 'recorded'} for **${league.name}**!\n\n` +
+    content: `✅ Your submission has been ${isResubmission ? 'updated' : 'recorded'} for **${updatedLeague.name}**!\n\n` +
              `**${result.title}**\n` +
              `by **${result.artist}**\n` +
              `${result.albumName ? `from *${result.albumName}*\n` : ''}` +
              `${isResubmission ? '\n*Your previous submission has been replaced.*\n' : ''}` +
-             `\nSubmissions: ${round.submissions.length}/${league.participants.length}`
+             `\nSubmissions: ${updatedRound.submissions.length}/${updatedLeague.participants.length}`
   });
 }

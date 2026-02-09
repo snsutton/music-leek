@@ -19,6 +19,7 @@ describe('submit-song-modal', () => {
     MockStorage.reset();
     (Storage.getLeagueByGuild as jest.Mock) = jest.fn((guildId: string) => MockStorage.getLeagueByGuild(guildId));
     (Storage.saveLeague as jest.Mock) = jest.fn((league: League) => MockStorage.saveLeague(league));
+    (Storage.atomicUpdate as jest.Mock) = jest.fn((guildId: string, updater: (league: League) => League | null) => MockStorage.atomicUpdate(guildId, updater));
 
     // Mock URL validator to accept test URLs
     (urlValidator.parseMusicUrl as jest.Mock) = jest.fn((url: string) => ({

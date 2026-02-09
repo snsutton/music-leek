@@ -1,9 +1,22 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { Mutex } from 'async-mutex';
 import { LeagueData, League } from '../types';
 
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '../../data');
 const DATA_FILE = path.join(DATA_DIR, 'leagues.json');
+
+// Per-guild mutexes to serialize concurrent updates
+const guildMutexes = new Map<string, Mutex>();
+
+function getGuildMutex(guildId: string): Mutex {
+  let mutex = guildMutexes.get(guildId);
+  if (!mutex) {
+    mutex = new Mutex();
+    guildMutexes.set(guildId, mutex);
+  }
+  return mutex;
+}
 
 export class Storage {
   private static ensureDataFile(): void {
@@ -51,5 +64,25 @@ export class Storage {
       return true;
     }
     return false;
+  }
+
+  static async atomicUpdate(
+    guildId: string,
+    updater: (league: League) => League | null
+  ): Promise<League | null> {
+    const mutex = getGuildMutex(guildId);
+
+    return mutex.runExclusive(() => {
+      const data = this.load();
+      const league = data.leagues[guildId];
+      if (!league) return null;
+
+      const updated = updater(league);
+      if (updated === null) return null;
+
+      data.leagues[guildId] = updated;
+      this.save(data);
+      return updated;
+    });
   }
 }

@@ -73,19 +73,8 @@ export async function execute(interaction: ModalSubmitInteraction) {
     return;
   }
 
-  // Initialize themeSubmissions array if it doesn't exist
-  if (!round.themeSubmissions) {
-    round.themeSubmissions = [];
-  }
-
-  // Find and remove existing submission if it exists (allows resubmission)
-  const existingSubmissionIndex = round.themeSubmissions.findIndex(t => t.userId === interaction.user.id);
-  const isResubmission = existingSubmissionIndex !== -1;
-
-  if (isResubmission) {
-    // Remove the old submission so the new one can replace it
-    round.themeSubmissions.splice(existingSubmissionIndex, 1);
-  }
+  // Check if this is a resubmission (for display purposes)
+  const isResubmission = round.themeSubmissions?.some(t => t.userId === interaction.user.id) ?? false;
 
   // Create theme submission
   const submission: ThemeSubmission = {
@@ -94,18 +83,45 @@ export async function execute(interaction: ModalSubmitInteraction) {
     submittedAt: toISOString()
   };
 
-  round.themeSubmissions.push(submission);
-  Storage.saveLeague(league);
+  // Atomically update the league to add this theme submission
+  const updatedLeague = await Storage.atomicUpdate(guildId, (freshLeague) => {
+    const freshRound = getCurrentRound(freshLeague);
+    if (!freshRound || freshRound.status !== 'theme-submission') {
+      return null;
+    }
+
+    if (!freshRound.themeSubmissions) {
+      freshRound.themeSubmissions = [];
+    }
+
+    // Remove existing submission by this user (allows resubmission)
+    const existingIdx = freshRound.themeSubmissions.findIndex(t => t.userId === interaction.user.id);
+    if (existingIdx !== -1) {
+      freshRound.themeSubmissions.splice(existingIdx, 1);
+    }
+
+    freshRound.themeSubmissions.push(submission);
+    return freshLeague;
+  });
+
+  if (!updatedLeague) {
+    await interaction.editReply({
+      content: 'The round state has changed. Please try again with `/submit-theme`.'
+    });
+    return;
+  }
 
   console.log(`[Theme] Saved theme "${theme.trim()}" for user:${interaction.user.id} in round:${round.roundNumber}`);
 
+  const updatedRound = getCurrentRound(updatedLeague)!;
+
   // Only send channel message when 1 player remains (holding up the stage)
-  const submitterIds = new Set(round.themeSubmissions.map(t => t.userId));
-  const missingSubmitterIds = league.participants.filter(id => !submitterIds.has(id));
+  const submitterIds = new Set(updatedRound.themeSubmissions!.map(t => t.userId));
+  const missingSubmitterIds = updatedLeague.participants.filter(id => !submitterIds.has(id));
 
   if (missingSubmitterIds.length === 1) {
     try {
-      const channel = await interaction.client.channels.fetch(league.channelId);
+      const channel = await interaction.client.channels.fetch(updatedLeague.channelId);
       if (channel && channel.isTextBased() && !channel.isDMBased()) {
         // Fetch username for the remaining submitter
         const waitingUser = await interaction.client.users.fetch(missingSubmitterIds[0]);
@@ -124,9 +140,9 @@ export async function execute(interaction: ModalSubmitInteraction) {
 
   // Send confirmation
   await interaction.editReply({
-    content: `✅ Your theme has been ${isResubmission ? 'updated' : 'submitted'} for **${league.name}**!\n\n` +
+    content: `✅ Your theme has been ${isResubmission ? 'updated' : 'submitted'} for **${updatedLeague.name}**!\n\n` +
              `**"${theme.trim()}"**\n` +
              `${isResubmission ? '\n*Your previous theme has been replaced.*\n' : ''}` +
-             `\nThemes submitted: ${round.themeSubmissions.length}/${league.participants.length}`
+             `\nThemes submitted: ${updatedRound.themeSubmissions!.length}/${updatedLeague.participants.length}`
   });
 }

@@ -39,6 +39,20 @@ export class MockStorage {
     return false;
   }
 
+  static async atomicUpdate(
+    guildId: string,
+    updater: (league: League) => League | null
+  ): Promise<League | null> {
+    const league = this.data.leagues[guildId];
+    if (!league) return null;
+
+    const updated = updater(league);
+    if (updated === null) return null;
+
+    this.data.leagues[guildId] = updated;
+    return updated;
+  }
+
   static setMockData(data: LeagueData): void {
     this.data = data;
   }
