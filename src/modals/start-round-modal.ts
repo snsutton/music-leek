@@ -1,7 +1,7 @@
 import { ModalSubmitInteraction, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { Storage } from '../utils/storage';
 import { Round } from '../types';
-import { getCurrentRound, toISOString, toTimestamp } from '../utils/helpers';
+import { getCurrentRound, toISOString, toTimestamp, snapToNoonEastern } from '../utils/helpers';
 import { isAdmin } from '../utils/permissions';
 import { DEFAULT_SUBMISSION_DAYS, DEFAULT_VOTING_DAYS } from '../constants';
 import { NotificationService } from '../services/notification-service';
@@ -17,9 +17,6 @@ export async function execute(interaction: ModalSubmitInteraction) {
 
   const submissionDays = parseInt(submissionDaysStr) || DEFAULT_SUBMISSION_DAYS;
   const votingDays = parseInt(votingDaysStr) || DEFAULT_VOTING_DAYS;
-
-  const submissionHours = submissionDays * 24;
-  const votingHours = votingDays * 24;
 
   // Extract guildId from customId (format: start-round-modal:guildId)
   const guildId = interaction.customId.split(':')[1] || interaction.guildId;
@@ -127,7 +124,9 @@ export async function execute(interaction: ModalSubmitInteraction) {
   }
 
   const now = Date.now();
-  const themeDeadline = now + (24 * 60 * 60 * 1000); // Fixed 24h for theme phase
+  const themeDeadline = snapToNoonEastern(now, 1); // Next noon EST, >= 24h from now
+  const submissionDeadline = snapToNoonEastern(themeDeadline, submissionDays);
+  const votingDeadline = snapToNoonEastern(submissionDeadline, votingDays); // Placeholder - recalculated when voting starts
   const round: Round = {
     roundNumber: nextRoundNumber,
     prompt: '', // Empty initially - will be set when theme is selected
@@ -135,9 +134,9 @@ export async function execute(interaction: ModalSubmitInteraction) {
     status: 'theme-submission', // Start in theme submission phase
     startedAt: toISOString(now),
     themeSubmissionDeadline: toISOString(themeDeadline),
-    submissionDeadline: toISOString(themeDeadline + (submissionHours * 60 * 60 * 1000)),
-    votingDeadline: toISOString(themeDeadline + ((submissionHours + votingHours) * 60 * 60 * 1000)), // Placeholder - will be recalculated when voting starts
-    votingDurationMs: votingHours * 60 * 60 * 1000, // Store voting duration for recalculation
+    submissionDeadline: toISOString(submissionDeadline),
+    votingDeadline: toISOString(votingDeadline),
+    votingDurationDays: votingDays, // Store voting duration for deadline recalculation
     themeSubmissions: [
       {
         userId: interaction.user.id,

@@ -4,7 +4,7 @@ import { Storage } from '../utils/storage';
 import { SpotifyPlaylistService } from './spotify-playlist-service';
 import { NotificationService } from './notification-service';
 import { NotificationTemplates } from './notification-templates';
-import { toISOString } from '../utils/helpers';
+import { toISOString, snapToNoonEastern } from '../utils/helpers';
 import { resolveUsernames } from '../utils/username-resolver';
 
 export type VotingTransitionStatus = 'pending_confirmation' | 'failed' | 'completed';
@@ -34,6 +34,7 @@ export class VotingService {
     round: Round,
     options?: {
       logPrefix?: string;
+      anchorTimestamp?: number;
     }
   ): Promise<VotingTransitionResult> {
     const logPrefix = options?.logPrefix || 'VotingService';
@@ -105,9 +106,9 @@ export class VotingService {
 
     // Update round status to voting (but don't send notifications yet)
     round.status = 'voting';
-    if (round.votingDurationMs) {
-      const now = Date.now();
-      round.votingDeadline = toISOString(now + round.votingDurationMs);
+    if (round.votingDurationDays) {
+      const anchor = options?.anchorTimestamp ?? Date.now();
+      round.votingDeadline = toISOString(snapToNoonEastern(anchor, round.votingDurationDays));
     }
     Storage.saveLeague(league);
 
@@ -163,6 +164,7 @@ export class VotingService {
     options?: {
       logPrefix?: string;
       skipChannelPost?: boolean;
+      anchorTimestamp?: number;
     }
   ): Promise<void> {
     const logPrefix = options?.logPrefix || 'VotingService';
@@ -172,9 +174,9 @@ export class VotingService {
     // Ensure we're in voting status
     if (round.status !== 'voting') {
       round.status = 'voting';
-      if (round.votingDurationMs) {
-        const now = Date.now();
-        round.votingDeadline = toISOString(now + round.votingDurationMs);
+      if (round.votingDurationDays) {
+        const anchor = options?.anchorTimestamp ?? Date.now();
+        round.votingDeadline = toISOString(snapToNoonEastern(anchor, round.votingDurationDays));
       }
     }
 

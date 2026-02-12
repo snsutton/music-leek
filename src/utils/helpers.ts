@@ -20,6 +20,57 @@ export function toISOString(timestamp?: number): string {
   return new Date(timestamp ?? Date.now()).toISOString();
 }
 
+/**
+ * Get the UTC timestamp for noon Eastern Time on a specific YYYY-MM-DD date.
+ * Handles EST/EDT automatically via Intl.DateTimeFormat.
+ */
+function noonEasternForDate(dateStr: string): number {
+  // Noon EST = 17:00 UTC, Noon EDT = 16:00 UTC
+  // Check which applies by testing 17:00 UTC on this date
+  const candidate = new Date(dateStr + 'T17:00:00Z').getTime();
+  const easternHour = parseInt(
+    new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/New_York',
+      hour: '2-digit',
+      hour12: false
+    }).format(new Date(candidate))
+  );
+
+  if (easternHour === 12) return candidate; // EST
+  return new Date(dateStr + 'T16:00:00Z').getTime(); // EDT
+}
+
+/**
+ * Find the next noon Eastern Time that is >= afterTimestamp.
+ */
+function getNextNoonEastern(afterTimestamp: number): number {
+  const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+  // Get today's date in Eastern timezone (YYYY-MM-DD format)
+  const todayStr = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/New_York'
+  }).format(new Date(afterTimestamp));
+
+  const todayNoon = noonEasternForDate(todayStr);
+  if (todayNoon >= afterTimestamp) return todayNoon;
+
+  // Tomorrow in Eastern timezone
+  const tomorrowStr = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/New_York'
+  }).format(new Date(afterTimestamp + MS_PER_DAY));
+
+  return noonEasternForDate(tomorrowStr);
+}
+
+/**
+ * Snap a deadline to the next noon Eastern Time that is at least durationDays away.
+ * A 1-day stage starting at 3pm EST gets a deadline of noon EST the next day (>= 24h away).
+ */
+export function snapToNoonEastern(fromTimestamp: number, durationDays: number): number {
+  const minDeadline = fromTimestamp + durationDays * 24 * 60 * 60 * 1000;
+  return getNextNoonEastern(minDeadline);
+}
+
 export function getCurrentRound(league: League): Round | null {
   if (league.rounds.length === 0) return null;
   return league.rounds[league.currentRound - 1] || null;

@@ -34,7 +34,7 @@ export interface Round {
   themeSubmissionDeadline?: string; // ISO 8601 timestamp, 24h from round start
   submissionDeadline: string; // ISO 8601 timestamp
   votingDeadline: string; // ISO 8601 timestamp
-  votingDurationMs?: number; // Duration of voting phase in milliseconds (for recalculating deadline when voting starts early)
+  votingDurationDays?: number; // Duration of voting phase in days (for recalculating deadline when voting starts early)
   themeSubmissions?: ThemeSubmission[]; // Theme ideas submitted by players
   submissions: Submission[];
   votes: Vote[];

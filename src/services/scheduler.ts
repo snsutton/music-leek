@@ -1,6 +1,6 @@
 import { Client } from 'discord.js';
 import { Storage } from '../utils/storage';
-import { getCurrentRound, calculateScores, calculateLeagueResults, calculateLeagueStandings, toTimestamp, toISOString } from '../utils/helpers';
+import { getCurrentRound, calculateScores, calculateLeagueResults, calculateLeagueStandings, toTimestamp, toISOString, getMissingSubmitters, getMissingVoters } from '../utils/helpers';
 import { League, Round } from '../types';
 import { NotificationService } from './notification-service';
 import { NotificationTemplates } from './notification-templates';
@@ -10,14 +10,15 @@ import { selectThemeAndUpdateTickets } from './theme-selection-service';
 import { resolveUsernames } from '../utils/username-resolver';
 
 /**
- * Background scheduler that checks for upcoming deadlines every hour
- * and sends reminder notifications 24-36 hours before deadlines
+ * Background scheduler that checks for upcoming deadlines every 30 minutes,
+ * sends reminder notifications ~2 hours before deadlines,
+ * then auto-transitions phases when deadlines pass
  */
 export class Scheduler {
   private static intervalId: NodeJS.Timeout | null = null;
-  private static readonly CHECK_INTERVAL = 60 * 60 * 1000; // 1 hour
-  private static readonly REMINDER_WINDOW_MIN = 24 * 60 * 60 * 1000; // 24 hours
-  private static readonly REMINDER_WINDOW_MAX = 36 * 60 * 60 * 1000; // 36 hours
+  private static readonly CHECK_INTERVAL = 30 * 60 * 1000; // 30 minutes
+  private static readonly REMINDER_WINDOW_MIN = 1 * 60 * 60 * 1000; // 1 hour
+  private static readonly REMINDER_WINDOW_MAX = 2.5 * 60 * 60 * 1000; // 2.5 hours
   private static lastCleanupDate: string = '';
 
   /**
@@ -43,7 +44,7 @@ export class Scheduler {
       });
     }, this.CHECK_INTERVAL);
 
-    console.log(`[Scheduler] ✓ Scheduler started (checking every hour)`);
+    console.log(`[Scheduler] ✓ Scheduler started (checking every 30 minutes)`);
   }
 
   /**
@@ -81,6 +82,28 @@ export class Scheduler {
 
       const round = getCurrentRound(league);
       if (!round) continue;
+
+      // --- Pre-deadline reminders (DM only to players who haven't acted) ---
+
+      // Submission reminder: ~2h before submission deadline
+      if (round.status === 'submission'
+        && !round.notificationsSent.submissionReminder
+        && this.isInReminderWindow(toTimestamp(round.submissionDeadline), now)
+      ) {
+        await this.sendSubmissionReminder(client, league, round);
+        remindersCount++;
+      }
+
+      // Voting reminder: ~2h before voting deadline
+      if (round.status === 'voting'
+        && !round.notificationsSent.votingReminder
+        && this.isInReminderWindow(toTimestamp(round.votingDeadline), now)
+      ) {
+        await this.sendVotingReminder(client, league, round);
+        remindersCount++;
+      }
+
+      // --- Auto-transitions (when deadlines have passed) ---
 
       // Auto-select theme when deadline passes
       if (round.status === 'theme-submission' && round.themeSubmissionDeadline && now > toTimestamp(round.themeSubmissionDeadline)) {
@@ -120,7 +143,10 @@ export class Scheduler {
     }
 
     try {
-      const result = await VotingService.initiateVotingTransition(client, league, round, { logPrefix: 'Scheduler' });
+      const result = await VotingService.initiateVotingTransition(client, league, round, {
+        logPrefix: 'Scheduler',
+        anchorTimestamp: toTimestamp(round.submissionDeadline)
+      });
 
       if (result.status === 'pending_confirmation') {
         console.log(`[Scheduler] Playlist created, waiting for creator to confirm it's public`);
@@ -284,5 +310,83 @@ export class Scheduler {
     Storage.saveLeague(league);
 
     console.log(`[Scheduler] Theme selected and transitioned to submission phase`);
+  }
+
+  /**
+   * Check if the current time is within the reminder window before a deadline.
+   */
+  private static isInReminderWindow(deadlineTimestamp: number, now: number): boolean {
+    const timeUntilDeadline = deadlineTimestamp - now;
+    return timeUntilDeadline > this.REMINDER_WINDOW_MIN && timeUntilDeadline <= this.REMINDER_WINDOW_MAX;
+  }
+
+  /**
+   * Send DM reminders to players who haven't submitted their song yet
+   */
+  private static async sendSubmissionReminder(
+    client: Client,
+    league: League,
+    round: Round
+  ): Promise<void> {
+    const missingSubmitters = getMissingSubmitters(league, round);
+
+    if (missingSubmitters.length === 0) {
+      console.log(`[Scheduler] All players have submitted for ${league.name} Round ${round.roundNumber}, skipping reminder`);
+      round.notificationsSent.submissionReminder = true;
+      Storage.saveLeague(league);
+      return;
+    }
+
+    console.log(`[Scheduler] Sending submission reminders to ${missingSubmitters.length} players for ${league.name} Round ${round.roundNumber}`);
+
+    const reminderEmbed = NotificationTemplates.submissionReminder(league, round);
+    await NotificationService.sendBulkDM(
+      client,
+      missingSubmitters,
+      { embeds: [reminderEmbed] },
+      100,
+      league.guildId,
+      'submission_reminder'
+    );
+
+    round.notificationsSent.submissionReminder = true;
+    Storage.saveLeague(league);
+
+    console.log(`[Scheduler] Submission reminders sent for ${league.name} Round ${round.roundNumber}`);
+  }
+
+  /**
+   * Send DM reminders to players who haven't voted yet
+   */
+  private static async sendVotingReminder(
+    client: Client,
+    league: League,
+    round: Round
+  ): Promise<void> {
+    const missingVoters = getMissingVoters(league, round);
+
+    if (missingVoters.length === 0) {
+      console.log(`[Scheduler] All players have voted for ${league.name} Round ${round.roundNumber}, skipping reminder`);
+      round.notificationsSent.votingReminder = true;
+      Storage.saveLeague(league);
+      return;
+    }
+
+    console.log(`[Scheduler] Sending voting reminders to ${missingVoters.length} players for ${league.name} Round ${round.roundNumber}`);
+
+    const reminderEmbed = NotificationTemplates.votingReminder(league, round);
+    await NotificationService.sendBulkDM(
+      client,
+      missingVoters,
+      { embeds: [reminderEmbed] },
+      100,
+      league.guildId,
+      'voting_reminder'
+    );
+
+    round.notificationsSent.votingReminder = true;
+    Storage.saveLeague(league);
+
+    console.log(`[Scheduler] Voting reminders sent for ${league.name} Round ${round.roundNumber}`);
   }
 }

@@ -194,17 +194,17 @@ export class NotificationTemplates {
   }
 
   /**
-   * DM Notification: Submission deadline reminder (24h notice)
+   * DM Notification: Submission deadline reminder (~2h notice)
    */
   static submissionReminder(league: League, round: Round): EmbedBuilder {
     return new EmbedBuilder()
-      .setColor(0xF39C12)
-      .setTitle(`⏰ Reminder: Submissions Due Soon!`)
+      .setColor(0xE74C3C)
+      .setTitle(`⏰ Last Call: Submit Your Song!`)
       .setDescription(
-        `You have approximately 24 hours left to submit your song for **${league.name}**!\n\n` +
+        `You have about **2 hours** left to submit your song for **${league.name}**!\n\n` +
         `**Prompt:** "${round.prompt}"\n` +
         `**Deadline:** <t:${Math.floor(toTimestamp(round.submissionDeadline) / 1000)}:F>\n\n` +
-        `Don't miss out! Use \`/submit-song\`.`
+        `Submit now with \`/submit-song\` before time runs out!`
       )
       .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
       .setTimestamp();
@@ -244,21 +244,21 @@ export class NotificationTemplates {
   }
 
   /**
-   * DM Notification: Voting deadline reminder (24h notice)
+   * DM Notification: Voting deadline reminder (~2h notice)
    */
   static votingReminder(league: League, round: Round): EmbedBuilder {
     return new EmbedBuilder()
       .setColor(0xE74C3C)
-      .setTitle(`⏰ Reminder: Voting Ends Soon!`)
+      .setTitle(`⏰ Last Call: Cast Your Votes!`)
       .setDescription(
-        `You have approximately 24 hours left to vote in **${league.name}**!\n\n` +
+        `You have about **2 hours** left to vote in **${league.name}**!\n\n` +
         `**Prompt:** "${round.prompt}"\n` +
         `**Deadline:** <t:${Math.floor(toTimestamp(round.votingDeadline) / 1000)}:F>\n\n` +
         (round.playlist
           ? `🎧 **[Listen to all submissions with this Spotify playlist](${round.playlist.playlistUrl})**\n\n`
           : ''
         ) +
-        `Make sure to cast your votes using \`/vote\`!`
+        `Vote now with \`/vote\` before time runs out!`
       )
       .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
       .setTimestamp();

@@ -40,6 +40,7 @@ describe('Full Flow Integration Test', () => {
     });
     (helpers.toISOString as jest.Mock) = jest.fn((ts?: number) => new Date(ts ?? Date.now()).toISOString());
     (helpers.toTimestamp as jest.Mock) = jest.fn((isoString: string) => new Date(isoString).getTime());
+    (helpers.snapToNoonEastern as jest.Mock) = jest.fn((from: number, days: number) => from + days * 24 * 60 * 60 * 1000);
     (helpers.getMissingVoters as jest.Mock) = jest.fn(() => []);
 
     // Mock Spotify OAuth service

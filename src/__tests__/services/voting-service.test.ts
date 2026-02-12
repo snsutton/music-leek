@@ -31,6 +31,7 @@ describe('VotingService - Playlist Confirmation Flow', () => {
     (Storage.saveLeague as jest.Mock) = jest.fn((league) => MockStorage.saveLeague(league));
     (helpers.toISOString as jest.Mock) = jest.fn((ts?: number) => new Date(ts ?? Date.now()).toISOString());
     (helpers.toTimestamp as jest.Mock) = jest.fn((isoString: string) => new Date(isoString).getTime());
+    (helpers.snapToNoonEastern as jest.Mock) = jest.fn((from: number, days: number) => from + days * 24 * 60 * 60 * 1000);
     (usernameResolver.resolveUsernames as jest.Mock) = jest.fn().mockResolvedValue(new Map([['creator123', 'TestCreator']]));
 
     // Create test league with Spotify integration
