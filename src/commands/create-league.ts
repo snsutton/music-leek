@@ -59,6 +59,8 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
   Storage.saveLeague(league);
 
+  await interaction.deferReply();
+
   // Send DM notification to creator
   const embed = NotificationTemplates.leagueCreated(league);
   await NotificationService.sendDM(
@@ -81,7 +83,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     const row = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(button);
 
-    await interaction.reply({
+    await interaction.editReply({
       content: `🎵 **${name}** has been created with ${totalRounds} rounds!\n\n` +
                `You've automatically joined as a participant and admin.\n\n` +
                `**Next Step:** Connect your Spotify account to enable automatic playlist creation for voting rounds.\n` +
@@ -92,7 +94,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     console.error('[CreateLeague] Failed to generate Spotify auth URL:', error);
 
     // Fallback if Spotify OAuth isn't configured
-    await interaction.reply({
+    await interaction.editReply({
       content: `🎵 **${name}** has been created with ${totalRounds} rounds!\n\n` +
                `You've automatically joined as a participant and admin.\n` +
                `Use \`/start-round\` to begin the first round!`

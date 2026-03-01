@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder, MessageFlags } from 'discord.js';
+import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import { Storage } from '../utils/storage';
 import { getCurrentRound } from '../utils/helpers';
 import { resolveGuildContext } from '../utils/dm-context';
@@ -11,50 +11,47 @@ export const data = new SlashCommandBuilder()
   .setDMPermission(true);
 
 export async function execute(interaction: ChatInputCommandInteraction) {
+  await interaction.deferReply({ ephemeral: true });
+
   try {
     // Resolve guild context (server or DM)
     const { guildId } = resolveGuildContext(interaction);
 
     if (!guildId) {
-      await interaction.reply({
+      await interaction.editReply({
         content: '❌ This command requires league context.\n\n' +
                  'Please run this command from the server where your league is hosted, ' +
                  'or wait for a notification from your league.',
-        flags: MessageFlags.Ephemeral
       });
       return;
     }
 
     const league = Storage.getLeagueByGuild(guildId);
     if (!league) {
-      await interaction.reply({
+      await interaction.editReply({
         content: 'No league found for this server!',
-        flags: MessageFlags.Ephemeral
       });
       return;
     }
 
     if (!league.participants.includes(interaction.user.id)) {
-      await interaction.reply({
+      await interaction.editReply({
         content: 'You are not in this league! Use `/join-league` first.',
-        flags: MessageFlags.Ephemeral
       });
       return;
     }
 
     const round = getCurrentRound(league);
     if (!round) {
-      await interaction.reply({
+      await interaction.editReply({
         content: 'No active round!',
-        flags: MessageFlags.Ephemeral
       });
       return;
     }
 
     if (round.status !== 'voting') {
-      await interaction.reply({
+      await interaction.editReply({
         content: 'Voting is not open yet!',
-        flags: MessageFlags.Ephemeral
       });
       return;
     }
@@ -62,20 +59,18 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     // Check if user submitted a song
     const userSubmitted = round.submissions.some(s => s.userId === interaction.user.id);
     if (!userSubmitted) {
-      await interaction.reply({
+      await interaction.editReply({
         content: 'You must submit a song to vote! Only players who submitted are eligible to vote.',
-        flags: MessageFlags.Ephemeral
       });
       return;
     }
 
     // Check if >25 submissions (Discord select menu limit)
     if (round.submissions.length > 25) {
-      await interaction.reply({
+      await interaction.editReply({
         content: '⚠️ This round has more than 25 submissions.\n\n' +
                  'The interactive voting UI supports up to 25 songs. ' +
                  'Please contact an admin to split this into multiple rounds.',
-        flags: MessageFlags.Ephemeral
       });
       return;
     }
@@ -87,9 +82,8 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       .map(item => item.index);
 
     if (votableSongIndices.length === 0) {
-      await interaction.reply({
+      await interaction.editReply({
         content: 'No other submissions to vote for!',
-        flags: MessageFlags.Ephemeral
       });
       return;
     }
@@ -103,7 +97,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     const existingSession = VoteSessionManager.getSession(interaction.user.id, guildId);
 
     // Send the voting hub message
-    const message = await interaction.reply({
+    const message = await interaction.editReply({
       content: `**🗳️ Vote for Round ${round.roundNumber} — "${round.prompt}"**`,
       embeds: [buildVotingHubEmbed(round, {
         userId: interaction.user.id,
@@ -123,8 +117,6 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         votableSongIndices,
         existingSession?.pointAllocations || new Map()
       ),
-      flags: MessageFlags.Ephemeral,
-      fetchReply: true
     });
 
     // Create or update session with message ID
@@ -149,17 +141,9 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   } catch (error) {
     console.error('[Vote] Error executing vote command:', error);
     try {
-      if (interaction.replied || interaction.deferred) {
-        await interaction.followUp({
-          content: '❌ An error occurred while loading the voting interface. Please try again.',
-          flags: MessageFlags.Ephemeral
-        });
-      } else {
-        await interaction.reply({
-          content: '❌ An error occurred while loading the voting interface. Please try again.',
-          flags: MessageFlags.Ephemeral
-        });
-      }
+      await interaction.editReply({
+        content: '❌ An error occurred while loading the voting interface. Please try again.',
+      });
     } catch {
       // Ignore reply errors
     }
