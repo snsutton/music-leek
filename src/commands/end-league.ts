@@ -69,6 +69,8 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   league.completedAt = toISOString();
   Storage.saveLeague(league);
 
+  await interaction.deferReply({ ephemeral: true });
+
   // Calculate league-wide results
   const results = calculateLeagueResults(league);
 
@@ -76,9 +78,8 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   const channel = await interaction.client.channels.fetch(league.channelId);
 
   if (!channel || !channel.isTextBased() || channel.isDMBased()) {
-    await interaction.reply({
+    await interaction.editReply({
       content: 'Could not find league channel!',
-      flags: MessageFlags.Ephemeral
     });
     return;
   }
@@ -115,12 +116,11 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     await channel.send(fanfareMessage);
   }
 
-  await interaction.reply({
+  await interaction.editReply({
     content: `🏆 **${league.name} has been ended!**\n\n` +
              `League completed after ${completedRounds.length} round${completedRounds.length === 1 ? '' : 's'}.\n` +
              `Final results posted to the channel.\n\n` +
              `💾 **Note:** All league data is preserved. Use \`/leaderboard\` to view standings anytime.\n` +
              `To completely remove the league, use \`/delete-league\`.`,
-    flags: MessageFlags.Ephemeral
   });
 }

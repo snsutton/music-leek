@@ -20,6 +20,8 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     return;
   }
 
+  await interaction.deferReply({ ephemeral: true });
+
   // Fetch user information for each admin
   const adminList: string[] = [];
 
@@ -38,8 +40,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     .setTitle(`👥 Admins of ${league.name}`)
     .setDescription(adminList.length > 0 ? adminList.join('\n') : 'No admins found.');
 
-  await interaction.reply({
+  await interaction.editReply({
     embeds: [embed],
-    flags: MessageFlags.Ephemeral
   });
 }

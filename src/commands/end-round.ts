@@ -58,6 +58,8 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   round.status = 'completed';
   Storage.saveLeague(league);
 
+  await interaction.deferReply({ ephemeral: true });
+
   // Calculate current league standings
   const leagueStandings = calculateLeagueStandings(league);
 
@@ -68,9 +70,8 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   const channel = await interaction.client.channels.fetch(league.channelId);
 
   if (!channel || !channel.isTextBased() || channel.isDMBased()) {
-    await interaction.reply({
+    await interaction.editReply({
       content: 'Could not find league channel!',
-      flags: MessageFlags.Ephemeral
     });
     return;
   }
@@ -104,9 +105,8 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       embeds: fanfareMessage.embeds
     });
 
-    await interaction.reply({
+    await interaction.editReply({
       content: `🎉 **Round ${round.roundNumber} has ended!**\n\n🏆 **${league.name} has concluded!** Check the channel for final results.`,
-      flags: MessageFlags.Ephemeral
     });
   } else {
     // Post round results + leaderboard to channel (with join-league blurb)
@@ -131,9 +131,8 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       'round_ready_to_start'
     );
 
-    await interaction.reply({
+    await interaction.editReply({
       content: `🎉 **Round ${round.roundNumber} has ended!** Results posted to the channel.\n\nAdmins have been notified that Round ${league.currentRound + 1} can begin.`,
-      flags: MessageFlags.Ephemeral
     });
   }
 }
