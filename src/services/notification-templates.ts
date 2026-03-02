@@ -368,6 +368,9 @@ export class NotificationTemplates {
       }
     });
 
+    if (round.playlist) {
+      resultsText += `\n🎧 [Listen to the full round playlist on Spotify](${round.playlist.playlistUrl})`;
+    }
     roundEmbed.setDescription(roundEmbed.data.description + resultsText);
     roundEmbed.setFooter({ text: `Votes cast: ${round.votes.length}/${league.participants.length}` });
 
@@ -418,6 +421,9 @@ export class NotificationTemplates {
       }
     });
 
+    if (round.playlist) {
+      resultsText += `\n🎧 [Listen to the full round playlist on Spotify](${round.playlist.playlistUrl})`;
+    }
     roundEmbed.setDescription(roundEmbed.data.description + resultsText);
 
     // League end fanfare with spoilers
@@ -453,6 +459,10 @@ export class NotificationTemplates {
         for (const winner of roundResult.winners.slice(0, 3)) {
           const medal = winner.rank === 1 ? '🥇' : winner.rank === 2 ? '🥈' : '🥉';
           spoilerText += `||  ${medal} ${winner.songTitle} - ${formatUser(winner.userId, usernameCache)} (${winner.points} pts)||\n`;
+        }
+        const roundPlaylistUrl = league.rounds.find(r => r.roundNumber === roundResult.roundNumber)?.playlist?.playlistUrl;
+        if (roundPlaylistUrl) {
+          spoilerText += `||  🎧 [Round playlist](${roundPlaylistUrl})||\n`;
         }
         spoilerText += '\n';
       }
@@ -512,6 +522,10 @@ export class NotificationTemplates {
         for (const winner of roundResult.winners.slice(0, 3)) {
           const medal = winner.rank === 1 ? '🥇' : winner.rank === 2 ? '🥈' : '🥉';
           spoilerText += `||  ${medal} ${winner.songTitle} - ${formatUser(winner.userId, usernameCache)} (${winner.points} pts)||\n`;
+        }
+        const roundPlaylistUrl = league.rounds.find(r => r.roundNumber === roundResult.roundNumber)?.playlist?.playlistUrl;
+        if (roundPlaylistUrl) {
+          spoilerText += `||  🎧 [Round playlist](${roundPlaylistUrl})||\n`;
         }
         spoilerText += '\n';
       }
