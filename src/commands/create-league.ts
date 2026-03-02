@@ -33,9 +33,9 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     return;
   }
 
-  // Check if league already exists for this server
+  // Check if an active (non-completed) league already exists for this server
   const existingLeague = Storage.getLeagueByGuild(interaction.guildId);
-  if (existingLeague) {
+  if (existingLeague && !existingLeague.isCompleted) {
     await interaction.reply({
       content: `This server already has a league called **${existingLeague.name}**!\n\nUse \`/delete-league\` first if you want to create a new one.`,
       flags: MessageFlags.Ephemeral
