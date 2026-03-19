@@ -3,6 +3,7 @@
 This guide covers setting up your Discord bot for local development testing and production deployment.
 
 ## Table of Contents
+
 1. [Prerequisites](#prerequisites)
 2. [Local Development Setup](#local-development-setup)
 3. [Production Deployment (Railway)](#production-deployment-railway)
@@ -97,6 +98,7 @@ APPLE_MUSIC_PRIVATE_KEY=your_private_key_content
    - Click "View client secret" → Copy → Use for `SPOTIFY_CLIENT_SECRET`
 
 3. **Generate Encryption Key:**
+
    ```bash
    # Generate a random 32-character key (Linux/Mac)
    openssl rand -base64 32
@@ -132,6 +134,7 @@ You should see: `Ready! Logged in as YourBotName#1234`
 ### Step 5: Test in Discord
 
 In your Discord server, try:
+
 ```
 /create-league name:Test League
 ```
@@ -170,6 +173,7 @@ Railway.app is a Platform-as-a-Service that makes deployment simple with GitHub 
 ### Prerequisites for Railway Deployment
 
 Before deploying to Railway:
+
 1. Complete the [Local Development Setup](#local-development-setup) first
 2. Your code must be pushed to a GitHub repository
 3. Ensure `.gitignore` includes: `.env`, `node_modules/`, `dist/`, `data/leagues.json`
@@ -177,6 +181,7 @@ Before deploying to Railway:
 ### Why Railway.app?
 
 **Key Benefits:**
+
 - Config-as-code deployment using `railway.toml`
 - Auto-deployments - Push to GitHub, Railway deploys automatically
 - Built-in monitoring - Real-time logs and resource metrics
@@ -184,6 +189,7 @@ Before deploying to Railway:
 - Free tier - $1/month in credits (sufficient for small bots)
 
 **Railway.app Pricing (2025):**
+
 - New users: $5 in credits for first 30 days (no credit card required)
 - After trial: $1/month in non-rollover credits (free forever)
 - Small Discord bots typically stay within the $1/month free tier
@@ -251,6 +257,7 @@ Your bot will fail initially because it's missing the Discord token. Let's add i
      - Replace `YOUR-APP-NAME` with your Railway app's domain (found in Settings → Domains, you may need to select Generate Domain)
    - **Name:** `TOKEN_ENCRYPTION_KEY`
      - **Value:** Generate a random 32+ character string:
+
        ```bash
        # Linux/Mac
        openssl rand -base64 32
@@ -258,6 +265,7 @@ Your bot will fail initially because it's missing the Discord token. Let's add i
        # Windows PowerShell
        -join ((65..90) + (97..122) + (48..57) | Get-Random -Count 32 | % {[char]$_})
        ```
+
      - **IMPORTANT:** Keep this secret secure! Anyone with this key can decrypt stored tokens.
 
    **Apple Music API (Optional - requires $99/year Apple Developer account):**
@@ -297,9 +305,11 @@ Commands are automatically deployed on startup (configured in package.json).
 
 3. **Test in Discord:**
    - In your Discord server, try:
+
      ```
      /create-league name:Test League
      ```
+
    - If it works, your bot is live!
 
 **Pushing your code to GitHub triggers a new Railway deployment.**
@@ -325,6 +335,7 @@ Railway provides persistent storage, but you need to configure it:
 The bot is already configured to use the `DATA_DIR` environment variable for flexible storage locations.
 
 Add environment variable in Railway:
+
 - Click **"New Variable"**
 - **Name:** `DATA_DIR`
 - **Value:** `/app/data`
@@ -414,3 +425,17 @@ This instantly reverts to the previous version.
 ---
 
 **You're all set!** Your Music Leek Discord bot is configured for both local development and production deployment with Railway.
+
+---
+
+## Maintainer Reference
+
+### Useful Commands
+
+**Download a league file from production:**
+
+```bash
+railway ssh "cat data/leagues/completed/170040953879527425-2026-03-11T16-17-22-125Z.json" > .\data\production\christmas.completed.json
+```
+
+Replace the filename with the target league file. Active league files live under `data/leagues/`, completed ones under `data/leagues/completed/`.

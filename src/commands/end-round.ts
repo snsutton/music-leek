@@ -94,7 +94,14 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     // Calculate league-wide results
     const results = calculateLeagueResults(league);
 
-    // Post final round results + league fanfare to channel (with join-league blurb)
+    // Post standard round tally first
+    const roundMessage = NotificationTemplates.roundEndedWithLeaderboard(league, round, leagueStandings, usernameCache);
+    await channel.send({
+      content: roundMessage.content,
+      embeds: roundMessage.embeds
+    });
+
+    // Then post league fanfare to channel (with join-league blurb)
     const fanfareMessage = NotificationTemplates.leagueEndedWithFanfare(league, round, results, usernameCache);
     const messageContent = typeof fanfareMessage.content === 'string'
       ? fanfareMessage.content + NotificationTemplates.getJoinLeagueBlurb()
