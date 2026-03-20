@@ -104,7 +104,7 @@ export class NotificationService {
     client: Client,
     userIds: string[],
     dmContent: { embeds: EmbedBuilder[] },
-    channelContent: string,
+    channelContent: string | EmbedBuilder,
     channelId: string,
     options?: {
       guildId?: string;
@@ -120,16 +120,28 @@ export class NotificationService {
     try {
       const channel = await client.channels.fetch(channelId);
       if (channel && channel.isTextBased() && !channel.isDMBased()) {
-        let message = channelContent;
-
-        // Append join-league blurb if requested
-        if (options?.appendJoinBlurb) {
+        if (channelContent instanceof EmbedBuilder) {
           // Import at runtime to avoid circular dependency
-          const { NotificationTemplates } = await import('./notification-templates');
-          message += NotificationTemplates.getJoinLeagueBlurb();
-        }
+          if (options?.appendJoinBlurb) {
+            const { NotificationTemplates } = await import('./notification-templates');
+            channelContent.addFields({
+              name: '\u200b',
+              value: NotificationTemplates.getJoinLeagueBlurb().trim(),
+            });
+          }
+          await channel.send({ embeds: [channelContent] });
+        } else {
+          let message = channelContent;
 
-        await channel.send(message);
+          // Append join-league blurb if requested
+          if (options?.appendJoinBlurb) {
+            // Import at runtime to avoid circular dependency
+            const { NotificationTemplates } = await import('./notification-templates');
+            message += NotificationTemplates.getJoinLeagueBlurb();
+          }
+
+          await channel.send(message);
+        }
         channelSuccess = true;
       }
     } catch (error) {

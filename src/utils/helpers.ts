@@ -1,4 +1,4 @@
-import { Client } from 'discord.js';
+import { Client, EmbedBuilder } from 'discord.js';
 import { League, Round, Submission, LeagueEndResults } from '../types';
 import { resolveUsernames, formatUser } from './username-resolver';
 
@@ -76,44 +76,63 @@ export function getCurrentRound(league: League): Round | null {
   return league.rounds[league.currentRound - 1] || null;
 }
 
-export function formatLeagueStatus(league: League): string {
+function progressBar(count: number, total: number): string {
+  const filled = total > 0 ? Math.round((count / total) * 10) : 0;
+  return '█'.repeat(filled) + '░'.repeat(10 - filled) + ` ${count}/${total}`;
+}
+
+export function formatLeagueStatus(league: League): EmbedBuilder {
   const round = getCurrentRound(league);
   if (!round) {
-    return `**${league.name}**\nNo active rounds. Use \`/start-round\` to begin!`;
+    return new EmbedBuilder()
+      .setColor(0x5865F2)
+      .setTitle(league.name)
+      .setDescription('No active rounds. Use `/start-round` to begin!');
   }
 
-  const status = round.status === 'theme-submission' ? 'Theme Submission Phase' :
-                 round.status === 'submission' ? 'Song Submission Phase' :
-                 round.status === 'voting' ? 'Voting Phase' : 'Completed';
+  const phaseColors: Record<string, number> = {
+    'theme-submission': 0xF39C12,
+    'submission': 0x3498DB,
+    'voting': 0x9B59B6,
+    'completed': 0xFFD700,
+  };
+
+  const phaseLabel = round.status === 'theme-submission' ? 'Theme Submission Phase' :
+                     round.status === 'submission' ? 'Song Submission Phase' :
+                     round.status === 'voting' ? 'Voting Phase' : 'Completed';
 
   const deadline = round.status === 'theme-submission' ? (round.themeSubmissionDeadline || round.submissionDeadline) :
                    round.status === 'submission' ? round.submissionDeadline : round.votingDeadline;
-  const timeLeft = toTimestamp(deadline) - Date.now();
-  const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
-  const daysLeft = Math.floor(hoursLeft / 24);
+  const deadlineUnix = Math.floor(toTimestamp(deadline) / 1000);
 
-  let statusText = `**${league.name}** - Round ${round.roundNumber}\n`;
+  const embed = new EmbedBuilder()
+    .setColor(phaseColors[round.status] ?? 0x5865F2)
+    .setTitle(`${league.name} — Round ${round.roundNumber}`)
+    .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` });
 
   if (round.status === 'theme-submission') {
-    statusText += `**Status:** ${status}\n`;
-    statusText += `**Time Remaining:** ${daysLeft}d ${hoursLeft % 24}h\n`;
-    statusText += `**Theme Submissions:** ${round.themeSubmissions?.length || 0}/${league.participants.length}`;
+    embed.addFields(
+      { name: 'Status', value: phaseLabel, inline: true },
+      { name: 'Deadline', value: `<t:${deadlineUnix}:R>`, inline: true },
+      { name: 'Theme Submissions', value: progressBar(round.themeSubmissions?.length || 0, league.participants.length), inline: false },
+    );
   } else {
-    statusText += `**Theme:** ${round.prompt}\n`;
-    statusText += `**Status:** ${status}\n`;
-    statusText += `**Time Remaining:** ${daysLeft}d ${hoursLeft % 24}h\n`;
-    statusText += `**Submissions:** ${round.submissions.length}/${league.participants.length}`;
-  }
-
-  if (round.status === 'voting') {
-    statusText += `\n**Votes:** ${round.votes.length}/${league.participants.length}`;
+    embed.setDescription(round.prompt ? `**Prompt:** ${round.prompt}` : null);
+    embed.addFields(
+      { name: 'Status', value: phaseLabel, inline: true },
+      { name: 'Deadline', value: `<t:${deadlineUnix}:R>`, inline: true },
+      { name: 'Submissions', value: progressBar(round.submissions.length, league.participants.length), inline: true },
+    );
+    if (round.status === 'voting') {
+      embed.addFields({ name: 'Votes', value: progressBar(round.votes.length, league.participants.length), inline: true });
+    }
   }
 
   if (round.playlist?.playlistUrl) {
-    statusText += `\n🎧 **[Listen on Spotify](${round.playlist.playlistUrl})**`;
+    embed.addFields({ name: '🎧 Spotify', value: `[Listen to submissions](${round.playlist.playlistUrl})`, inline: false });
   }
 
-  return statusText;
+  return embed;
 }
 
 export function getMissingSubmitters(league: League, round: Round): string[] {

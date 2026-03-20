@@ -213,14 +213,16 @@ export class NotificationTemplates {
   /**
    * DM Notification: Voting started
    */
-  static votingStarted(league: League, round: Round): { dm: EmbedBuilder; channel: string } {
+  static votingStarted(league: League, round: Round): { dm: EmbedBuilder; channel: EmbedBuilder } {
+    const deadlineUnix = Math.floor(toTimestamp(round.votingDeadline) / 1000);
+
     const dm = new EmbedBuilder()
       .setColor(0x9B59B6)
       .setTitle(`🗳️ Voting Open for Round ${round.roundNumber}!`)
       .setDescription(
         `Submissions are in! It's time to vote in **${league.name}**.\n\n` +
         `**Prompt:** ${round.prompt}\n` +
-        `**Voting Deadline:** <t:${Math.floor(toTimestamp(round.votingDeadline) / 1000)}:F>\n\n` +
+        `**Voting Deadline:** <t:${deadlineUnix}:F>\n\n` +
         (round.playlist
           ? `🎧 **[Listen to all submissions with this Spotify playlist](${round.playlist.playlistUrl})**\n\n`
           : ''
@@ -230,15 +232,22 @@ export class NotificationTemplates {
       .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
       .setTimestamp();
 
-    const channel =
-      `🗳️ **Voting has started for Round ${round.roundNumber}!**\n\n` +
-      `**Prompt:** ${round.prompt}\n\n` +
-      (round.playlist
-        ? `🎧 **[Listen to all submissions with this Spotify playlist](${round.playlist.playlistUrl})**\n\n`
-        : ''
-      ) +
-      `Review the submissions and use \`/vote\` to rank your favorites!\n\n` +
-      `**Voting Deadline:** <t:${Math.floor(toTimestamp(round.votingDeadline) / 1000)}:F>`;
+    const channelFields: { name: string; value: string; inline?: boolean }[] = [];
+    if (round.playlist) {
+      channelFields.push({ name: '🎧 Spotify', value: `[Listen to all submissions](${round.playlist.playlistUrl})`, inline: false });
+    }
+    channelFields.push(
+      { name: 'Voting Deadline', value: `<t:${deadlineUnix}:F>`, inline: true },
+      { name: 'How to vote', value: 'Use `/vote` to rank your favorites!', inline: true },
+    );
+
+    const channel = new EmbedBuilder()
+      .setColor(0x9B59B6)
+      .setTitle(`🗳️ Voting Open for Round ${round.roundNumber}!`)
+      .setDescription(`Submissions are in for **${league.name}**!\n\n**Prompt:** ${round.prompt}`)
+      .addFields(channelFields)
+      .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
+      .setTimestamp();
 
     return { dm, channel };
   }
