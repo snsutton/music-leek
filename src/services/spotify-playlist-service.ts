@@ -24,10 +24,10 @@ export class SpotifyPlaylistService {
       return null;
     }
 
-    // Get valid access token (auto-refreshes if expired)
-    const accessToken = await SpotifyOAuthService.getValidToken(league.createdBy);
+    // Get valid access token for the bot/developer Spotify account (auto-refreshes if expired)
+    const accessToken = await SpotifyOAuthService.getBotToken();
     if (!accessToken) {
-      console.error('[SpotifyPlaylist] No valid access token available');
+      console.error('[SpotifyPlaylist] No valid bot Spotify token available. Run /reconnect-spotify to reconnect.');
       return null;
     }
 
@@ -78,9 +78,11 @@ export class SpotifyPlaylistService {
       console.log(`[SpotifyPlaylist] Creating playlist "${playlistName}" with ${trackUris.length} tracks`);
       console.log(`[SpotifyPlaylist] Description: "${playlistDescription}"`);
 
+      // Fetch the bot's Spotify user ID to create the playlist under their account
+      const botSpotifyUserId = await SpotifyOAuthService.getBotSpotifyUserId();
       const playlistId = await this.createPlaylist(
         accessToken,
-        league.spotifyIntegration.userId,
+        botSpotifyUserId,
         playlistName,
         playlistDescription,
         true // public playlist because private ones can only be accessed by the creator

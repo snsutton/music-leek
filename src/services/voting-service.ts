@@ -5,7 +5,6 @@ import { SpotifyPlaylistService } from './spotify-playlist-service';
 import { NotificationService } from './notification-service';
 import { NotificationTemplates } from './notification-templates';
 import { toISOString, snapToNoonEastern } from '../utils/helpers';
-import { resolveUsernames } from '../utils/username-resolver';
 
 export type VotingTransitionStatus = 'pending_confirmation' | 'failed' | 'completed';
 
@@ -78,30 +77,48 @@ export class VotingService {
       console.error(`[${logPrefix}] Failed to create playlist:`, error);
     }
 
-    // If playlist creation failed, notify admins and don't proceed
-    if (!playlistCreated) {
-      console.log(`[${logPrefix}] Playlist creation failed, notifying admins`);
+    const developerDiscordId = process.env.DEVELOPER_DISCORD_ID;
 
-      const failedEmbed = NotificationTemplates.playlistCreationFailed(league, round, playlistError);
-      await NotificationService.sendBulkDM(
-        client,
-        league.admins,
-        { embeds: [failedEmbed] },
-        100,
-        league.guildId,
-        'playlist_creation_failed'
-      );
+    // If playlist creation failed, notify developer (with reconnect instructions) and admins separately
+    if (!playlistCreated) {
+      console.log(`[${logPrefix}] Playlist creation failed, notifying developer and admins`);
+
+      if (developerDiscordId) {
+        const developerEmbed = NotificationTemplates.playlistCreationFailedDeveloper(league, round, playlistError);
+        await NotificationService.sendDM(
+          client,
+          developerDiscordId,
+          { embeds: [developerEmbed] },
+          league.guildId,
+          'playlist_creation_failed'
+        );
+      }
+
+      const adminsToNotify = developerDiscordId
+        ? league.admins.filter(id => id !== developerDiscordId)
+        : league.admins;
+      if (adminsToNotify.length > 0) {
+        const failedEmbed = NotificationTemplates.playlistCreationFailed(league, round, playlistError);
+        await NotificationService.sendBulkDM(
+          client,
+          adminsToNotify,
+          { embeds: [failedEmbed] },
+          100,
+          league.guildId,
+          'playlist_creation_failed'
+        );
+      }
 
       return { status: 'failed', playlistCreated: false, error: playlistError };
     }
 
-    // Playlist created successfully - request confirmation from creator
-    console.log(`[${logPrefix}] Requesting playlist confirmation from creator`);
+    // Playlist created successfully - request confirmation from developer
+    console.log(`[${logPrefix}] Requesting playlist confirmation from developer`);
 
-    // Set up confirmation tracking
+    // Set up confirmation tracking - routes to developer, not league creator
     round.playlistConfirmation = {
       requestedAt: toISOString(),
-      requestedFrom: league.createdBy
+      requestedFrom: developerDiscordId || league.createdBy
     };
 
     // Update round status to voting (but don't send notifications yet)
@@ -112,35 +129,31 @@ export class VotingService {
     }
     Storage.saveLeague(league);
 
-    // Send DM to creator with confirmation button
+    // Send DM to developer with confirmation button
+    const confirmationRecipient = developerDiscordId || league.createdBy;
     const { embed, components } = NotificationTemplates.playlistConfirmationNeeded(league, round);
-    const creatorDmResult = await NotificationService.sendDM(
+    const developerDmResult = await NotificationService.sendDM(
       client,
-      league.createdBy,
+      confirmationRecipient,
       { embeds: [embed], components },
       league.guildId,
       'playlist_confirmation_requested'
     );
 
-    if (!creatorDmResult.success) {
-      console.warn(`[${logPrefix}] Could not DM league creator: ${creatorDmResult.error}`);
+    if (!developerDmResult.success) {
+      console.warn(`[${logPrefix}] Could not DM developer for playlist confirmation: ${developerDmResult.error}`);
     }
 
-    // Notify other admins that confirmation is pending
-    const otherAdmins = league.admins.filter(id => id !== league.createdBy);
-    if (otherAdmins.length > 0) {
-      // Resolve creator's username for the pending notification
-      const usernameCache = await resolveUsernames(client, [league.createdBy]);
-      const pendingEmbed = NotificationTemplates.playlistConfirmationPending(
-        league,
-        round,
-        league.createdBy,
-        usernameCache
-      );
+    // Notify all league admins that confirmation is pending
+    const adminsToNotifyPending = developerDiscordId
+      ? league.admins.filter(id => id !== developerDiscordId)
+      : league.admins.filter(id => id !== league.createdBy);
+    if (adminsToNotifyPending.length > 0) {
+      const pendingEmbed = NotificationTemplates.playlistConfirmationPending(league, round);
 
       await NotificationService.sendBulkDM(
         client,
-        otherAdmins,
+        adminsToNotifyPending,
         { embeds: [pendingEmbed] },
         100,
         league.guildId,
@@ -148,7 +161,7 @@ export class VotingService {
       );
     }
 
-    console.log(`[${logPrefix}] Waiting for playlist confirmation from creator`);
+    console.log(`[${logPrefix}] Waiting for playlist confirmation from developer`);
     return { status: 'pending_confirmation', playlistCreated: true };
   }
 

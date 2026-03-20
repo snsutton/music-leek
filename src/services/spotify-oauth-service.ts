@@ -17,10 +17,13 @@ const REQUIRED_SCOPES = [
   'user-read-private'
 ];
 
+const BOT_TOKEN_KEY = '__spotify_bot__';
+
 interface OAuthState {
   discordUserId: string;
   guildId: string;
   createdAt: number;
+  isBotAuth?: boolean;
 }
 
 interface TokenResponse {
@@ -52,6 +55,56 @@ export class SpotifyOAuthService {
         this.stateMap.delete(state);
       }
     }
+  }
+
+  /**
+   * Generate OAuth authorization URL for the bot/developer account reconnect
+   */
+  static generateBotAuthUrl(discordUserId: string, guildId: string): string {
+    if (!SPOTIFY_CLIENT_ID || !SPOTIFY_REDIRECT_URI) {
+      throw new Error('Spotify OAuth not configured. Missing SPOTIFY_CLIENT_ID or SPOTIFY_REDIRECT_URI.');
+    }
+
+    this.cleanupExpiredStates();
+
+    const state = crypto.randomBytes(16).toString('hex');
+    this.stateMap.set(state, {
+      discordUserId,
+      guildId,
+      createdAt: Date.now(),
+      isBotAuth: true
+    });
+
+    const params = new URLSearchParams({
+      client_id: SPOTIFY_CLIENT_ID,
+      response_type: 'code',
+      redirect_uri: SPOTIFY_REDIRECT_URI,
+      scope: REQUIRED_SCOPES.join(' '),
+      state,
+      show_dialog: 'true'
+    });
+
+    return `${SPOTIFY_AUTH_URL}?${params.toString()}`;
+  }
+
+  /**
+   * Get a valid access token for the bot/developer Spotify account
+   */
+  static async getBotToken(): Promise<string | null> {
+    return this.getValidToken(BOT_TOKEN_KEY);
+  }
+
+  /**
+   * Get the Spotify user ID for the bot/developer account by calling GET /me
+   */
+  static async getBotSpotifyUserId(): Promise<string> {
+    const accessToken = await this.getBotToken();
+    if (!accessToken) {
+      throw new Error('No valid bot Spotify token available');
+    }
+
+    const user = await this.getSpotifyUser(accessToken);
+    return user.id;
   }
 
   /**
@@ -100,6 +153,7 @@ export class SpotifyOAuthService {
     discordUserId: string;
     guildId: string;
     spotifyUserId: string;
+    isBotAuth: boolean;
   }> {
     // Validate state (CSRF protection)
     const stateData = this.stateMap.get(state);
@@ -119,7 +173,8 @@ export class SpotifyOAuthService {
     // Calculate expiration time
     const expiresAt = toISOString(Date.now() + (tokenData.expires_in * 1000));
 
-    // Store tokens
+    // Store tokens under bot key if bot auth, otherwise under Discord user ID
+    const storageKey = stateData.isBotAuth ? BOT_TOKEN_KEY : stateData.discordUserId;
     const tokenStorage: SpotifyTokenData = {
       accessToken: tokenData.access_token,
       refreshToken: tokenData.refresh_token,
@@ -128,14 +183,16 @@ export class SpotifyOAuthService {
       tokenType: 'Bearer'
     };
 
-    await TokenStorageService.saveToken(stateData.discordUserId, tokenStorage);
+    await TokenStorageService.saveToken(storageKey, tokenStorage);
 
-    console.log(`[SpotifyOAuth] Successfully connected Spotify for user ${stateData.discordUserId}, Spotify ID: ${spotifyUser.id}`);
+    const logLabel = stateData.isBotAuth ? 'bot account' : `user ${stateData.discordUserId}`;
+    console.log(`[SpotifyOAuth] Successfully connected Spotify for ${logLabel}, Spotify ID: ${spotifyUser.id}`);
 
     return {
       discordUserId: stateData.discordUserId,
       guildId: stateData.guildId,
-      spotifyUserId: spotifyUser.id
+      spotifyUserId: spotifyUser.id,
+      isBotAuth: stateData.isBotAuth ?? false
     };
   }
 
@@ -237,7 +294,7 @@ export class SpotifyOAuthService {
   /**
    * Get Spotify user profile
    */
-  private static async getSpotifyUser(accessToken: string): Promise<SpotifyUser> {
+  static async getSpotifyUser(accessToken: string): Promise<SpotifyUser> {
     try {
       const response = await axios.get<SpotifyUser>(`${SPOTIFY_API_BASE}/me`, {
         headers: {

@@ -18,8 +18,8 @@ export interface League {
   isCompleted: boolean; // Whether league has finished all rounds
   completedAt?: string; // ISO 8601 timestamp when league was completed
   spotifyIntegration?: {
-    userId: string; // Spotify user ID (e.g., "abc123xyz")
-    connectedBy: string; // Discord user ID who connected
+    userId?: string; // Spotify user ID (e.g., "abc123xyz") - unused when using developer account
+    connectedBy?: string; // Discord user ID who connected - unused when using developer account
     connectedAt: string; // ISO 8601 timestamp
   };
   themeSelectionTickets?: Record<string, number>; // userId -> ticket count for weighted theme selection

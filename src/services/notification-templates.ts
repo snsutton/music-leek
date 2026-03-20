@@ -545,8 +545,8 @@ export class NotificationTemplates {
   }
 
   /**
-   * DM Notification: Playlist confirmation needed (to league creator)
-   * Returns embed with a confirm button for the creator to click after making playlist public
+   * DM Notification: Playlist confirmation needed (to developer)
+   * Returns embed with a confirm button for the developer to click after verifying the playlist
    */
   static playlistConfirmationNeeded(
     league: League,
@@ -554,15 +554,14 @@ export class NotificationTemplates {
   ): { embed: EmbedBuilder; components: ActionRowBuilder<ButtonBuilder>[] } {
     const embed = new EmbedBuilder()
       .setColor(0xF39C12) // Orange - action required
-      .setTitle(`📋 Action Required: Make Playlist Public`)
+      .setTitle(`📋 Action Required: Confirm Playlist`)
       .setDescription(
-        `The Spotify playlist for **${league.name}** Round ${round.roundNumber} has been created!\n\n` +
-        `**Before voting notifications can be sent**, you need to make the playlist public in Spotify.\n\n` +
+        `The Spotify playlist for **${league.name}** Round ${round.roundNumber} has been created under your account!\n\n` +
+        `**Before voting notifications can be sent**, please verify the playlist looks correct.\n\n` +
         `🎧 **[Open Playlist in Spotify](${round.playlist?.playlistUrl})**\n\n` +
-        `**How to make it public:**\n` +
-        `1. Open the playlist link above in Spotify\n` +
-        `2. Click the three dots (...) menu\n` +
-        `3. Select "Make public" or toggle the visibility setting\n\n` +
+        `**Please check:**\n` +
+        `1. The playlist is set to public\n` +
+        `2. All tracks loaded correctly\n\n` +
         `Once done, click the button below to send voting notifications to all players.`
       )
       .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
@@ -570,7 +569,7 @@ export class NotificationTemplates {
 
     const confirmButton = new ButtonBuilder()
       .setCustomId(`playlist-confirm:${league.guildId}`)
-      .setLabel("Click to confirm you have made the playlist public")
+      .setLabel("Click to confirm the playlist is public and correct")
       .setStyle(ButtonStyle.Success);
 
     const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(confirmButton);
@@ -579,32 +578,29 @@ export class NotificationTemplates {
   }
 
   /**
-   * DM Notification: Playlist confirmation pending (to other admins)
-   * Informs admins that voting is waiting for creator to confirm playlist is public
+   * DM Notification: Playlist confirmation pending (to league admins)
+   * Informs admins that voting is waiting for developer to confirm playlist is ready
    */
   static playlistConfirmationPending(
     league: League,
-    round: Round,
-    creatorId: string,
-    usernameCache: Map<string, string>
+    round: Round
   ): EmbedBuilder {
-    const creatorName = formatUser(creatorId, usernameCache);
     return new EmbedBuilder()
       .setColor(0x3498DB) // Blue - informational
       .setTitle(`⏳ Voting Pending: Waiting for Playlist Confirmation`)
       .setDescription(
         `Voting for **${league.name}** Round ${round.roundNumber} is ready to begin!\n\n` +
-        `**Waiting for:** ${creatorName} to confirm the Spotify playlist is public.\n\n` +
+        `**Waiting for:** the bot developer to review and confirm the Spotify playlist.\n\n` +
         `🎧 **[View Playlist](${round.playlist?.playlistUrl})**\n\n` +
-        `Once the playlist is confirmed as public, voting notifications will be sent to all players.`
+        `Once confirmed, voting notifications will be sent to all players.`
       )
       .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
       .setTimestamp();
   }
 
   /**
-   * DM Notification: Playlist creation failed (to all admins)
-   * Notifies admins that Spotify playlist could not be created
+   * DM Notification: Playlist creation failed (to league admins)
+   * Notifies admins that Spotify playlist could not be created - developer has been notified
    */
   static playlistCreationFailed(
     league: League,
@@ -617,10 +613,32 @@ export class NotificationTemplates {
       .setDescription(
         `Failed to create the Spotify playlist for **${league.name}** Round ${round.roundNumber}.\n\n` +
         (errorMessage ? `**Error:** ${errorMessage}\n\n` : '') +
+        `The bot developer has been notified and will resolve the Spotify integration.\n\n` +
+        `Once resolved, use \`/start-voting\` to try again.\n\n` +
+        `Voting has **not** started. Players have not been notified.`
+      )
+      .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
+      .setTimestamp();
+  }
+
+  /**
+   * DM Notification: Playlist creation failed (to developer)
+   * Notifies developer that Spotify playlist could not be created and they need to reconnect
+   */
+  static playlistCreationFailedDeveloper(
+    league: League,
+    round: Round,
+    errorMessage?: string
+  ): EmbedBuilder {
+    return new EmbedBuilder()
+      .setColor(0xE74C3C) // Red - error
+      .setTitle(`❌ Spotify Playlist Creation Failed`)
+      .setDescription(
+        `Failed to create the Spotify playlist for **${league.name}** Round ${round.roundNumber}.\n\n` +
+        (errorMessage ? `**Error:** ${errorMessage}\n\n` : '') +
         `**What to do:**\n` +
-        `1. Check that the Spotify integration is still connected (\`/reconnect-spotify\`)\n` +
-        `2. Try creating the playlist manually in Spotify\n` +
-        `3. Use \`/start-voting\` again once the issue is resolved\n\n` +
+        `1. Run \`/reconnect-spotify\` to reconnect the bot's Spotify account\n` +
+        `2. Use \`/start-voting\` again once the issue is resolved\n\n` +
         `Voting has **not** started. Players have not been notified.`
       )
       .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })

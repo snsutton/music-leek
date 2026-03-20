@@ -26,10 +26,11 @@ export async function execute(interaction: ButtonInteraction) {
     return;
   }
 
-  // Only league admins can confirm
-  if (!isAdmin(league, interaction.user.id)) {
+  // Only league admins or the bot developer can confirm
+  const isDeveloper = interaction.user.id === process.env.DEVELOPER_DISCORD_ID;
+  if (!isAdmin(league, interaction.user.id) && !isDeveloper) {
     await interaction.reply({
-      content: 'Only league admins can confirm the playlist is public.',
+      content: 'Only league admins can confirm the playlist.',
       flags: MessageFlags.Ephemeral
     });
     return;

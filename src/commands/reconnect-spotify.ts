@@ -1,43 +1,32 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-import { Storage } from '../utils/storage';
-import { isAdmin } from '../utils/permissions';
 import { SpotifyOAuthService } from '../services/spotify-oauth-service';
 import { resolveGuildContext } from '../utils/dm-context';
 
 export const data = new SlashCommandBuilder()
   .setName('reconnect-spotify')
-  .setDescription('Reconnect your Spotify account to update permissions (admin only)')
+  .setDescription('Reconnect the bot\'s Spotify account (developer only)')
   .setDMPermission(true);
 
 export async function execute(interaction: ChatInputCommandInteraction) {
-  const { guildId } = resolveGuildContext(interaction);
+  const developerDiscordId = process.env.DEVELOPER_DISCORD_ID;
 
-  if (!guildId) {
+  if (!developerDiscordId || interaction.user.id !== developerDiscordId) {
     await interaction.reply({
-      content: '❌ This command requires league context.\n\n' +
-               'Please run this command from the server where your league is hosted.',
+      content: '❌ Only the bot developer can reconnect the Spotify integration.\n\n' +
+               'If you are experiencing Spotify issues, please contact the bot administrator.',
       flags: MessageFlags.Ephemeral
     });
     return;
   }
 
-  const league = Storage.getLeagueByGuild(guildId);
-
-  if (!league) {
-    await interaction.reply({ content: 'No league found for this server!', flags: MessageFlags.Ephemeral });
-    return;
-  }
-
-  if (!isAdmin(league, interaction.user.id)) {
-    await interaction.reply({ content: 'Only league admins can reconnect Spotify!', flags: MessageFlags.Ephemeral });
-    return;
-  }
+  const { guildId } = resolveGuildContext(interaction);
+  const contextGuildId = guildId || 'unknown';
 
   try {
-    const authUrl = SpotifyOAuthService.generateAuthUrl(interaction.user.id, guildId);
+    const authUrl = SpotifyOAuthService.generateBotAuthUrl(interaction.user.id, contextGuildId);
 
     const button = new ButtonBuilder()
-      .setLabel('Reconnect Spotify Account')
+      .setLabel('Reconnect Bot Spotify Account')
       .setStyle(ButtonStyle.Link)
       .setURL(authUrl);
 
@@ -45,12 +34,9 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       .addComponents(button);
 
     await interaction.reply({
-      content: '🔄 **Reconnect Spotify Account**\n\n' +
-               'Click the button below to re-authorize Music Leek with your Spotify account.\n\n' +
-               'This is useful if:\n' +
-               '• Your token has expired\n' +
-               '• New permissions are required\n' +
-               '• You want to connect a different Spotify account',
+      content: '🔄 **Reconnect Bot Spotify Account**\n\n' +
+               'Click the button below to re-authorize the bot\'s Spotify account.\n\n' +
+               'This reconnects the single shared Spotify account used for all playlist creation.',
       components: [row],
       flags: MessageFlags.Ephemeral
     });

@@ -252,21 +252,12 @@ if (shouldStartHttpServer) {
 
       try {
         const { SpotifyOAuthService } = await import('./services/spotify-oauth-service');
-        const { Storage } = await import('./utils/storage');
         const result = await SpotifyOAuthService.handleCallback(code, state);
 
-        console.log(`[HTTP] Spotify OAuth successful for Discord user ${result.discordUserId}`);
-
-        // Update league with Spotify integration
-        const league = Storage.getLeagueByGuild(result.guildId);
-        if (league) {
-          league.spotifyIntegration = {
-            userId: result.spotifyUserId,
-            connectedBy: result.discordUserId,
-            connectedAt: new Date().toISOString()
-          };
-          Storage.saveLeague(league);
-          console.log(`[HTTP] Updated league ${league.name} with Spotify integration`);
+        if (result.isBotAuth) {
+          console.log(`[HTTP] Spotify bot account reconnected successfully, Spotify ID: ${result.spotifyUserId}`);
+        } else {
+          console.log(`[HTTP] Spotify OAuth successful for Discord user ${result.discordUserId}`);
         }
 
         res.send(`
