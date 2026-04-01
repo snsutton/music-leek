@@ -84,7 +84,22 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       console.error(`[CreatePlaylist] createRoundPlaylist returned null for round ${round.roundNumber}`);
 
       // Check if submissions are Spotify links
-      const nonSpotifyLinks = round.submissions.filter(sub => !sub.songUrl.includes('spotify.com'));
+      const nonSpotifyLinks = round.submissions.filter(sub => {
+        try {
+          const url = new URL(sub.songUrl);
+          const hostname = url.hostname.toLowerCase();
+          const allowedHosts = new Set([
+            'open.spotify.com',
+            'play.spotify.com',
+            'www.spotify.com',
+            'spotify.link'
+          ]);
+          return !allowedHosts.has(hostname);
+        } catch {
+          // Treat invalid or unparsable URLs as non-Spotify links
+          return true;
+        }
+      });
       if (nonSpotifyLinks.length > 0) {
         await interaction.editReply({
           content: `❌ Failed to create playlist. Found ${nonSpotifyLinks.length} non-Spotify submission(s).\n\n` +
