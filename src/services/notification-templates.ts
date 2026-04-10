@@ -96,24 +96,32 @@ export class NotificationTemplates {
   /**
    * DM Notification: Round started with theme submission phase
    */
-  static roundStartedWithThemePhase(league: League, round: Round): { dm: EmbedBuilder; channel: string } {
+  static roundStartedWithThemePhase(league: League, round: Round): { dm: EmbedBuilder; channel: EmbedBuilder } {
+    const deadlineUnix = Math.floor(toTimestamp(round.themeSubmissionDeadline!) / 1000);
+
     const dm = new EmbedBuilder()
       .setColor(0x3498DB)
       .setTitle(`🎵 Round ${round.roundNumber} Started in ${league.name}!`)
       .setDescription(
         `**Theme Submission Phase**\n\n` +
         `For the next 24 hours, submit your theme ideas using \`/submit-theme\`!\n\n` +
-        `**Theme Deadline:** <t:${Math.floor(toTimestamp(round.themeSubmissionDeadline!) / 1000)}:F>\n\n` +
+        `**Theme Deadline:** <t:${deadlineUnix}:F>\n\n` +
         `After the deadline, one theme will be randomly selected and you'll submit songs based on that theme.`
       )
       .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
       .setTimestamp();
 
-    const channel =
-      `🎵 **Round ${round.roundNumber} has started in ${league.name}!**\n\n` +
-      `**Theme Submission Phase** - Submit your theme ideas!\n\n` +
-      `**Theme Deadline:** <t:${Math.floor(toTimestamp(round.themeSubmissionDeadline!) / 1000)}:F>\n\n` +
-      `Use \`/submit-theme\` to submit your idea. After the deadline, one theme will be randomly selected!`;
+    const channel = new EmbedBuilder()
+      .setColor(0x3498DB)
+      .setTitle(`🎵 Round ${round.roundNumber} Started in ${league.name}!`)
+      .setDescription(
+        `**Theme Submission Phase**\n\n` +
+        `Submit your theme ideas using \`/submit-theme\`!\n\n` +
+        `**Theme Deadline:** <t:${deadlineUnix}:F>\n\n` +
+        `After the deadline, one theme will be randomly selected!`
+      )
+      .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
+      .setTimestamp();
 
     return { dm, channel };
   }
@@ -142,8 +150,10 @@ export class NotificationTemplates {
     round: Round,
     selectedTheme: ThemeSubmission,
     usernameCache: Map<string, string>
-  ): { dm: EmbedBuilder; channel: string } {
+  ): { dm: EmbedBuilder; channel: EmbedBuilder } {
     const themeSubmitter = formatUser(selectedTheme.userId, usernameCache);
+    const deadlineUnix = Math.floor(toTimestamp(round.submissionDeadline) / 1000);
+
     const dm = new EmbedBuilder()
       .setColor(0x2ECC71)
       .setTitle(`🎲 Theme Selected for Round ${round.roundNumber}!`)
@@ -152,17 +162,23 @@ export class NotificationTemplates {
         `**"${round.prompt}"**\n\n` +
         `Submitted by ${themeSubmitter}\n\n` +
         `Now it's time to submit your song! Use \`/submit-song\`.\n\n` +
-        `**Song Submission Deadline:** <t:${Math.floor(toTimestamp(round.submissionDeadline) / 1000)}:F>`
+        `**Song Submission Deadline:** <t:${deadlineUnix}:F>`
       )
       .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
       .setTimestamp();
 
-    const channel =
-      `🎲 **Theme selected for Round ${round.roundNumber}!**\n\n` +
-      `**"${round.prompt}"**\n\n` +
-      `Submitted by ${themeSubmitter}\n\n` +
-      `Get ready to submit your songs! Use \`/submit-song\`.\n\n` +
-      `**Deadline:** <t:${Math.floor(toTimestamp(round.submissionDeadline) / 1000)}:F>`;
+    const channel = new EmbedBuilder()
+      .setColor(0x2ECC71)
+      .setTitle(`🎲 Theme Selected for Round ${round.roundNumber}!`)
+      .setDescription(
+        `The theme has been randomly selected!\n\n` +
+        `**"${round.prompt}"**\n\n` +
+        `Submitted by ${themeSubmitter}\n\n` +
+        `Get ready to submit your songs! Use \`/submit-song\`.\n\n` +
+        `**Deadline:** <t:${deadlineUnix}:F>`
+      )
+      .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
+      .setTimestamp();
 
     return { dm, channel };
   }
@@ -170,7 +186,9 @@ export class NotificationTemplates {
   /**
    * DM Notification: Theme selected (fallback - admin's original)
    */
-  static themeSelectedFallback(league: League, round: Round): { dm: EmbedBuilder; channel: string } {
+  static themeSelectedFallback(league: League, round: Round): { dm: EmbedBuilder; channel: EmbedBuilder } {
+    const deadlineUnix = Math.floor(toTimestamp(round.submissionDeadline) / 1000);
+
     const dm = new EmbedBuilder()
       .setColor(0xE67E22)
       .setTitle(`📋 Theme Set for Round ${round.roundNumber}`)
@@ -178,17 +196,22 @@ export class NotificationTemplates {
         `No themes were submitted during the theme phase.\n\n` +
         `Using admin's original prompt:\n**"${round.prompt}"**\n\n` +
         `Now it's time to submit your song! Use \`/submit-song\`.\n\n` +
-        `**Song Submission Deadline:** <t:${Math.floor(toTimestamp(round.submissionDeadline) / 1000)}:F>`
+        `**Song Submission Deadline:** <t:${deadlineUnix}:F>`
       )
       .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
       .setTimestamp();
 
-    const channel =
-      `📋 **Theme set for Round ${round.roundNumber}**\n\n` +
-      `No themes were submitted, so we're using the admin's original prompt:\n\n` +
-      `**"${round.prompt}"**\n\n` +
-      `Get ready to submit your songs! Use \`/submit-song\`.\n\n` +
-      `**Deadline:** <t:${Math.floor(toTimestamp(round.submissionDeadline) / 1000)}:F>`;
+    const channel = new EmbedBuilder()
+      .setColor(0xE67E22)
+      .setTitle(`📋 Theme Set for Round ${round.roundNumber}`)
+      .setDescription(
+        `No themes were submitted, so we're using the admin's original prompt:\n\n` +
+        `**"${round.prompt}"**\n\n` +
+        `Get ready to submit your songs! Use \`/submit-song\`.\n\n` +
+        `**Deadline:** <t:${deadlineUnix}:F>`
+      )
+      .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
+      .setTimestamp();
 
     return { dm, channel };
   }
