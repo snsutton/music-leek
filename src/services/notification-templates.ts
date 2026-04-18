@@ -373,7 +373,6 @@ export class NotificationTemplates {
       if (submission) {
         resultsText += `\n${medal} **${submission.songTitle}** by ${submission.artist}\n`;
         resultsText += `   Submitted by ${formatUser(userId, usernameCache)} - **${score} points**${didNotVote ? ' ⚠️ (DQ - did not vote)' : ''}\n`;
-        resultsText += `   ${submission.songUrl}\n`;
       }
     });
 
@@ -426,7 +425,6 @@ export class NotificationTemplates {
       if (submission) {
         resultsText += `\n${medal} **${submission.songTitle}** by ${submission.artist}\n`;
         resultsText += `   Submitted by ${formatUser(userId, usernameCache)} - **${score} points**${didNotVote ? ' ⚠️ (DQ - did not vote)' : ''}\n`;
-        resultsText += `   ${submission.songUrl}\n`;
       }
     });
 

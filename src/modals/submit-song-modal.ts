@@ -6,6 +6,7 @@ import { parseMusicUrl } from '../utils/url-validator';
 import { MusicServiceFactory } from '../services/music-service-factory';
 import { NotificationTemplates } from '../services/notification-templates';
 import { NotificationService } from '../services/notification-service';
+import { VotingService } from '../services/voting-service';
 
 export const customId = 'submit-song-modal';
 
@@ -152,6 +153,14 @@ export async function execute(interaction: ModalSubmitInteraction) {
 
   // Calculate missing submitters
   const missingSubmitterIds = getMissingSubmitters(updatedLeague, updatedRound);
+
+  // Auto-advance to voting when all submissions are received
+  if (missingSubmitterIds.length === 0) {
+    console.log(`[Song] All submissions received for round ${updatedRound.roundNumber}, auto-starting voting`);
+    VotingService.initiateVotingTransition(interaction.client, updatedLeague, updatedRound, {
+      logPrefix: 'AutoAdvance'
+    }).catch(err => console.error('[Song] Failed to auto-start voting:', err));
+  }
 
   // Channel message: When 1 player remains (holding up the stage)
   if (missingSubmitterIds.length === 1) {

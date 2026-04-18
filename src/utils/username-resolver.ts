@@ -1,4 +1,4 @@
-import { Client } from 'discord.js';
+import { Client, escapeMarkdown } from 'discord.js';
 
 /**
  * Batch resolve usernames for a list of user IDs.
@@ -38,5 +38,6 @@ export async function resolveUsernames(
  * @returns Username string or fallback mention
  */
 export function formatUser(userId: string, cache: Map<string, string>): string {
-  return cache.get(userId) || `<@${userId}>`;
+  const username = cache.get(userId);
+  return username ? escapeMarkdown(username) : `<@${userId}>`;
 }

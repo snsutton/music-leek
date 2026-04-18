@@ -163,7 +163,7 @@ export class Scheduler {
   /**
    * Automatically end round when voting deadline passes
    */
-  private static async autoEndRound(
+  static async autoEndRound(
     client: Client,
     league: League,
     round: Round

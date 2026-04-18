@@ -5,6 +5,7 @@ import { getCurrentRound, getMissingVoters, toTimestamp } from '../utils/helpers
 import { VoteSessionManager } from '../utils/vote-sessions';
 import { NotificationService } from '../services/notification-service';
 import { NotificationTemplates } from '../services/notification-templates';
+import { Scheduler } from '../services/scheduler';
 import { POINTS_BUDGET } from '../constants';
 
 export const customId = 'vote-submit';
@@ -190,19 +191,9 @@ export async function execute(interaction: ButtonInteraction) {
     );
   }
 
-  // Check if all participants have voted
+  // Auto-end round when all participants have voted
   if (totalVotes === totalParticipants && !updatedRound.notificationsSent.allVotesReceived) {
-    const adminEmbed = NotificationTemplates.allVotesReceived(updatedLeague, updatedRound);
-
-    await NotificationService.sendBulkDM(
-      interaction.client,
-      updatedLeague.admins,
-      { embeds: [adminEmbed] },
-      100,
-      updatedLeague.guildId,
-      'round_ready_to_start'
-    );
-
+    console.log(`[Vote] All votes received for round ${updatedRound.roundNumber}, auto-ending round`);
     await Storage.atomicUpdate(guildId, (freshLeague) => {
       const freshRound = getCurrentRound(freshLeague);
       if (freshRound) {
@@ -210,5 +201,7 @@ export async function execute(interaction: ButtonInteraction) {
       }
       return freshLeague;
     });
+    Scheduler.autoEndRound(interaction.client, updatedLeague, updatedRound)
+      .catch(err => console.error('[Vote] Failed to auto-end round:', err));
   }
 }
