@@ -5,6 +5,7 @@ import { Client, Collection, GatewayIntentBits, Events, Partials } from 'discord
 import * as fs from 'fs';
 import * as path from 'path';
 import express from 'express';
+import escapeHtml from 'escape-html';
 import { MusicServiceFactory } from './services/music-service-factory';
 import { Scheduler } from './services/scheduler';
 
@@ -231,13 +232,14 @@ if (shouldStartHttpServer) {
 
       if (error) {
         console.error(`[HTTP] Spotify OAuth error: ${error}`);
+        const safeError = escapeHtml(String(error));
         res.status(400).send(`
           <!DOCTYPE html>
           <html>
           <head><title>Spotify Connection Failed</title></head>
           <body style="font-family: sans-serif; text-align: center; padding: 50px;">
             <h1>❌ Connection Failed</h1>
-            <p>Error: ${error}</p>
+            <p>Error: ${safeError}</p>
             <p>Please try again in Discord.</p>
           </body>
           </html>
