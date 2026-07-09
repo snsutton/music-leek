@@ -2,6 +2,30 @@
 
 A Discord bot for music sharing and voting - a game where participants submit songs based on prompts and vote on their favorites!
 
+Everyone pitches a theme, everyone submits a song for it, everyone votes, and the leaderboard updates. Music Leek runs the whole cycle right inside Discord — deadlines, tallies, and a season-long leaderboard, so your homies find out once and for all who really has the best taste in music.
+
+No spreadsheets, no DMs to tally votes by hand — just `/submit-song`, `/vote`, and the bot handles the rest.
+
+## 📸 See it in action
+
+Once the theme's picked and everyone's submitted a song, Music Leek opens voting automatically:
+
+<img src="docs/images/voting-open.png" alt="Discord embed announcing that voting is open for a round, with the prompt, a Spotify link to all submissions, the voting deadline, and instructions to vote" width="620">
+
+When the votes are tallied, results post automatically — medals for the top three, points for every submission, even a DQ callout if someone forgot to vote:
+
+<img src="docs/images/round-results.png" alt="Discord embed showing final standings for a round, with medals for the top three songs, points per submission, and a DQ marker for a player who did not vote" width="620">
+
+Every round adds to a season-long leaderboard, so bragging rights build over time:
+
+<img src="docs/images/leaderboard.png" alt="Discord embed showing the current leaderboard with players ranked by total points after round 10 of 10" width="430">
+
+And once the submission deadline has passed, your admin presses one button in a DM to turn the round's submissions into a real Spotify playlist — an instant record of your group's taste, round after round:
+
+<img src="docs/images/spotify-playlist.png" alt="Spotify playlist named after the round prompt, containing the submitted songs" width="700">
+
+_Usernames in these screenshots are illustrative._
+
 ## 📚 Documentation
 
 - **[docs/USER_GUIDE.md](docs/USER_GUIDE.md)** - Complete user documentation
