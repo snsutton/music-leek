@@ -29,6 +29,17 @@ interface ComponentHandler {
   execute: (interaction: any) => Promise<void>;
 }
 
+// Catch anything that slips past local try/catch blocks so Railway logs a
+// stack trace instead of the process dying silently with no diagnostics.
+process.on('unhandledRejection', (reason) => {
+  console.error('[FATAL] Unhandled promise rejection:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('[FATAL] Uncaught exception:', error);
+  process.exit(1);
+});
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
