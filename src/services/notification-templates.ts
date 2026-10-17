@@ -676,6 +676,24 @@ export class NotificationTemplates {
   }
 
   /**
+   * DM Notification: Bot Spotify connection needs reconnecting (to developer)
+   * Sent when a round starts and the bot's Spotify token is missing or expired
+   */
+  static spotifyReconnectNeededDeveloper(league: League, round: Round): EmbedBuilder {
+    return new EmbedBuilder()
+      .setColor(0xF39C12) // Orange - warning
+      .setTitle('Spotify Reconnect Needed')
+      .setDescription(
+        `**${league.name}** Round ${round.roundNumber} has started, but the bot's Spotify connection is missing or expired.\n\n` +
+        `Spotify requires re-authorization every 6 months.\n\n` +
+        `**What to do:**\n` +
+        `Run \`/reconnect-spotify\` before voting starts so the round playlist can be created.`
+      )
+      .setFooter({ text: `Round ${round.roundNumber} of ${league.totalRounds}` })
+      .setTimestamp();
+  }
+
+  /**
    * Helper: Format leaderboard standings
    */
   private static formatLeaderboard(

@@ -22,6 +22,7 @@ describe('submit-song-modal', () => {
     (Storage.atomicUpdate as jest.Mock) = jest.fn((guildId: string, updater: (league: League) => League | null) => MockStorage.atomicUpdate(guildId, updater));
 
     // Mock URL validator to accept test URLs
+    (urlValidator.resolveSpotifyShortLink as jest.Mock) = jest.fn(() => Promise.resolve(null));
     (urlValidator.parseMusicUrl as jest.Mock) = jest.fn((url: string) => ({
       platform: 'spotify',
       trackId: '123',

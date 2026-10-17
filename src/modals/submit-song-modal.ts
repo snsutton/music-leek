@@ -2,7 +2,7 @@ import { ModalSubmitInteraction, MessageFlags } from 'discord.js';
 import { Storage } from '../utils/storage';
 import { Submission } from '../types';
 import { getCurrentRound, getMissingSubmitters, normalizeSongIdentifier, toTimestamp, toISOString } from '../utils/helpers';
-import { parseMusicUrl } from '../utils/url-validator';
+import { parseMusicUrl, resolveSpotifyShortLink } from '../utils/url-validator';
 import { MusicServiceFactory } from '../services/music-service-factory';
 import { NotificationTemplates } from '../services/notification-templates';
 import { NotificationService } from '../services/notification-service';
@@ -18,8 +18,9 @@ export async function execute(interaction: ModalSubmitInteraction) {
 
   console.log(`[Song] user:${interaction.user.id} submitting song`);
 
-  // Step 1: Validate URL and extract track info
-  const parsedUrl = parseMusicUrl(songUrl);
+  // Step 1: Resolve short share links, then validate URL and extract track info
+  const resolvedUrl = (await resolveSpotifyShortLink(songUrl)) ?? songUrl;
+  const parsedUrl = parseMusicUrl(resolvedUrl);
   if (!parsedUrl || parsedUrl.platform === 'unsupported') {
     await interaction.editReply({
       content: '❌ Invalid URL! Please provide a Spotify track link.\n\n' +

@@ -1,4 +1,4 @@
-import { ModalSubmitInteraction, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { ModalSubmitInteraction, MessageFlags } from 'discord.js';
 import { Storage } from '../utils/storage';
 import { Round } from '../types';
 import { getCurrentRound, toISOString, toTimestamp, snapToNoonEastern } from '../utils/helpers';
@@ -52,75 +52,6 @@ export async function execute(interaction: ModalSubmitInteraction) {
       flags: MessageFlags.Ephemeral
     });
     return;
-  }
-
-  // Check if this is the first round and Spotify is required
-  const isFirstRound = league.rounds.length === 0;
-  if (isFirstRound) {
-    // Check if Spotify integration exists
-    if (!league.spotifyIntegration) {
-      try {
-        const authUrl = SpotifyOAuthService.generateAuthUrl(league.createdBy, guildId);
-
-        const button = new ButtonBuilder()
-          .setLabel('Connect Spotify Account')
-          .setStyle(ButtonStyle.Link)
-          .setURL(authUrl);
-
-        const row = new ActionRowBuilder<ButtonBuilder>()
-          .addComponents(button);
-
-        await interaction.reply({
-          content: '🎵 **Spotify Connection Required**\n\n' +
-                   'Before starting the first round, you need to connect a Spotify account to enable automatic playlist creation during voting rounds.\n\n' +
-                   'Click the button below to connect your Spotify account:',
-          components: [row],
-          flags: MessageFlags.Ephemeral
-        });
-      } catch (error) {
-        console.error('[StartRound] Failed to generate Spotify auth URL:', error);
-        await interaction.reply({
-          content: '❌ **Configuration Error**\n\n' +
-                   'Spotify integration is not properly configured on this bot. Please contact the bot administrator.\n\n' +
-                   'The first round cannot be started without Spotify integration.',
-          flags: MessageFlags.Ephemeral
-        });
-      }
-      return;
-    }
-
-    // Check if the token is still valid
-    try {
-      const validToken = await SpotifyOAuthService.getValidToken(league.createdBy);
-      if (!validToken) {
-        const authUrl = SpotifyOAuthService.generateAuthUrl(league.createdBy, guildId);
-
-        const button = new ButtonBuilder()
-          .setLabel('Reconnect Spotify Account')
-          .setStyle(ButtonStyle.Link)
-          .setURL(authUrl);
-
-        const row = new ActionRowBuilder<ButtonBuilder>()
-          .addComponents(button);
-
-        await interaction.reply({
-          content: '🎵 **Spotify Connection Expired**\n\n' +
-                   'Your Spotify connection has expired or is no longer valid. Please reconnect your account to start the first round.\n\n' +
-                   'Click the button below to reconnect:',
-          components: [row],
-          flags: MessageFlags.Ephemeral
-        });
-        return;
-      }
-    } catch (error) {
-      console.error('[StartRound] Error validating Spotify token:', error);
-      await interaction.reply({
-        content: '❌ **Error Checking Spotify Connection**\n\n' +
-                 'An error occurred while validating your Spotify connection. Please try again later or contact the bot administrator.',
-        flags: MessageFlags.Ephemeral
-      });
-      return;
-    }
   }
 
   const now = Date.now();
@@ -194,4 +125,18 @@ export async function execute(interaction: ModalSubmitInteraction) {
              `**Notifications:** Channel ${channelSuccess ? '✅' : '❌'} | DMs: ${summary.successful}/${summary.total} delivered\n\n` +
              `Players can use \`/submit-theme\` to submit their theme ideas!`
   });
+
+  // Warn the developer early if the bot's Spotify connection needs reconnecting before voting creates the playlist
+  const botToken = await SpotifyOAuthService.getBotToken();
+  const developerDiscordId = process.env.DEVELOPER_DISCORD_ID;
+  if (!botToken && developerDiscordId) {
+    console.log('[StartRound] Bot Spotify token unavailable, notifying developer');
+    await NotificationService.sendDM(
+      interaction.client,
+      developerDiscordId,
+      { embeds: [NotificationTemplates.spotifyReconnectNeededDeveloper(league, round)] },
+      league.guildId,
+      'spotify_reconnect_needed'
+    );
+  }
 }

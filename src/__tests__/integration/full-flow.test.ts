@@ -44,8 +44,7 @@ describe('Full Flow Integration Test', () => {
     (helpers.getMissingVoters as jest.Mock) = jest.fn(() => []);
 
     // Mock Spotify OAuth service
-    (SpotifyOAuthService.generateAuthUrl as jest.Mock) = jest.fn(() => 'https://example.com/auth');
-    (SpotifyOAuthService.getValidToken as jest.Mock) = jest.fn(() => Promise.resolve({ accessToken: 'mock-token' }));
+    (SpotifyOAuthService.getBotToken as jest.Mock) = jest.fn(() => Promise.resolve('mock-token'));
 
     // Mock Spotify playlist service
     const { SpotifyPlaylistService } = require('../../services/spotify-playlist-service');
