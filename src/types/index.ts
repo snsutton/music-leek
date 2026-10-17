@@ -113,7 +113,8 @@ export type NotificationType =
   | 'round_ready_to_start'
   | 'playlist_confirmation_requested'
   | 'playlist_confirmation_pending'
-  | 'playlist_creation_failed';
+  | 'playlist_creation_failed'
+  | 'spotify_reconnect_needed';
 
 export interface NotificationResult {
   userId: string;

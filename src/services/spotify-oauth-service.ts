@@ -95,19 +95,6 @@ export class SpotifyOAuthService {
   }
 
   /**
-   * Get the Spotify user ID for the bot/developer account by calling GET /me
-   */
-  static async getBotSpotifyUserId(): Promise<string> {
-    const accessToken = await this.getBotToken();
-    if (!accessToken) {
-      throw new Error('No valid bot Spotify token available');
-    }
-
-    const user = await this.getSpotifyUser(accessToken);
-    return user.id;
-  }
-
-  /**
    * Generate OAuth authorization URL
    */
   static generateAuthUrl(discordUserId: string, guildId: string): string {
@@ -264,6 +251,13 @@ export class SpotifyOAuthService {
       console.log(`[SpotifyOAuth] Refreshed access token for user ${discordUserId}`);
     } catch (error: any) {
       console.error('[SpotifyOAuth] Failed to refresh token:', error.response?.data || error.message);
+
+      // Spotify refresh tokens expire 6 months after authorization; a dead token must be discarded and re-authorized
+      if (error.response?.data?.error === 'invalid_grant') {
+        await TokenStorageService.deleteToken(discordUserId);
+        console.log(`[SpotifyOAuth] Deleted expired token for user ${discordUserId}; re-authorization required`);
+      }
+
       throw new Error('Failed to refresh access token');
     }
   }
@@ -281,7 +275,11 @@ export class SpotifyOAuthService {
     // Check if token is expired or about to expire
     if (TokenStorageService.isTokenExpired(tokenData)) {
       console.log(`[SpotifyOAuth] Token expired for user ${discordUserId}, refreshing...`);
-      await this.refreshToken(discordUserId);
+      try {
+        await this.refreshToken(discordUserId);
+      } catch {
+        return null;
+      }
 
       // Get the refreshed token
       const refreshedToken = await TokenStorageService.getToken(discordUserId);

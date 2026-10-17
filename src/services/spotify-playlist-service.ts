@@ -78,11 +78,9 @@ export class SpotifyPlaylistService {
       console.log(`[SpotifyPlaylist] Creating playlist "${playlistName}" with ${trackUris.length} tracks`);
       console.log(`[SpotifyPlaylist] Description: "${playlistDescription}"`);
 
-      // Fetch the bot's Spotify user ID to create the playlist under their account
-      const botSpotifyUserId = await SpotifyOAuthService.getBotSpotifyUserId();
+      // Playlist is created under the bot/developer account that owns the token
       const playlistId = await this.createPlaylist(
         accessToken,
-        botSpotifyUserId,
         playlistName,
         playlistDescription,
         true // public playlist because private ones can only be accessed by the creator
@@ -113,14 +111,13 @@ export class SpotifyPlaylistService {
    */
   private static async createPlaylist(
     accessToken: string,
-    spotifyUserId: string,
     name: string,
     description: string,
     isPublic: boolean
   ): Promise<string> {
     console.log(`[SpotifyPlaylist] Creating playlist with public=${isPublic}`);
     const response = await axios.post(
-      `${SPOTIFY_API_BASE}/users/${spotifyUserId}/playlists`,
+      `${SPOTIFY_API_BASE}/me/playlists`,
       {
         name,
         description,
@@ -153,7 +150,7 @@ export class SpotifyPlaylistService {
       const batch = trackUris.slice(i, i + batchSize);
 
       await axios.post(
-        `${SPOTIFY_API_BASE}/playlists/${playlistId}/tracks`,
+        `${SPOTIFY_API_BASE}/playlists/${playlistId}/items`,
         {
           uris: batch
         },
