@@ -3,9 +3,9 @@ import * as path from 'path';
 import { Mutex } from 'async-mutex';
 import { LeagueData, League } from '../types';
 
-const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '../../data');
-const LEAGUES_DIR = path.join(DATA_DIR, 'leagues');
-const COMPLETED_DIR = path.join(LEAGUES_DIR, 'completed');
+export const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '../../data');
+const LEAGUES_DIR = path.resolve(DATA_DIR, 'leagues');
+const COMPLETED_DIR = path.resolve(LEAGUES_DIR, 'completed');
 const LEGACY_DATA_FILE = path.join(DATA_DIR, 'leagues.json');
 
 // Per-guild mutexes to serialize concurrent updates
@@ -20,8 +20,27 @@ function getGuildMutex(guildId: string): Mutex {
   return mutex;
 }
 
+// Guild IDs become file names, so reject anything that could escape the data directory
+const SAFE_GUILD_ID = /^[A-Za-z0-9_-]+$/;
+
+export function isSafeGuildId(guildId: string): boolean {
+  return SAFE_GUILD_ID.test(guildId);
+}
+
+// Resolves a file name inside dir, throwing if the result would land outside it
+function resolveInside(dir: string, fileName: string): string {
+  const resolved = path.resolve(dir, fileName);
+  if (!resolved.startsWith(dir + path.sep)) {
+    throw new Error('[Storage] Invalid guild ID');
+  }
+  return resolved;
+}
+
 function getActiveFilePath(guildId: string): string {
-  return path.join(LEAGUES_DIR, `${guildId}.json`);
+  if (!isSafeGuildId(guildId)) {
+    throw new Error('[Storage] Invalid guild ID');
+  }
+  return resolveInside(LEAGUES_DIR, `${guildId}.json`);
 }
 
 function sanitizeTimestamp(iso: string): string {
@@ -29,7 +48,10 @@ function sanitizeTimestamp(iso: string): string {
 }
 
 function getCompletedFilePath(guildId: string, completedAt: string): string {
-  return path.join(COMPLETED_DIR, `${guildId}-${sanitizeTimestamp(completedAt)}.json`);
+  if (!isSafeGuildId(guildId)) {
+    throw new Error('[Storage] Invalid guild ID');
+  }
+  return resolveInside(COMPLETED_DIR, `${guildId}-${sanitizeTimestamp(completedAt)}.json`);
 }
 
 let migrationChecked = false;
@@ -87,7 +109,7 @@ export class Storage {
       try {
         return JSON.parse(fs.readFileSync(activePath, 'utf-8')) as League;
       } catch (err) {
-        console.error(`[Storage] Failed to parse active league file for guild ${guildId}:`, err);
+        console.error('[Storage] Failed to parse active league file for guild', guildId, err);
         return null;
       }
     }
@@ -104,7 +126,7 @@ export class Storage {
     try {
       return JSON.parse(fs.readFileSync(latestFile, 'utf-8')) as League;
     } catch (err) {
-      console.error(`[Storage] Failed to parse completed league file ${latestFile}:`, err);
+      console.error('[Storage] Failed to parse completed league file', latestFile, err);
       return null;
     }
   }

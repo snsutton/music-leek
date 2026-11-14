@@ -343,6 +343,31 @@ Add environment variable in Railway:
 
 This ensures league data persists across deployments by storing it in the mounted volume instead of the ephemeral filesystem.
 
+### Editing League Data Live
+
+You can pull a league's JSON to your machine, edit it, and push it back without touching the Railway volume.
+
+1. **Enable the admin API** by adding `ADMIN_API_TOKEN` in Railway, set to a long random string (for example `openssl rand -hex 32`). The `/admin` routes don't exist unless this is set.
+2. **Configure your machine** by adding both values to `.env.local`:
+
+   ```env
+   ADMIN_API_URL=https://YOUR-APP.railway.app
+   ADMIN_API_TOKEN=the-same-token
+   ```
+
+3. **Pull, edit, push:**
+
+   ```bash
+   npm run league -- list
+   npm run league -- pull <guildId>
+   # edit data/edits/<guildId>.json
+   npm run league -- push <guildId>
+   ```
+
+Every push saves the previous version on the server in `data/edit-backups/`. If the bot changed the league after you pulled it (a song was submitted or a vote came in), the push is rejected so you don't overwrite that change. Pull again and redo your edit, or use `push <guildId> --force` to overwrite anyway.
+
+Be careful when removing or reordering submissions. Votes point to songs by their position in `submissions` (`submissionIndex`), and `shuffledOrder` uses those positions too.
+
 ### Environment Variables Reference
 
 | Variable | Required | Description | Where to Get It |
@@ -358,6 +383,7 @@ This ensures league data persists across deployments by storing it in the mounte
 | `APPLE_MUSIC_PRIVATE_KEY` | No | Apple MusicKit private key | Contents of .p8 file from Apple Developer (optional) |
 | `DATA_DIR` | No | Path to data directory | Set to `/app/data` if using Railway volumes (default: `./data`) |
 | `NODE_ENV` | No | Set to `production` for production | Set automatically by Railway |
+| `ADMIN_API_TOKEN` | No | Enables `/admin` routes for pulling and pushing league JSON | Generate: `openssl rand -hex 32` |
 
 \* Required if you want users to be able to submit Spotify URLs. Without these, users will see "Spotify support is not configured on this bot" error.
 
