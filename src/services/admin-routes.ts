@@ -2,7 +2,7 @@ import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 import express, { Request, Response, NextFunction, Router } from 'express';
-import { Storage, DATA_DIR } from '../utils/storage';
+import { Storage, DATA_DIR, isSafeGuildId } from '../utils/storage';
 import { League } from '../types';
 
 const EDIT_BACKUP_DIR = path.join(DATA_DIR, 'edit-backups');
@@ -63,6 +63,14 @@ export function createAdminRouter(token: string | undefined = process.env.ADMIN_
   const router = express.Router();
   router.use(requireToken(token));
   router.use(express.json({ limit: '5mb' }));
+
+  router.param('guildId', (req, res, next, guildId: string) => {
+    if (!isSafeGuildId(guildId)) {
+      res.status(400).json({ error: 'Invalid guild ID' });
+      return;
+    }
+    next();
+  });
 
   router.get('/leagues', (req, res) => {
     const leagues = Storage.getAllLeagues().map(l => ({ guildId: l.guildId, name: l.name }));

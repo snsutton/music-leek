@@ -20,7 +20,21 @@ function getGuildMutex(guildId: string): Mutex {
   return mutex;
 }
 
+// Guild IDs become file names, so reject anything that could escape the data directory
+const SAFE_GUILD_ID = /^[A-Za-z0-9_-]+$/;
+
+export function isSafeGuildId(guildId: string): boolean {
+  return SAFE_GUILD_ID.test(guildId);
+}
+
+function assertSafeGuildId(guildId: string): void {
+  if (!isSafeGuildId(guildId)) {
+    throw new Error('[Storage] Invalid guild ID');
+  }
+}
+
 function getActiveFilePath(guildId: string): string {
+  assertSafeGuildId(guildId);
   return path.join(LEAGUES_DIR, `${guildId}.json`);
 }
 
@@ -29,6 +43,7 @@ function sanitizeTimestamp(iso: string): string {
 }
 
 function getCompletedFilePath(guildId: string, completedAt: string): string {
+  assertSafeGuildId(guildId);
   return path.join(COMPLETED_DIR, `${guildId}-${sanitizeTimestamp(completedAt)}.json`);
 }
 
@@ -87,7 +102,7 @@ export class Storage {
       try {
         return JSON.parse(fs.readFileSync(activePath, 'utf-8')) as League;
       } catch (err) {
-        console.error(`[Storage] Failed to parse active league file for guild ${guildId}:`, err);
+        console.error('[Storage] Failed to parse active league file for guild', guildId, err);
         return null;
       }
     }
@@ -104,7 +119,7 @@ export class Storage {
     try {
       return JSON.parse(fs.readFileSync(latestFile, 'utf-8')) as League;
     } catch (err) {
-      console.error(`[Storage] Failed to parse completed league file ${latestFile}:`, err);
+      console.error('[Storage] Failed to parse completed league file', latestFile, err);
       return null;
     }
   }

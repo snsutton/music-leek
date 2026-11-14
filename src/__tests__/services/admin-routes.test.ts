@@ -79,6 +79,11 @@ describe('admin routes', () => {
     expect(((await res.json()) as League).name).toBe('Test League');
   });
 
+  it('rejects guild IDs that could escape the data directory', async () => {
+    const res = await fetch(`${baseUrl}/leagues/..%2F..%2Ftokens`, { headers: auth });
+    expect(res.status).toBe(400);
+  });
+
   it('returns 404 for an unknown league', async () => {
     const res = await fetch(`${baseUrl}/leagues/nope`, { headers: auth });
     expect(res.status).toBe(404);
