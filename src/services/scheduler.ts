@@ -8,6 +8,7 @@ import { DmContextManager } from '../utils/dm-context';
 import { VotingService } from './voting-service';
 import { selectThemeAndUpdateTickets } from './theme-selection-service';
 import { resolveUsernames } from '../utils/username-resolver';
+import { TriviaService } from './trivia-service';
 
 /**
  * Background scheduler that checks for upcoming deadlines every 30 minutes,
@@ -77,6 +78,11 @@ export class Scheduler {
     let remindersCount = 0;
 
     for (const league of leagues) {
+      // Daily trivia keeps running after the league ends, until the final round's songs run out
+      await TriviaService.postDailyTrivia(client, league, now).catch(err => {
+        console.error(`[Scheduler] Error posting trivia for ${league.name}:`, err);
+      });
+
       // Skip completed leagues
       if (league.isCompleted) continue;
 
