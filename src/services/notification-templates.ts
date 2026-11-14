@@ -1,5 +1,6 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-import { League, Round, LeagueEndResults, ThemeSubmission } from '../types';
+import { League, Round, LeagueEndResults, ThemeSubmission, Submission } from '../types';
+import type { SongTrivia } from './trivia-service';
 import { calculateScores, toTimestamp } from '../utils/helpers';
 import { formatUser } from '../utils/username-resolver';
 
@@ -12,6 +13,21 @@ export class NotificationTemplates {
    */
   static getJoinLeagueBlurb(): string {
     return "\n\n💡 Want to join this league? Use `/join-league` to participate!";
+  }
+
+  /**
+   * Channel Notification: Daily trivia about a song from the last completed round
+   */
+  static dailyTrivia(round: Round, submission: Submission, trivia: SongTrivia): EmbedBuilder {
+    return new EmbedBuilder()
+      .setColor(0x1ABC9C)
+      .setTitle('Song Trivia')
+      .setDescription(
+        `**[${submission.songTitle}](${submission.songUrl})** by ${submission.artist}\n` +
+        `Round ${round.roundNumber}: "${round.prompt}", submitted by <@${submission.userId}>\n\n` +
+        trivia.text
+      )
+      .setFooter({ text: `Source: ${trivia.source}` });
   }
 
   /**

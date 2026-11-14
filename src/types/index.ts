@@ -23,6 +23,11 @@ export interface League {
     connectedAt: string; // ISO 8601 timestamp
   };
   themeSelectionTickets?: Record<string, number>; // userId -> ticket count for weighted theme selection
+  trivia?: {
+    roundNumber: number; // Completed round the daily trivia is drawn from
+    usedSubmissionIndices: number[]; // Submissions already featured, or with no trivia found
+    lastRunDate?: string; // YYYY-MM-DD (Eastern) of the last daily trivia check
+  };
 }
 
 export interface Round {
