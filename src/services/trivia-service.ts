@@ -40,6 +40,18 @@ function cleanTitle(title: string): string {
   return title.replace(/\s+-\s+.*$/, '').replace(/\s*[([].*?[)\]]/g, '').trim() || title;
 }
 
+function sanitizeLastFmSummary(summary: string): string {
+  let text = summary;
+  let previous: string;
+  do {
+    previous = text;
+    text = text
+      .replace(/<a [^>]*>Read more on Last\.fm<\/a>\.?/i, '')
+      .replace(/<[^>]+>/g, '');
+  } while (text !== previous);
+  return text.trim();
+}
+
 function escapeLucene(value: string): string {
   return value.replace(/[\\"]/g, '\\$&');
 }
@@ -77,10 +89,7 @@ export class TriviaService {
       if (!summary) return null;
 
       // Summaries end with a "Read more on Last.fm" link; drop it and any other markup
-      const text = summary
-        .replace(/<a [^>]*>Read more on Last\.fm<\/a>\.?/i, '')
-        .replace(/<[^>]+>/g, '')
-        .trim();
+      const text = sanitizeLastFmSummary(summary);
       if (!text) return null;
 
       return { text: text.length > MAX_TRIVIA_LENGTH ? text.slice(0, MAX_TRIVIA_LENGTH - 3) + '...' : text, source: 'Last.fm' };
