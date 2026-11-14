@@ -7,6 +7,7 @@ import * as path from 'path';
 import express from 'express';
 import { MusicServiceFactory } from './services/music-service-factory';
 import { Scheduler } from './services/scheduler';
+import { createAdminRouter } from './services/admin-routes';
 
 // HTTP server reference for graceful shutdown
 let httpServer: any = null;
@@ -355,6 +356,12 @@ if (shouldStartHttpServer) {
         </html>
       `);
     });
+
+    const adminRouter = createAdminRouter();
+    if (adminRouter) {
+      app.use('/admin', adminRouter);
+      console.log('[HTTP] Admin league routes enabled');
+    }
 
     httpServer = app.listen(PORT, '0.0.0.0', () => {
       console.log(`[HTTP] ✓ Health check server listening on port ${PORT}`);

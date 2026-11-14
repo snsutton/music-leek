@@ -3,7 +3,7 @@ import * as path from 'path';
 import { Mutex } from 'async-mutex';
 import { LeagueData, League } from '../types';
 
-const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '../../data');
+export const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '../../data');
 const LEAGUES_DIR = path.join(DATA_DIR, 'leagues');
 const COMPLETED_DIR = path.join(LEAGUES_DIR, 'completed');
 const LEGACY_DATA_FILE = path.join(DATA_DIR, 'leagues.json');
