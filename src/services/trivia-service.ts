@@ -65,6 +65,29 @@ function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// Waits before each retry when MusicBrainz is busy (503), rate limiting (429), or unreachable
+const MUSICBRAINZ_RETRY_DELAYS_MS = [5000, 15000, 30000];
+
+async function musicBrainzGet(url: string, params: Record<string, unknown>) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await axios.get(url, {
+        params: { ...params, fmt: 'json' },
+        headers: { 'User-Agent': MUSICBRAINZ_USER_AGENT },
+        timeout: 10000
+      });
+    } catch (error) {
+      const status: number | undefined = (error as { response?: { status?: number } })?.response?.status;
+      const retryable = status === undefined || status === 429 || status === 503;
+      if (!retryable || attempt >= MUSICBRAINZ_RETRY_DELAYS_MS.length) throw error;
+
+      const delay = MUSICBRAINZ_RETRY_DELAYS_MS[attempt];
+      console.warn(`[Trivia] MusicBrainz request failed (${status ?? 'no response'}), retrying in ${delay / 1000}s`);
+      await sleep(delay);
+    }
+  }
+}
+
 export class TriviaService {
   /**
    * Look up a piece of trivia for a song: the Last.fm wiki summary when one exists,
@@ -100,17 +123,10 @@ export class TriviaService {
   }
 
   private static async getMusicBrainzTrivia(title: string, artist: string): Promise<SongTrivia | null> {
-    const headers = { 'User-Agent': MUSICBRAINZ_USER_AGENT };
-
     try {
-      const search = await axios.get(`${MUSICBRAINZ_API_URL}/recording`, {
-        params: {
-          query: `recording:"${escapeLucene(title)}" AND artist:"${escapeLucene(artist)}"`,
-          fmt: 'json',
-          limit: 1
-        },
-        headers,
-        timeout: 10000
+      const search = await musicBrainzGet(`${MUSICBRAINZ_API_URL}/recording`, {
+        query: `recording:"${escapeLucene(title)}" AND artist:"${escapeLucene(artist)}"`,
+        limit: 1
       });
 
       const recording = search.data?.recordings?.[0];
@@ -120,21 +136,13 @@ export class TriviaService {
 
       // Songwriters live on the work the recording is a performance of
       await sleep(MUSICBRAINZ_DELAY_MS);
-      const recordingDetail = await axios.get(`${MUSICBRAINZ_API_URL}/recording/${recording.id}`, {
-        params: { inc: 'work-rels', fmt: 'json' },
-        headers,
-        timeout: 10000
-      });
+      const recordingDetail = await musicBrainzGet(`${MUSICBRAINZ_API_URL}/recording/${recording.id}`, { inc: 'work-rels' });
       const workId: string | undefined = recordingDetail.data?.relations
         ?.find((rel: { type: string }) => rel.type === 'performance')?.work?.id;
 
       if (workId) {
         await sleep(MUSICBRAINZ_DELAY_MS);
-        const work = await axios.get(`${MUSICBRAINZ_API_URL}/work/${workId}`, {
-          params: { inc: 'artist-rels', fmt: 'json' },
-          headers,
-          timeout: 10000
-        });
+        const work = await musicBrainzGet(`${MUSICBRAINZ_API_URL}/work/${workId}`, { inc: 'artist-rels' });
         const writers: string[] = Array.from(new Set(
           (work.data?.relations ?? [])
             .filter((rel: { type: string }) => ['writer', 'composer', 'lyricist'].includes(rel.type))
