@@ -100,6 +100,38 @@ describe('TriviaService', () => {
       expect(trivia).toEqual({ text: 'Written by Jane Doe and John Roe. First released in 1983.', source: 'MusicBrainz' });
     });
 
+    it('retries MusicBrainz when it is busy', async () => {
+      (axios.get as jest.Mock)
+        .mockResolvedValueOnce({ data: { track: {} } })
+        .mockRejectedValueOnce({ response: { status: 503 } })
+        .mockRejectedValueOnce({ response: { status: 429 } })
+        .mockResolvedValueOnce({ data: { recordings: [{ id: 'rec1', score: 100, 'first-release-date': '1976-03-26' }] } })
+        .mockResolvedValueOnce({ data: { relations: [] } });
+
+      const trivia = await TriviaService.getTrivia('Song B', 'Artist B');
+
+      expect(trivia).toEqual({ text: 'First released in 1976.', source: 'MusicBrainz' });
+      expect(axios.get).toHaveBeenCalledTimes(5);
+    });
+
+    it('gives up after three MusicBrainz retries', async () => {
+      (axios.get as jest.Mock)
+        .mockResolvedValueOnce({ data: { track: {} } })
+        .mockRejectedValue({ response: { status: 503 } });
+
+      await expect(TriviaService.getTrivia('Song B', 'Artist B')).rejects.toEqual({ response: { status: 503 } });
+      expect(axios.get).toHaveBeenCalledTimes(5);
+    });
+
+    it('does not retry MusicBrainz client errors', async () => {
+      (axios.get as jest.Mock)
+        .mockResolvedValueOnce({ data: { track: {} } })
+        .mockRejectedValue({ response: { status: 400 } });
+
+      await expect(TriviaService.getTrivia('Song B', 'Artist B')).rejects.toEqual({ response: { status: 400 } });
+      expect(axios.get).toHaveBeenCalledTimes(2);
+    });
+
     it('returns null when MusicBrainz has no confident match', async () => {
       (axios.get as jest.Mock)
         .mockResolvedValueOnce({ data: { track: {} } })
@@ -162,10 +194,10 @@ describe('TriviaService', () => {
       expect(league.trivia.usedSubmissionIndices).toEqual([0, 1]);
     });
 
-    it('leaves a song unused when MusicBrainz errors so it is retried tomorrow', async () => {
+    it('leaves a song unused when MusicBrainz keeps erroring so it is retried tomorrow', async () => {
       (axios.get as jest.Mock)
         .mockResolvedValueOnce({ data: {} })
-        .mockRejectedValueOnce({ response: { status: 503 } });
+        .mockRejectedValue({ response: { status: 503 } });
       const { client, channel } = makeClient();
       const league = makeLeague([makeRound()]);
 
